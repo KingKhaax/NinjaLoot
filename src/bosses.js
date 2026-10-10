@@ -22,6 +22,10 @@ function computeBosses(instances, seasons) {
     g.bosses.push({ id, name: m.e.name, order: m.e.order });
   }
   for (const g of groups) g.bosses.sort((a, b) => a.order - b.order);
-  return { season: season.name, groups };
+  const names = {};
+  for (const inst of instances) for (const e of inst.encounters || []) if (names[e.id] == null) names[e.id] = e.name;
+  const inst = {};
+  for (const i of instances) if (i.id != null) inst[i.id] = { n: i.name, t: i.type };
+  return { season: season.name, groups, names, inst };
 }
 module.exports = { computeBosses };

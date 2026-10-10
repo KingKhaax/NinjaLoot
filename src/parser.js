@@ -19,6 +19,21 @@ function extractReportIds(text) {
   return [...new Set(ids)];
 }
 
+const SLOT_ALIASES = { shoulders: 'shoulder', wrists: 'wrist', bracers: 'wrist', finger: 'finger1', ring1: 'finger1', ring2: 'finger2', trinket: 'trinket1', mainhand: 'main_hand', offhand: 'off_hand', cloak: 'back', belt: 'waist', boots: 'feet', gloves: 'hands', helm: 'head' };
+const SLOT_RE = /^(head|neck|shoulder|back|chest|wrist|hands|waist|legs|feet|finger[12]|trinket[12]|main_hand|off_hand)$/;
+const normSlot = s => { const k = String(s || '').toLowerCase().replace(/[^a-z0-9_]/g, ''); const v = SLOT_ALIASES[k] || k; return SLOT_RE.test(v) ? v : null; };
+const ilvlOf = v => { if (typeof v === 'number') return v; if (!v || typeof v !== 'object') return 0; for (const k of ['ilevel', 'item_level', 'ilvl', 'itemLevel']) if (typeof v[k] === 'number' && v[k] > 0) return v[k]; return 0; };
+// Busca (con tope de profundidad) un objeto "ranura -> objeto con nivel" dentro de los datos del informe
+function extractGear(root, depth = 0) {
+  if (!root || typeof root !== 'object' || depth > 4 || (Array.isArray(root) && root.length > 50)) return null;
+  const slots = {};
+  let n = 0;
+  for (const [k, v] of Object.entries(root)) { const s = normSlot(k); if (s) { const il = ilvlOf(v); if (il >= 1) { slots[s] = il; n++; } } }
+  if (n >= 6) return slots;
+  for (const v of Object.values(root)) if (v && typeof v === 'object') { const r = extractGear(v, depth + 1); if (r) return r; }
+  return null;
+}
+
 function detectClass(player, raw) {
   const cands = [player && player.class, player && player.specialization, raw && raw.character && raw.character.class, raw && raw.class];
   for (const c of cands) {
@@ -53,6 +68,17 @@ function parseProfilesetName(name) {
   return { id: nums[idx], ilvl, slot, name: itemName, source: parts.length >= 6 && idx === 3 ? { instance: nums[0], difficulty: nums[1], encounter: nums[2] } : null };
 }
 
+const DIFF_BY_ID = { 14: 'nm', 15: 'hc', 16: 'mm', 17: 'lfr' };
+// Dificultad de la simulación: la más frecuente entre los objetos (2º dato del nombre del profileset); si no, el formulario de Raidbots
+function detectDifficulty(items, raw) {
+  const count = {};
+  for (const it of items) { const d = it.source && DIFF_BY_ID[it.source.difficulty]; if (d) count[d] = (count[d] || 0) + 1; }
+  const top = Object.entries(count).sort((a, b) => b[1] - a[1])[0];
+  if (top) return top[0];
+  const txt = JSON.stringify((raw && raw.droptimizer) || '').toLowerCase();
+  return /mythic/.test(txt) ? 'mm' : /heroic/.test(txt) ? 'hc' : /normal/.test(txt) ? 'nm' : /lfr|finder/.test(txt) ? 'lfr' : null;
+}
+
 function parseReport(json, id) {
   const sim = json && json.sim;
   const players = sim && sim.players;
@@ -72,7 +98,7 @@ function parseReport(json, id) {
     if (gain <= 0) continue;
     const key = `${p.id}:${p.ilvl}`;
     const prev = best.get(key);
-    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source });
+    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source });
   }
   if (!best.size) {
     const any = results.some(r => parseProfilesetName(r.name));
@@ -87,6 +113,8 @@ function parseReport(json, id) {
     fetchedAt: Date.now(),
     character: { name: player.name || character.name || id, realm: character.realm || '', cls, spec: detectSpec(player, cls) },
     baseDps: Math.round(base),
+    difficulty: detectDifficulty(items, raw),
+    gear: extractGear(raw && raw.character) || extractGear(player) || null,
     items,
   };
 }

@@ -38,7 +38,7 @@ ipcMain.handle('report:fetch', async (_e, id) => {
 });
 
 // --- Nombres de objetos localizados (Wowhead) con caché en disco ---
-const WH_LOCALE = { en: 0, es: 6 };
+const WH_LOCALE = { en: 0, fr: 2, de: 3, es: 6 };
 let itemCache = null;
 let itemCacheDirty = false;
 const itemCacheFile = () => path.join(userData(), 'item-cache.json');
@@ -64,6 +64,24 @@ ipcMain.handle('items:lookup', async (_e, ids, lang) => {
   }));
   if (itemCacheDirty) { itemCacheDirty = false; try { fs.writeFileSync(itemCacheFile(), JSON.stringify(itemCache)); } catch {} }
   return out;
+});
+
+// --- Tooltip de objeto (Wowhead) con el nivel de objeto simulado ---
+const tipCache = new Map();
+ipcMain.handle('items:tooltip', async (_e, id, ilvl, lang) => {
+  id = Number(id); ilvl = Number(ilvl) || 0;
+  if (!Number.isInteger(id) || id <= 0) return { ok: false };
+  const key = `${lang}:${id}:${ilvl}`;
+  if (tipCache.has(key)) return tipCache.get(key);
+  try {
+    const res = await net.fetch(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}`, { headers: UA });
+    if (!res.ok) return { ok: false };
+    const j = await res.json();
+    if (!j.tooltip) return { ok: false };
+    const r = { ok: true, html: j.tooltip };
+    tipCache.set(key, r);
+    return r;
+  } catch { return { ok: false }; }
 });
 
 // --- Iconos como data URL (para exportar el gráfico a PNG sin "tainted canvas") ---

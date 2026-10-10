@@ -8,7 +8,7 @@ import { PNG } from 'pngjs';
 import { createRequire } from 'node:module';
 const { SPECS } = createRequire(import.meta.url)('../src/data/classes.js');
 const { RAID_BUFFS } = createRequire(import.meta.url)('../src/data/buffs.js');
-const UI_ICONS = { lang: 'inv_misc_book_09', settings: 'trade_engineering', refresh: 'spell_holy_borrowedtime', remove: 'inv_misc_bone_skull_01', open: 'inv_misc_map_01', export: 'inv_scroll_03', charts: 'achievement_dungeon_gloryoftheraider', rotations: 'inv_banner_01' };
+const UI_ICONS = { lang: 'inv_misc_book_09', settings: 'trade_engineering', refresh: 'spell_holy_borrowedtime', remove: 'inv_misc_bone_skull_01', open: 'inv_misc_map_01', export: 'inv_scroll_03', charts: 'achievement_dungeon_gloryoftheraider', rotations: 'inv_banner_01', personal: 'inv_misc_spyglass_03', home: 'inv_misc_rune_01', coin: 'inv_misc_coin_01' };
 
 const zip = process.argv[2];
 if (!zip) { console.error('Falta la ruta del zip de iconos'); process.exit(1); }
@@ -16,14 +16,22 @@ const root = path.resolve(import.meta.dirname, '..');
 const MIN_EXPANSION = 9; // Dragonflight en adelante
 const SIZE = 64;
 
-const items = await (await fetch('https://www.raidbots.com/static/data/live/equippable-items.json')).json();
+const items = await (await fetch('https://www.raidbots.com/static/data/live/equippable-items-full.json')).json();
 const wanted = items.filter(i => i.icon && i.quality >= 3 && i.expansion >= MIN_EXPANSION);
 
 // Datos compactos: id -> [nombre, icono, calidad, ilvl, tipoInventario]
+const TANK = new Set([66, 73, 104, 250, 268, 581]), HEAL = new Set([65, 105, 256, 257, 264, 270, 1468]);
+// Rol de los trinkets: solo tank, solo healer o ambos (si algún spec de DPS lo puede usar, no lleva etiqueta)
+const roleOf = i => {
+  if (i.inventoryType !== 12 || !Array.isArray(i.specs) || !i.specs.length) return '';
+  if (i.specs.some(s => !TANK.has(s) && !HEAL.has(s))) return '';
+  const t = i.specs.some(s => TANK.has(s)), h = i.specs.some(s => HEAL.has(s));
+  return t && h ? 'th' : t ? 't' : 'h';
+};
 const data = {};
-for (const i of wanted) data[i.id] = [i.name, i.icon.toLowerCase(), i.quality, i.itemLevel, i.inventoryType];
+for (const i of wanted) data[i.id] = [i.name, i.icon.toLowerCase(), i.quality, i.itemLevel, i.inventoryType, roleOf(i), (i.sources || []).slice(0, 3).map(s => [s.instanceId, s.encounterId])];
 fs.writeFileSync(path.join(root, 'src/data/items.js'), `'use strict';
-// id -> [nombre, icono, calidad, ilvl, tipoInventario] (generado por tools/build-assets.mjs)
+// id -> [nombre, icono, calidad, ilvl, tipoInventario, rol, fuentes] (generado por tools/build-assets.mjs)
 const ITEMS = ${JSON.stringify(data)};
 `);
 

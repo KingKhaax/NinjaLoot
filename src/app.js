@@ -2,24 +2,41 @@
 (() => {
   const $ = (s, r = document) => r.querySelector(s);
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-  const FONT = "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif";
+  const FONT = "'Noto Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
   const WEB_ICON = n => `https://wow.zamimg.com/images/wow/icons/large/${n}.jpg`;
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0 };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
     settings: { ...DEFAULTS, ...load('ninjaloot.settings', {}) },
-    sims: [], loading: new Set(), names: { es: {}, en: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'charts', bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    sims: [], loading: new Set(), names: { es: {}, en: {}, fr: {}, de: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
+    view: 'home', personal: load('ninjaloot.personal', null), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
   const S = () => state.settings;
   const T = () => I18N[S().lang] || I18N.es;
   const persistSims = () => save('ninjaloot.sims', S().persist ? state.sims : []);
   const persistSettings = () => save('ninjaloot.settings', S());
+
+  // ---------- Fuentes ----------
+  // Expressway no se incluye (su licencia no permite incrustarla en aplicaciones): se usa si está instalada en Windows
+  const FONTS = {
+    noto: ['Noto Sans', "'Noto Sans','Segoe UI Variable Text','Segoe UI',system-ui,sans-serif"],
+    segoe: ['Segoe UI', "'Segoe UI Variable Text','Segoe UI',system-ui,sans-serif"],
+    arial: ['Arial', 'Arial,Helvetica,sans-serif'],
+    verdana: ['Verdana', 'Verdana,Geneva,sans-serif'],
+    georgia: ['Georgia', "Georgia,'Times New Roman',serif"],
+    consolas: ['Consolas', "Consolas,'Cascadia Mono',monospace"],
+    expressway: ['Expressway', "Expressway,'Noto Sans','Segoe UI',sans-serif"],
+  };
+  function fontInstalled(name) {
+    const c = document.createElement('canvas').getContext('2d');
+    const w = f => { c.font = `72px ${f}`; return c.measureText('mmmmmmmmmmlli').width; };
+    return ['monospace', 'serif', 'sans-serif'].some(b => w(`'${name}',${b}`) !== w(b));
+  }
 
   // ---------- Tema y colores ----------
   const hex = v => /^#[0-9a-f]{6}$/i.test(v) ? v : null;
@@ -39,6 +56,9 @@
     const c = S().colors;
     if (c) for (const k of ['bg', 'panel', 'accent', 'text']) if (hex(c[k])) root.style.setProperty(`--${k}`, c[k]);
     document.body.classList.toggle('no-anim', !S().animations);
+    root.style.setProperty('--font', (FONTS[S().font] || FONTS.noto)[1]);
+    document.body.classList.toggle('compact', S().density === 'compact');
+    window.api.setZoom((Number(S().fontScale) || 100) / 100);
   }
   function themeColors() {
     const cs = getComputedStyle(document.documentElement);
@@ -57,16 +77,17 @@
     const name = (lang !== 'en' && state.names[lang][it.id]?.[0]) || loc?.[0] || cached?.[0] || it.name || `#${it.id}`;
     const icon = loc?.[1] || cached?.[1] || 'inv_misc_questionmark';
     const quality = loc?.[2] ?? cached?.[2] ?? 4;
+    const tag = { t: '(tank)', h: '(healer)', th: '(tank/healer)' }[loc?.[5]] || '';
     const src = loc ? `assets/items/${loc[1]}.png` : WEB_ICON(icon);
-    return { name, icon: src, quality };
+    return { name, icon: src, quality, tag };
   }
   const pending = new Set();
   async function ensureNames() {
     const lang = S().lang, ids = [];
-    for (const sim of state.sims) for (const it of visibleItems(sim, true)) {
-      const needLoc = lang !== 'en' && !state.names[lang][it.id];
-      const needMeta = !ITEMS[it.id] && !state.names[lang][it.id] && !state.names.en[it.id];
-      if ((needLoc || needMeta) && !pending.has(`${lang}:${it.id}`)) { pending.add(`${lang}:${it.id}`); ids.push(it.id); }
+    for (const id of state.shown || []) {
+      const needLoc = lang !== 'en' && !state.names[lang][id];
+      const needMeta = !ITEMS[id] && !state.names[lang][id] && !state.names.en[id];
+      if ((needLoc || needMeta) && !pending.has(`${lang}:${id}`)) { pending.add(`${lang}:${id}`); ids.push(id); }
     }
     if (!ids.length) return;
     const res = await window.api.lookupItems(ids, lang);
@@ -91,10 +112,12 @@
   // Especialización: nombre localizado e icono propio (cada spec tiene el suyo; si no se reconoce, icono de clase)
   const specKey = sim => String(sim.character.spec || '').toLowerCase().replace(/[^a-z]/g, '');
   const specData = sim => (SPECS[sim.character.cls] || {})[specKey(sim)] || null;
-  const specName = sim => { const d = specData(sim); return d ? d[S().lang === 'es' ? 1 : 0] : (sim.character.spec || ''); };
+  const specName = sim => { const d = specData(sim), l = S().lang; return d ? (l === 'es' ? d[1] : (SPEC_L10N[l]?.[sim.character.cls]?.[specKey(sim)] || d[0])) : (sim.character.spec || ''); };
+  const buffName = b => BUFF_L10N[S().lang]?.[b.id]?.[0] || b.name[S().lang === 'es' ? 0 : 1];
+  const buffEffect = b => BUFF_L10N[S().lang]?.[b.id]?.[1] || b.effect[S().lang === 'es' ? 0 : 1];
   const specIcon = sim => { const d = specData(sim); return d ? `assets/specs/${sim.character.cls}-${specKey(sim)}.png` : (sim.character.cls ? `assets/classes/${sim.character.cls}.png` : null); };
   const clsColor = sim => CLASS_COLORS[sim.character.cls] || '#c8a45a';
-  const nf = () => new Intl.NumberFormat(S().lang === 'es' ? 'es-ES' : 'en-US');
+  const nf = () => new Intl.NumberFormat({ es: 'es-ES', en: 'en-US', fr: 'fr-FR', de: 'de-DE' }[S().lang] || 'en-US');
 
   function valueOf(it, sim) { return S().unit === 'pct' ? it.pct : it.gain; }
   function valueText(it, sim) {
@@ -102,6 +125,198 @@
     if (S().unit === 'pct') return `+${it.pct.toFixed(2)}%`;
     const base = `+${S().compact ? Chart.fmtNum(it.gain, true) : f.format(it.gain)}`;
     return S().showPct ? `${base} (${it.pct.toFixed(1)}%)` : base;
+  }
+
+  // "Cuidado": mejoras grandes que se deben a que la pieza equipada es de nivel muy bajo frente al resto del equipo
+  function cautionsFor(sim) {
+    if (!sim.gear) return null;
+    const vals = Object.values(sim.gear).filter(n => n > 0).sort((x, y) => x - y);
+    if (vals.length < 6) return null;
+    const median = vals[vals.length >> 1], gap = Number(S().cautionGap) || 15;
+    return sim.items.slice(0, 12).filter(it => sim.gear[it.slot] && median - sim.gear[it.slot] >= gap && it.ilvl > sim.gear[it.slot])
+      .map(it => ({ it, eq: sim.gear[it.slot], median })).slice(0, 5);
+  }
+  function cautionSection() {
+    const t = T();
+    let body = '';
+    for (const sim of activeSims()) {
+      const list = cautionsFor(sim);
+      if (list === null) { body += `<div class="caution-sim"><div class="cs-head">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<b style="color:${readable(clsColor(sim))}">${esc(sim.character.name)}</b></div><div class="hint">${esc(t.cautionNoGear)}</div></div>`; continue; }
+      if (!list.length) continue;
+      body += `<div class="caution-sim"><div class="cs-head">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<b style="color:${readable(clsColor(sim))}">${esc(sim.character.name)}</b></div>`
+        + list.map(({ it, eq, median }) => { const info = itemInfo(it); const slot = t.slots[it.slot] || it.slot;
+          return `<div class="caution-line bar" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span>${esc(t.cautionLine(info.name, nf().format(it.gain), slot, eq, median, it.ilvl))}</span></div>`; }).join('') + '</div>';
+    }
+    return `<section class="panel card caution"><div class="card-head"><h2>${esc(t.cautionTitle)}</h2></div><div class="hint">${esc(t.cautionIntro)}</div>${body || `<div class="caution-ok">${esc(t.cautionNone)}</div>`}</section>`;
+  }
+
+  const gainLine = it => `${T().tipGain}: +${nf().format(it.gain)} DPS (${it.pct.toFixed(2)}%)`;
+
+  // ---------- Dificultad (Normal / Heroico / Mítico): no se mezclan simulaciones de distinta dificultad ----------
+  const DIFF_RANK = { lfr: 0, nm: 1, hc: 2, mm: 3 };
+  const DIFF_TAG = { lfr: 'LFR', nm: 'NM', hc: 'HC', mm: 'MM' };
+  const presentDiffs = () => [...new Set(state.sims.map(s => s.difficulty).filter(Boolean))].sort((a, b) => DIFF_RANK[a] - DIFF_RANK[b]);
+  function effectiveDiff() { const p = presentDiffs(); if (p.length < 2) return null; return p.includes(S().diff) ? S().diff : p[p.length - 1]; }
+  const activeSims = () => { const e = effectiveDiff(); return state.sims.filter(s => !e || !s.difficulty || s.difficulty === e); };
+  const diffBadge = d => d ? `<span class="dbadge d-${d}" title="${esc(T().diffNames[d])}">${DIFF_TAG[d]}</span>` : '';
+  const xmark = '<svg class="xmark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
+  const srcOf = it => it.source || (ITEMS[it.id]?.[6]?.[0] ? { instance: ITEMS[it.id][6][0][0], encounter: ITEMS[it.id][6][0][1] } : null);
+  const catOfType = ty => /raid/.test(ty) ? 'raid' : /mplus|dungeon/.test(ty) ? 'dungeon' : /delve/.test(ty) ? 'delve' : /prey/.test(ty) ? 'prey' : /catalyst/.test(ty) ? 'catalyst' : /pvp/.test(ty) ? 'pvp' : /profession/.test(ty) ? 'craft' : /bonus/.test(ty) ? 'bonus' : 'other';
+  const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
+  const bossLabel = enc => (state.bosses.names || {})[enc] || '';
+
+  const act0 = () => activeSims();
+  function toolbarHtml() {
+    const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
+    let h = `<div class="charts-bar"><div class="seg"><button data-mode="boss" class="${mode === 'boss' ? 'on' : ''}">${esc(t.modeBoss)}</button><button data-mode="player" class="${mode === 'player' ? 'on' : ''}">${esc(t.modePlayer)}</button></div>`;
+    if (p.length) h += `<div class="diffbar"><span class="meta">${esc(t.diffLabel)}:</span>` + (p.length > 1 ? `<div class="seg">${p.map(d => `<button data-diff="${d}" class="${d === eff ? 'on' : ''}" title="${esc(t.diffNames[d])}">${DIFF_TAG[d]}</button>`).join('')}</div>` : diffBadge(p[0])) + '</div>';
+    if (mode === 'boss') {
+      const cats = {};
+      for (const s of act0()) for (const it of s.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
+      const keys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
+      if (keys.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-cat="all" class="${S().srcCat === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${keys.map(k => `<button data-cat="${k}" class="${S().srcCat === k ? 'on' : ''}">${esc(t['cat' + k[0].toUpperCase() + k.slice(1)] || k)}</button>`).join('')}</div></div>`;
+    }
+    const hidden = eff ? state.sims.filter(s => s.difficulty && s.difficulty !== eff).length : 0;
+    if (hidden) h += `<span class="meta warnnote">${esc(t.diffHidden(hidden, t.diffNames[eff]))}</span>`;
+    return h + '</div>';
+  }
+
+  // ---------- Gráficas por jefe: todas las piezas que dan DPS, ordenadas, comparadas entre jugadores ----------
+  function bossCharts(act, chartOpts) {
+    const t = T(), min = Number(S().minGain) || 0, pct = S().unit === 'pct';
+    const byEnc = new Map();
+    for (const sim of act) for (const it of sim.items) {
+      if (it.gain < min) continue;
+      const src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0;
+      if (S().srcCat !== 'all' && catOfSrc(src) !== S().srcCat) continue;
+      let m = byEnc.get(enc); if (!m) byEnc.set(enc, m = new Map());
+      let g = m.get(it.id); if (!g) m.set(it.id, g = { id: it.id, name: it.name, gains: [] });
+      g.gains.push({ sim, gain: it.gain, pct: it.pct, ilvl: it.ilvl });
+    }
+    const rowsOf = enc => [...byEnc.get(enc).values()].map(g => { g.gains.sort((x, y) => y.gain - x.gain); return { ...g, best: g.gains[0] }; }).sort((x, y) => y.best.gain - x.best.gain);
+    const bosses = allBosses(), order = bosses.map(b => b.id), groupOf = new Map(bosses.map(b => [b.id, b.group]));
+    const top = new Map([...byEnc.keys()].map(e => [e, rowsOf(e)[0]?.best.gain || 0]));
+    const encs = [...byEnc.keys()].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia >= 0 || ib >= 0) ? (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) : top.get(b) - top.get(a); });
+    let html = `<div class="hint boss-hint">${esc(t.bossChartsHint)}</div>`;
+    for (const enc of encs) {
+      const rows = rowsOf(enc), key = `boss${enc}`, n = S().topN, lim = state.expanded.has(key) || n === 0 ? rows.length : n;
+      const entries = rows.slice(0, lim).map(r => {
+        state.shown.add(r.id);
+        const info = itemInfo(r), best = r.best, col = clsColor(best.sim), vt = { gain: best.gain, pct: best.pct };
+        return {
+          id: `${enc}-${r.id}`, value: pct ? best.pct : best.gain, label: info.name + (info.tag ? ' ' + info.tag : ''), labelColor: readable(QUALITY_COLORS[info.quality]), color: col,
+          icon: specIcon(best.sim), iconBorder: col, bottomIcon: info.icon, sub: best.sim.character.name, subColor: readable(col), valueText: valueText(vt, best.sim),
+          itemId: r.id, ilvl: best.ilvl, gain: r.gains.slice(0, 6).map(x => `${x.sim.character.name}: +${nf().format(x.gain)} DPS (${x.pct.toFixed(2)}%)`).join('\n'),
+        };
+      });
+      const name = bossLabel(enc) || (enc ? `#${enc}` : t.bossOtherSources);
+      html += `<section class="panel card" id="boss-${enc}"><div class="card-head"><div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
+        + (n !== 0 && rows.length > n ? `<button class="btn small" data-toggle="${key}">${esc(state.expanded.has(key) ? t.showLess : t.showAll)}</button>` : '')
+        + `<button class="btn small" data-export="boss-${enc}">${ui('export')}${esc(t.exportPng)}</button></div></div>`
+        + `<div class="chart-wrap" data-chart="boss-${enc}">${Chart.build(entries, { ...chartOpts, slot: 116, height: 260, bottom: 150, labelSize: 12.5, maxLines: 3 })}</div></section>`;
+    }
+    return html;
+  }
+
+  // ---------- Gráficas por jugador ----------
+  function playerCharts(act, chartOpts) {
+    const t = T(), pct = S().unit === 'pct';
+    const sims = [...act].sort((a, b) => (bestOf(b)?.gain || 0) - (bestOf(a)?.gain || 0));
+    const entries = sims.map(sim => {
+      const best = bestOf(sim), info = itemInfo(best), col = clsColor(sim);
+      state.shown.add(best.id);
+      return {
+        id: sim.id, value: valueOf(best, sim), label: sim.character.name, sub: sim.difficulty ? DIFF_TAG[sim.difficulty] : '',
+        color: col, labelColor: readable(col), icon: info.icon, iconBorder: QUALITY_COLORS[info.quality], valueText: valueText(best, sim),
+        bottomIcon: specIcon(sim), itemId: best.id, ilvl: best.ilvl, gain: gainLine(best), onclick: true,
+      };
+    }).sort((a, b) => b.value - a.value);
+    let html = `<section class="panel card" id="overview"><div class="card-head"><h2>${esc(t.overviewTitle)}</h2><span class="spacer"></span>`
+      + `<div class="card-tools"><button class="btn small" data-export="overview">${ui('export')}${esc(t.exportPng)}</button></div></div>`
+      + `<div class="hint">${esc(t.overviewHint)}</div><div class="chart-wrap" data-chart="overview">${Chart.build(entries, { ...chartOpts, slot: 112, height: 300 })}</div></section>`;
+    for (const sim of sims) {
+      const col = clsColor(sim), list = visibleItems(sim), total = sim.items.filter(i => i.gain >= (Number(S().minGain) || 0)).length;
+      const items = list.map(it => {
+        const info = itemInfo(it);
+        state.shown.add(it.id);
+        return { id: it.id, value: valueOf(it, sim), label: info.name + (info.tag ? ' ' + info.tag : ''), itemId: it.id, ilvl: it.ilvl, gain: gainLine(it), color: col, labelColor: readable(QUALITY_COLORS[info.quality]), icon: null, bottomIcon: info.icon, valueText: valueText(it, sim) };
+      });
+      const canToggle = S().topN !== 0 && total > S().topN;
+      html += `<section class="panel card" id="sim-${esc(sim.id)}"><div class="card-head">`
+        + (specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : '')
+        + `<div><h2 style="color:${readable(col)}">${esc(sim.character.name)} ${diffBadge(sim.difficulty)}</h2>`
+        + `<div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
+        + `<span class="spacer"></span><div class="card-tools">`
+        + (canToggle ? `<button class="btn small" data-toggle="${esc(sim.id)}">${esc(state.expanded.has(sim.id) ? t.showLess : t.showAll)}</button>` : '')
+        + `<button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button>`
+        + `<button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button>`
+        + `<button class="btn small" data-export="${esc(sim.id)}">${ui('export')}${esc(t.exportPng)}</button>`
+        + `<button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
+        + `<div class="chart-wrap" data-chart="${esc(sim.id)}">${Chart.build(items, { ...chartOpts, slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3 })}</div></section>`;
+    }
+    return html;
+  }
+
+  // ---------- Inicio ----------
+  function homeView() {
+    const t = T();
+    const feats = [['charts', 'f1'], ['personal', 'f2'], ['coin', 'f3'], ['rotations', 'f4'], ['remove', 'f5'], ['lang', 'f6']];
+    return `<section class="panel home-hero"><img src="assets/logo.png" alt="" width="128" height="128"><div><h2>${esc(t.homeWelcome)}</h2><p>${esc(t.homeIntro)}</p>`
+      + `<div class="home-actions"><button class="btn primary" data-view="charts">${esc(t.homeStart)}</button><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div></section>`
+      + `<div class="feats">${feats.map(([ic, k]) => `<div class="feat"><img src="assets/ui/${ic}.png" alt=""><div><b>${esc(t[k + 't'])}</b><p>${esc(t[k + 'd'])}</p></div></div>`).join('')}</div>`
+      + `<section class="panel card"><div class="card-head"><h2>${esc(t.homeHow)}</h2></div><ol class="steps">${t.homeSteps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`;
+  }
+
+  // ---------- Simulación personal: cada pieza exacta, su DPS y de qué jefe sale ----------
+  function personalView() {
+    const t = T(), p = state.personal;
+    let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.persTitle)}</h2></div><div class="hint">${esc(t.persHint)}</div>`
+      + `<div class="pers-form"><input id="personalUrl" class="txt" spellcheck="false" placeholder="${esc(t.persUrl)}"><button class="btn primary" data-personal-load>${esc(t.persLoad)}</button>`
+      + (state.sims.length ? `<select id="personalPick" class="txt"><option value="">${esc(t.persUse)}</option>${state.sims.map(s => `<option value="${esc(s.id)}"${p && p.id === s.id ? ' selected' : ''}>${esc(s.character.name)} (${esc(specName(s))})</option>`).join('')}</select>` : '')
+      + `</div></section>`;
+    if (!p) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
+    const col = clsColor(p), max = p.items[0]?.gain || 1, min = Number(S().minGain) || 0;
+    const rows = p.items.filter(i => i.gain >= min).map((it, i) => {
+      state.shown.add(it.id);
+      const info = itemInfo(it), src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0, boss = bossLabel(enc);
+      const group = (allBosses().find(b => b.id === enc) || {}).group;
+      return `<tr data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
+        + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td>`
+        + `<td>${esc(t.slots[it.slot] || it.slot || '')}</td><td>${it.ilvl || ''}</td>`
+        + `<td class="bs">${boss ? `<b>${esc(boss)}</b>${group ? `<div class="meta">${esc(group)}</div>` : ''}` : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
+        + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
+    }).join('');
+    const pm = S().persMode || 'all';
+    html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button><button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div></div>`;
+    if (pm === 'coin') return html + coinSection(p);
+    html += `<section class="panel card"><div class="card-head">${specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
+      + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}</div></div>`
+      + `<span class="spacer"></span><div class="card-tools"><button class="btn small" data-open="${esc(p.url)}">${ui('open')}${esc(t.openRaidbots)}</button></div></div>`
+      + `<div class="ptable-wrap"><table class="ptable"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.colIlvl)}</th><th>${esc(t.colBoss)}</th><th>${esc(t.colGain)}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+    return html;
+  }
+
+  // Dónde tirar moneda: los 10 jefes de la raid de la temporada cuya mejor pieza más DPS te da
+  function coinSection(p) {
+    const t = T(), order = new Set(allBosses().map(b => b.id)), byBoss = new Map();
+    for (const it of p.items) { const s = srcOf(it); if (!s || !order.has(s.encounter)) continue; if (!byBoss.has(s.encounter)) byBoss.set(s.encounter, []); byBoss.get(s.encounter).push(it); }
+    const rows = [...byBoss.entries()].map(([enc, list]) => ({ enc, list: list.sort((x, y) => y.gain - x.gain) })).sort((x, y) => y.list[0].gain - x.list[0].gain).slice(0, 10);
+    let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
+    rows.forEach(({ enc, list }, i) => {
+      const group = (allBosses().find(b => b.id === enc) || {}).group;
+      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><b>${esc(bossLabel(enc))}</b><div class="meta">${esc(group || '')}</div></div><div class="coin-items">`
+        + list.slice(0, 3).map(it => { const info = itemInfo(it); state.shown.add(it.id); return `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div>`; }).join('') + '</div></div>';
+    });
+    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2></div><div class="hint">${esc(t.coinHint)}</div>${body}</section>`;
+  }
+
+  async function loadPersonal(text) {
+    const ids = extractIds(text);
+    if (!ids.length) { toast(T().noUrls, true); return; }
+    const r = await window.api.fetchReport(ids[0]);
+    if (!r.ok) { toast(`${ids[0]}: ${errText(r)}`, true); return; }
+    state.personal = r.report; save('ninjaloot.personal', state.personal);
+    state.animateNext = true; render();
   }
 
   // ---------- Render ----------
@@ -112,63 +327,41 @@
     $('#urlInput').placeholder = t.urlPlaceholder;
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
     $('#btnClear').disabled = !state.sims.length;
-    $('#langLabel').textContent = S().lang.toUpperCase();
-    $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations;
+    $('#langLabel').textContent = t.language; renderLangMenu();
+    $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navPers').textContent = t.navPersonal;
     document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === state.view));
     $('#chartsTools').hidden = state.view !== 'charts';
     $('#btnLang').title = t.language; $('#btnSettings').title = `${t.settings} (Ctrl+,)`;
     renderChips();
     const content = $('#content');
-    if (state.view === 'rotations') { renderRotations(); return; }
+    if (state.view === 'rotations') {
+      const sy = document.scrollingElement.scrollTop, sx = $('.rtable-wrap')?.scrollLeft || 0;
+      renderRotations();
+      document.scrollingElement.scrollTop = sy;
+      const w = $('.rtable-wrap'); if (w) w.scrollLeft = sx;
+      return;
+    }
+    state.shown = new Set();
+    if (state.view === 'home') { content.innerHTML = homeView(); return; }
+    if (state.view === 'personal') {
+      const keep = $('#personalUrl')?.value || '';
+      content.innerHTML = personalView();
+      if (keep && $('#personalUrl')) $('#personalUrl').value = keep;
+      ensureNames();
+      return;
+    }
     if (!state.sims.length) {
       content.innerHTML = `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.emptyTitle)}</h2><p>${esc(t.emptyText)}</p></div>`;
       return;
     }
     const colors = themeColors(), animate = state.animateNext && S().animations;
     state.animateNext = false;
-    const sims = [...state.sims].sort((a, b) => (bestOf(b)?.gain || 0) - (bestOf(a)?.gain || 0));
-    const pct = S().unit === 'pct';
-
-    // Gráfica general: mejor mejora por jugador
-    const entries = sims.map(sim => {
-      const best = bestOf(sim), info = itemInfo(best), col = clsColor(sim);
-      return {
-        id: sim.id, value: valueOf(best, sim), label: sim.character.name, sub: specName(sim) || clsName(sim),
-        color: col, labelColor: readable(col), icon: info.icon, iconBorder: QUALITY_COLORS[info.quality], valueText: valueText(best, sim),
-        bottomIcon: specIcon(sim),
-        title: `${sim.character.name}\n${info.name} (${best.ilvl})\n${valueText(best, sim)} · ${best.pct.toFixed(2)}%`, onclick: true,
-      };
-    }).sort((a, b) => b.value - a.value);
-    const chartOpts = { colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
-
-    let html = `<section class="panel card" id="overview"><div class="card-head"><h2>${esc(t.overviewTitle)}</h2><span class="spacer"></span>`
-      + `<div class="card-tools"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
-      + `<button class="btn small" data-export="overview">${ui('export')}${esc(t.exportPng)}</button></div></div>`
-      + `<div class="hint">${esc(t.overviewHint)}</div><div class="chart-wrap" data-chart="overview">${Chart.build(entries, { ...chartOpts, slot: 112, height: 300 })}</div></section>`;
-
-    // Una tarjeta por jugador con todos sus objetos
-    for (const sim of sims) {
-      const col = clsColor(sim), list = visibleItems(sim), total = sim.items.filter(i => i.gain >= (Number(S().minGain) || 0)).length;
-      const items = list.map(it => {
-        const info = itemInfo(it);
-        return {
-          id: it.id, value: valueOf(it, sim), label: info.name, sub: `${t.ilvl} ${it.ilvl}`, color: col, labelColor: readable(QUALITY_COLORS[info.quality]),
-          icon: null, bottomIcon: info.icon, valueText: valueText(it, sim), title: `${info.name} (${it.ilvl})\n${valueText(it, sim)} · ${it.pct.toFixed(2)}%`,
-        };
-      });
-      const canToggle = S().topN !== 0 && total > S().topN;
-      html += `<section class="panel card" id="sim-${esc(sim.id)}"><div class="card-head">`
-        + (specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : '')
-        + `<div><h2 style="color:${readable(col)}">${esc(sim.character.name)}</h2>`
-        + `<div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
-        + `<span class="spacer"></span><div class="card-tools">`
-        + (canToggle ? `<button class="btn small" data-toggle="${esc(sim.id)}">${esc(state.expanded.has(sim.id) ? t.showLess : t.showAll)}</button>` : '')
-        + `<button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button>`
-        + `<button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button>`
-        + `<button class="btn small" data-export="${esc(sim.id)}">${ui('export')}${esc(t.exportPng)}</button>`
-        + `<button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${ui('remove')}</button></div></div>`
-        + `<div class="chart-wrap" data-chart="${esc(sim.id)}">${Chart.build(items, { ...chartOpts, slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3 })}</div></section>`;
-    }
+    const act = activeSims(), pct = S().unit === 'pct';
+    const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
+    let html = toolbarHtml();
+    html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div></div>`;
+    html += S().chartMode === 'player' ? playerCharts(act, chartOpts) : bossCharts(act, chartOpts);
+    if (S().showCaution) html += cautionSection();
     const scroll = document.scrollingElement.scrollTop;
     content.innerHTML = html;
     document.scrollingElement.scrollTop = scroll;
@@ -176,15 +369,14 @@
   }
 
   function renderChips() {
-    const chips = $('#chips');
+    const chips = $('#chips'), eff = effectiveDiff();
     let h = '';
     for (const id of state.loading) h += `<span class="chip loading"><span class="spinner"></span>${esc(id)} — ${esc(T().loading)}</span>`;
     for (const sim of state.sims) {
-      const col = clsColor(sim);
-      h += `<span class="chip" style="border-left-color:${col}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}`
-        + `<span style="color:${readable(col)};font-weight:700">${esc(sim.character.name)}</span>`
-        + `<span style="color:var(--muted)">${esc(specName(sim))}</span>`
-        + `<button class="x" data-remove="${esc(sim.id)}" title="${esc(T().remove)}">${ui('remove')}</button></span>`;
+      const col = clsColor(sim), dim = eff && sim.difficulty && sim.difficulty !== eff;
+      h += `<span class="chip${dim ? ' dim' : ''}" style="border-left-color:${col}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}`
+        + `<span style="color:${readable(col)};font-weight:700">${esc(sim.character.name)}</span>${diffBadge(sim.difficulty)}`
+        + `<button class="x" data-remove="${esc(sim.id)}" title="${esc(T().remove)}">${xmark}</button></span>`;
     }
     chips.innerHTML = h;
   }
@@ -278,7 +470,7 @@
     const root = $('#modalRoot');
     const back = document.createElement('div');
     back.className = 'modal-back';
-    back.innerHTML = `<div class="panel modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${esc(title)}</h2><button class="btn ghost small" data-close aria-label="${esc(T().close)}">${ui('remove')}</button></div>`
+    back.innerHTML = `<div class="panel modal" role="dialog" aria-modal="true"><div class="modal-head"><h2>${esc(title)}</h2><button class="btn ghost small" data-close aria-label="${esc(T().close)}">${xmark}</button></div>`
       + `<div class="modal-inner">${tabs || ''}<div class="modal-body">${body}</div></div>${actions.length ? '<div class="modal-foot"></div>' : ''}</div>`;
     const close = () => back.remove();
     back.addEventListener('mousedown', e => { if (e.target === back) close(); });
@@ -306,13 +498,17 @@
       const check = (key, label) => `<div class="row"><label for="s-${key}">${esc(label)}</label><input type="checkbox" id="s-${key}" data-key="${key}" ${s[key] ? 'checked' : ''}></div>`;
       const cur = k => hex((s.colors || {})[k]) || hex(getComputedStyle(document.documentElement).getPropertyValue(`--${k}`).trim()) || '#000000';
       const views = {
-        general: () => `<div class="row"><label>${esc(t.language)}</label><select data-key="lang"><option value="es" ${s.lang === 'es' ? 'selected' : ''}>Español</option><option value="en" ${s.lang === 'en' ? 'selected' : ''}>English</option></select></div>`
+        general: () => `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.minGain)}</label><input type="number" min="0" step="50" style="width:110px" data-key="minGain" value="${Number(s.minGain) || 0}"></div>`
-          + check('showValues', t.showValues) + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
+          + check('showValues', t.showValues) + check('showCaution', t.showCaution) + check('tooltips', t.tooltips) + check('chartTall', t.chartTall) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>` + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
           + check('animations', t.animations) + check('persist', t.persist) + check('confirmClear', t.confirmClear)
           + `<div class="small-note">${esc(t.shortcuts)}</div>`,
         appearance: () => `<div class="row"><label>${esc(t.theme)}</label><div class="seg">${[['dark', t.themeDark], ['light', t.themeLight], ['auto', t.themeAuto]].map(([k, l]) => `<button data-set-theme="${k}" class="${s.theme === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div></div>`
+          + `<div class="row"><label>${esc(t.font)}</label><select data-key="font">${Object.entries(FONTS).map(([k, v]) => `<option value="${k}" ${s.font === k ? 'selected' : ''}>${v[0]}${k === 'noto' ? ` (${esc(t.fontDefault)})` : ''}</option>`).join('')}</select></div>`
+          + (s.font === 'expressway' && !fontInstalled('Expressway') ? `<div class="small-note warn">${esc(t.fontMissing)}</div>` : '')
+          + `<div class="row"><label>${esc(t.fontScale)}</label><select data-key="fontScale">${[90, 100, 110, 120, 130].map(n => `<option value="${n}" ${Number(s.fontScale) === n ? 'selected' : ''}>${n}%</option>`).join('')}</select></div>`
+          + `<div class="row"><label>${esc(t.density)}</label><select data-key="density"><option value="normal" ${s.density !== 'compact' ? 'selected' : ''}>${esc(t.densityNormal)}</option><option value="compact" ${s.density === 'compact' ? 'selected' : ''}>${esc(t.densityCompact)}</option></select></div>`
           + `<h3>${esc(t.customColors)}</h3><div class="colors">`
           + [['bg', t.colorBg], ['panel', t.colorPanel], ['accent', t.colorAccent], ['text', t.colorText]].map(([k, l]) => `<label>${esc(l)}<input type="color" data-color="${k}" value="${cur(k)}"></label>`).join('')
           + `</div><button class="btn small" data-reset-colors>${esc(t.resetColors)}</button>`,
@@ -323,7 +519,7 @@
           + `<p>${esc(t.madeBy)} <b>Drakko</b> <span class="heart">♥</span></p>`
           + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <b>sr.kitkat</b> <span class="muted">${esc(t.questions)}</span></p>`
           + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <b>KitKat#21202</b> <span class="muted">${esc(t.questions)}</span></p>`
-          + `<p class="small-note credits"><b>${esc(t.credits)}</b><br>${esc(t.creditsText)}</p></div></div>`,
+          + `</div></div>`,
       };
       back.innerHTML = `<div class="panel modal settings" role="dialog" aria-modal="true"><aside class="side"><h2>${esc(t.settingsTitle)}</h2>`
         + `<nav>${tabs.map(([k, l]) => `<button class="side-tab${k === view ? ' on' : ''}" data-tab="${k}">${esc(l)}</button>`).join('')}</nav>`
@@ -345,22 +541,79 @@
     back.addEventListener('change', e => {
       const el = e.target.closest('[data-key]'); if (!el) return;
       const key = el.dataset.key, s = S();
-      s[key] = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && key !== 'lang' ? Number(el.value) : el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value;
+      s[key] = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && !['lang', 'font', 'density'].includes(key) ? Number(el.value) : el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value;
       persistSettings();
       if (key === 'persist') persistSims();
-      if (key === 'animations') applyTheme();
+      if (['animations', 'font', 'fontScale', 'density'].includes(key)) applyTheme();
       state.animateNext = false;
-      if (key === 'lang') draw(back.dataset.view);
+      if (key === 'lang' || key === 'font') draw(back.dataset.view);
       render();
     });
     draw(tab);
   }
 
-  // ---------- Rotaciones: jefes, buffs y plantillas de banda ----------
-  const out = id => new Set(state.rot[id] || []);
-  const rosterFor = id => { const o = out(id); return state.sims.filter(s => !o.has(s.id)); };
-  const coverage = sims => RAID_BUFFS.map(b => ({ b, who: sims.filter(s => b.from.includes(s.character.cls)) }));
-  const missingFor = id => coverage(rosterFor(id)).filter(c => !c.who.length);
+  // ---------- Tooltip de objetos (datos de Wowhead con el nivel de objeto simulado) ----------
+  const tipEl = document.createElement('div');
+  tipEl.id = 'tip'; tipEl.hidden = true;
+  document.body.appendChild(tipEl);
+  const tipCache = new Map();
+  let tipKey = null;
+  function cleanTip(html) { // quita scripts, eventos y enlaces del HTML externo
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input,button').forEach(n => n.remove());
+    doc.querySelectorAll('[class*=sellprice],[class*=money]').forEach(n => n.remove());
+    doc.querySelectorAll('div,span').forEach(n => { if (/^\s*(Sell Price|Precio de venta)/i.test(n.textContent) && n.textContent.length < 60) n.remove(); });
+    doc.querySelectorAll('*').forEach(n => {
+      for (const at of [...n.attributes]) {
+        const nm = at.name.toLowerCase();
+        if (nm.startsWith('on') || nm === 'href' || nm === 'style' && !/^\s*color:\s*#[0-9a-f]{3,8};?\s*$/i.test(at.value)) n.removeAttribute(at.name);
+        else if (nm === 'src' && !/^https:\/\/wow\.zamimg\.com\//.test(at.value)) n.remove();
+      }
+    });
+    return doc.body.innerHTML;
+  }
+  function placeTip(x, y) {
+    const w = tipEl.offsetWidth, h = tipEl.offsetHeight, m = 16;
+    let left = x + m, top = y + m;
+    if (left + w > innerWidth - 8) left = Math.max(8, x - w - m);
+    if (top + h > innerHeight - 8) top = Math.max(8, innerHeight - h - 8);
+    tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
+  }
+  async function showTip(g, x, y) {
+    const id = Number(g.dataset.item), ilvl = Number(g.dataset.ilvl) || 0, lang = S().lang, key = `${lang}:${id}:${ilvl}`;
+    tipKey = key;
+    const foot = g.dataset.gain ? `<div class="tip-gain">${esc(g.dataset.gain)}</div>` : '';
+    const fallback = () => { const info = itemInfo({ id }); return `<div class="tip-fallback"><b style="color:${QUALITY_COLORS[info.quality]}">${esc(info.name)}</b><br>${esc(T().ilvl)} ${ilvl}</div>`; };
+    if (!tipCache.has(key)) {
+      tipEl.innerHTML = `<div class="tip-load">${esc(T().loading)}</div>`; tipEl.hidden = false; placeTip(x, y);
+      window.api.itemTooltip(id, ilvl, lang).then(r => { tipCache.set(key, r && r.ok ? cleanTip(r.html) : fallback()); if (tipKey === key) { tipEl.innerHTML = tipCache.get(key) + foot; placeTip(x, y); } });
+      return;
+    }
+    tipEl.innerHTML = tipCache.get(key) + foot; tipEl.hidden = false; placeTip(x, y);
+  }
+  document.addEventListener('mouseover', e => {
+    if (S().tooltips === false) return;
+    const g = e.target.closest?.('[data-item]');
+    if (!g) { if (tipKey) { tipKey = null; tipEl.hidden = true; } return; }
+    if (g.dataset.item + ':' + g.dataset.ilvl + S().lang !== (tipEl.dataset.cur || '')) { tipEl.dataset.cur = g.dataset.item + ':' + g.dataset.ilvl + S().lang; showTip(g, e.clientX, e.clientY); }
+  });
+  document.addEventListener('mousemove', e => { if (!tipEl.hidden) placeTip(e.clientX, e.clientY); });
+  document.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('[data-item]')) { tipKey = null; tipEl.hidden = true; tipEl.dataset.cur = ''; } });
+  window.addEventListener('scroll', () => { tipEl.hidden = true; tipEl.dataset.cur = ''; tipKey = null; }, true);
+
+  // ---------- Rotaciones: tabla jugador x jefe ----------
+  // Estados de cada casilla: 'n' = NO rota (verde) · 'r' = SÍ rota (rojo) · 'p' = en duda / pendiente (naranja, por defecto)
+  const NEXT = { p: 'n', n: 'r', r: 'p' };
+  const cellState = (bossId, simId) => { const b = state.rot[bossId]; return (b && !Array.isArray(b) && b[simId]) || 'p'; };
+  const setCell = (bossId, simId, st) => { const b = state.rot[bossId]; state.rot[bossId] = { ...(b && !Array.isArray(b) ? b : {}), [simId]: st }; };
+  // Cobertura de buffs de un jefe: ok = lo aporta alguien que no rota · warn = solo quien rota · bad = nadie
+  function coverage(bossId) {
+    return RAID_BUFFS.map(b => {
+      const who = state.sims.filter(s => b.from.includes(s.character.cls)).map(s => ({ s, st: cellState(bossId, s.id) }));
+      const fixed = who.filter(w => w.st !== 'r');
+      return { b, who, status: fixed.length ? 'ok' : who.length ? 'warn' : 'bad' };
+    });
+  }
   const allBosses = () => state.bosses.groups.flatMap(g => g.bosses.map(b => ({ ...b, group: g.name })));
   const persistRot = () => save('ninjaloot.rotations', state.rot);
   const buffIcon = b => `assets/ui/buff-${b.id}.png`;
@@ -371,35 +624,47 @@
     if (!bosses.find(b => b.id === state.bossSel)) state.bossSel = bosses[0]?.id;
     const sel = bosses.find(b => b.id === state.bossSel);
     const kindLabel = { buff: t.kindBuff, debuff: t.kindDebuff, util: t.kindUtil };
+    const stLabel = { n: t.stN, r: t.stR, p: t.stP };
 
-    let list = '';
+    // Tabla: filas = personajes, columnas = jefes
+    let head1 = '<th class="corner" rowspan="2">' + esc(t.rotPlayer) + '</th>', head2 = '';
     for (const g of state.bosses.groups) {
-      list += `<div class="boss-group">${esc(g.name)}</div>`;
+      head1 += `<th class="grp" colspan="${g.bosses.length}">${esc(g.name)}</th>`;
       for (const b of g.bosses) {
-        const miss = missingFor(b.id).length;
-        list += `<button class="boss${b.id === state.bossSel ? ' on' : ''}" data-boss="${b.id}"><span>${esc(b.name)}</span><span class="pill ${miss ? 'bad' : 'ok'}">${miss ? `−${miss}` : t.complete}</span></button>`;
+        const cov = coverage(b.id), bad = cov.filter(c => c.status === 'bad').length, warn = cov.filter(c => c.status === 'warn').length;
+        const cls = bad ? 'bad' : warn ? 'warn' : 'ok';
+        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><button data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}"><span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></button></th>`;
       }
     }
-
-    let detail = '';
-    if (sel) {
-      const o = out(sel.id), cov = coverage(rosterFor(sel.id)), miss = cov.filter(c => !c.who.length);
-      const roster = state.sims.length
-        ? state.sims.map(sim => {
-          const col = clsColor(sim), off = o.has(sim.id);
-          return `<button class="rchip${off ? ' off' : ''}" data-roster="${esc(sim.id)}" style="border-color:${off ? 'var(--border)' : col}" title="${esc(clsName(sim))}">`
-            + `${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<span class="rn" style="color:${readable(col)}">${esc(sim.character.name)}</span><span class="rs">${esc(specName(sim))}</span></button>`;
-        }).join('')
-        : `<div class="hint">${esc(t.rotNoSims)}</div>`;
-      detail = `<div class="panel card rot-head"><div class="card-head"><div><h2>${esc(sel.name)}</h2><div class="meta">${esc(sel.group)} · ${esc(state.bosses.season)}</div></div>`
-        + `<span class="spacer"></span><div class="card-tools"><button class="btn small" data-roster-all="in">${esc(t.rotAllIn)}</button><button class="btn small" data-roster-all="out">${esc(t.rotAllOut)}</button><button class="btn small" data-roster-copy>${esc(t.rotCopy)}</button></div></div>`
-        + `<h3>${esc(t.rotRoster)}</h3><div class="hint">${esc(t.rotRosterHint)}</div><div class="roster">${roster}</div></div>`
-        + `<div class="panel card"><div class="status ${miss.length ? 'bad' : 'ok'}">${miss.length ? `${esc(t.rotMissing)}: ${miss.map(m => esc(m.b.name[L])).join(', ')}` : esc(t.rotAllCovered)}</div>`
-        + `<div class="buffs">${cov.map(({ b, who }) => `<div class="buff ${who.length ? 'ok' : 'bad'}"><img src="${buffIcon(b)}" alt="" width="36" height="36">`
-          + `<div class="bi"><b>${esc(b.name[L])}</b> <span class="kind">${esc(kindLabel[b.kind])}</span><div class="be">${esc(b.effect[L])}</div></div>`
-          + `<div class="bs">${who.length ? `<span class="tag ok">${esc(t.rotCovered)}</span><div class="bw">${who.map(s => esc(s.character.name)).join(', ')}</div>` : `<span class="tag bad">${esc(t.rotMissingTag)}</span><div class="bw">${esc(t.rotProvidedBy)}: ${b.from.map(c => esc(t.classes[c])).join(', ')}</div>`}</div></div>`).join('')}</div></div>`;
+    let rows = '';
+    for (const sim of state.sims) {
+      const col = clsColor(sim);
+      rows += `<tr><th class="who"><span class="wl">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<span class="wn" style="color:${readable(col)}">${esc(sim.character.name)}</span></span></th>`;
+      for (const b of bosses) {
+        const st = cellState(b.id, sim.id);
+        rows += `<td class="${b.id === state.bossSel ? 'sel' : ''}"><button class="cell st-${st}" data-cell="${esc(sim.id)}:${b.id}" title="${esc(sim.character.name)} — ${esc(b.name)}: ${esc(stLabel[st])}">${esc(stLabel[st])}</button></td>`;
+      }
+      rows += '</tr>';
     }
-    content.innerHTML = `<div class="rot"><aside class="panel boss-list"><div class="boss-season">${esc(state.bosses.season)}</div>${list}</aside><div class="rot-main">${detail}</div></div>`;
+    const table = state.sims.length
+      ? `<div class="rtable-wrap"><table class="rtable"><thead><tr>${head1}</tr><tr>${head2}</tr></thead><tbody>${rows}</tbody></table></div>`
+      : `<div class="hint">${esc(t.rotNoSims)}</div><div class="rtable-wrap"><table class="rtable"><thead><tr>${head1}</tr><tr>${head2}</tr></thead></table></div>`;
+
+    let buffs = '';
+    if (sel) {
+      const cov = coverage(sel.id), bad = cov.filter(c => c.status === 'bad'), warn = cov.filter(c => c.status === 'warn');
+      const cls = bad.length ? 'bad' : warn.length ? 'warn' : 'ok';
+      const msg = bad.length ? `${t.rotMissing}: ${bad.map(m => buffName(m.b)).join(', ')}` : warn.length ? `${t.rotWarn}: ${warn.map(m => buffName(m.b)).join(', ')}` : t.rotAllCovered;
+      buffs = `<div class="panel card"><div class="card-head"><div><h2>${esc(sel.name)}</h2><div class="meta">${esc(sel.group)} · ${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
+        + `<div class="card-tools"><span class="meta">${esc(t.rotColumn)}:</span><button class="btn small" data-col-set="n">${esc(t.stN)}</button><button class="btn small" data-col-set="r">${esc(t.stR)}</button><button class="btn small" data-col-set="p">${esc(t.stP)}</button><button class="btn small" data-roster-copy>${esc(t.rotCopy)}</button></div></div>`
+        + `<div class="status ${cls}">${esc(msg)}</div><div class="buffs">${cov.map(({ b, who, status }) => `<div class="buff ${status}"><img src="${buffIcon(b)}" alt="" width="36" height="36">`
+          + `<div class="bi"><b>${esc(buffName(b))}</b> <span class="kind">${esc(kindLabel[b.kind])}</span><div class="be">${esc(buffEffect(b))}</div></div>`
+          + `<div class="bs">${status === 'bad' ? `<span class="tag bad">${esc(t.rotMissingTag)}</span><div class="bw">${esc(t.rotProvidedBy)}: ${b.from.map(c => esc(t.classes[c])).join(', ')}</div>`
+            : `<span class="tag ${status}">${esc(status === 'ok' ? t.rotCovered : t.rotOnlyRotating)}</span><div class="bw">${who.map(w => esc(w.s.character.name)).join(', ')}</div>`}</div></div>`).join('')}</div></div>`;
+    }
+    content.innerHTML = `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
+      + `<div class="legend"><span class="lg st-n">${esc(t.stN)}</span><span class="lg st-r">${esc(t.stR)}</span><span class="lg st-p">${esc(t.stP)}</span></div></div>`
+      + `<div class="hint">${esc(t.rotHint)}</div>${table}</div>${buffs}`;
   }
 
   // ---------- Actualizaciones ----------
@@ -410,6 +675,7 @@
     const draw = body => { if (box.isConnected) box.innerHTML = body; };
     draw(`<div class="spinner"></div> ${esc(t.checking)}`);
     const r = await window.api.checkUpdate();
+    if (r.ok) setBadge(r);
     if (!r.ok) {
       draw(`<div class="status bad">${esc(t.updError)}</div><button class="btn small" data-upd-check>${esc(t.checkAgain)}</button>`);
       box.querySelector('[data-upd-check]')?.addEventListener('click', () => runUpdateCheck(box));
@@ -437,12 +703,40 @@
     });
   }
 
+  // Versión junto a los ajustes: verde si es la más actual, rojo si no. Se comprueba en vivo (cada 2 min y al volver a la ventana).
+  function setBadge(r) {
+    const b = $('#verBadge'), cur = (r && r.current) || state.info.version;
+    if (!cur) return;
+    const latest = r && r.ok ? (r.release?.version || r.main || null) : (state.latest || null);
+    if (r && r.ok) state.latest = latest;
+    b.hidden = false; b.textContent = `v${cur}`;
+    const outdated = latest && isNewer(latest, cur);
+    b.className = `verbadge ${!latest ? 'na' : outdated ? 'bad' : 'ok'}`;
+    b.title = latest ? `${T().updRelease}: v${latest}` : '';
+    if (outdated && state.notified !== latest) { state.notified = latest; toast(`${T().updOutdated}: v${latest}`, true); }
+  }
+  let lastCheck = 0;
+  async function trackVersion(force = false) {
+    if (!force && Date.now() - lastCheck < 30000) return;
+    lastCheck = Date.now();
+    try { setBadge(await window.api.checkUpdate()); } catch {}
+  }
+  setInterval(() => trackVersion(true), 120000);
+  window.addEventListener('focus', () => trackVersion());
+
   // ---------- Eventos ----------
   $('#btnAdd').onclick = () => { const v = $('#urlInput').value; if (v.trim()) { $('#urlInput').value = ''; addFromText(v); } };
   $('#btnPaste').onclick = async () => { try { const v = await navigator.clipboard.readText(); if (v) addFromText(v); } catch { $('#urlInput').focus(); } };
   $('#btnClear').onclick = clearAll;
   $('#btnSettings').onclick = () => openSettings();
-  $('#btnLang').onclick = () => { S().lang = S().lang === 'es' ? 'en' : 'es'; persistSettings(); state.animateNext = false; render(); };
+  $('#verBadge').onclick = () => openSettings('update');
+  // Menú de idiomas: el idioma activo aparece iluminado
+  const langMenu = () => $('#langMenu');
+  function renderLangMenu() {
+    langMenu().innerHTML = LANGS.map(([c, n]) => `<button data-lang="${c}" class="${S().lang === c ? 'on' : ''}"><span>${esc(n)}</span><span class="code">${c.toUpperCase()}</span></button>`).join('');
+  }
+  $('#btnLang').onclick = e => { e.stopPropagation(); langMenu().hidden = !langMenu().hidden; };
+  document.addEventListener('click', e => { if (!e.target.closest('.langwrap')) langMenu().hidden = true; });
   $('#urlInput').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('#btnAdd').click(); } });
   $('#urlInput').addEventListener('paste', e => { const txt = e.clipboardData.getData('text'); if (extractIds(txt).length) { e.preventDefault(); addFromText(txt); } });
 
@@ -450,11 +744,17 @@
     const q = a => e.target.closest(`[${a}]`);
     let el;
     if ((el = q('data-remove'))) removeSim(el.dataset.remove);
+    else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
+    else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-diff'))) { S().diff = el.dataset.diff; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-cat'))) { S().srcCat = el.dataset.cat; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
+    else if (q('data-personal-load')) { loadPersonal($('#personalUrl').value); }
     else if ((el = q('data-boss'))) { state.bossSel = Number(el.dataset.boss); render(); }
-    else if ((el = q('data-roster'))) { const o = out(state.bossSel); o.has(el.dataset.roster) ? o.delete(el.dataset.roster) : o.add(el.dataset.roster); state.rot[state.bossSel] = [...o]; persistRot(); render(); }
-    else if ((el = q('data-roster-all'))) { state.rot[state.bossSel] = el.dataset.rosterAll === 'out' ? state.sims.map(s => s.id) : []; persistRot(); render(); }
-    else if (q('data-roster-copy')) { const cur = state.rot[state.bossSel] || []; for (const b of allBosses()) state.rot[b.id] = [...cur]; persistRot(); render(); toast(T().rotCopied); }
+    else if ((el = q('data-cell'))) { const [sid, bid] = el.dataset.cell.split(':'); setCell(Number(bid), sid, NEXT[cellState(Number(bid), sid)]); persistRot(); render(); }
+    else if ((el = q('data-col-set'))) { for (const s of state.sims) setCell(state.bossSel, s.id, el.dataset.colSet); persistRot(); render(); }
+    else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of allBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
     else if ((el = q('data-refresh'))) addSim(el.dataset.refresh, true);
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
@@ -463,10 +763,16 @@
     else if ((el = e.target.closest('#overview .bar[role="button"]'))) document.getElementById(`sim-${el.dataset.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeTopModal();
+    if (e.key === 'Escape') { langMenu().hidden = true; closeTopModal(); }
+    else if (e.key === 'Enter' && e.target.id === 'personalUrl') { e.preventDefault(); loadPersonal(e.target.value); }
     else if (e.ctrlKey && e.key === ',') { e.preventDefault(); if (!$('.modal-back')) openSettings(); }
     else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.bar[role="button"]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
     else if (e.ctrlKey && e.key.toLowerCase() === 'v' && state.view === 'charts' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) $('#btnPaste').click();
+  });
+  document.addEventListener('change', e => {
+    if (e.target.id !== 'personalPick') return;
+    const s = state.sims.find(x => x.id === e.target.value);
+    if (s) { state.personal = s; save('ninjaloot.personal', s); state.animateNext = true; render(); }
   });
   // Arrastrar enlaces o texto sobre la ventana
   let dragDepth = 0;
@@ -482,6 +788,6 @@
   // ---------- Inicio ----------
   applyTheme();
   render();
-  window.api.appInfo().then(i => { state.info = i; });
+  window.api.appInfo().then(i => { state.info = i; setBadge(null); trackVersion(true); });
   window.api.getBosses().then(r => { if (r && r.ok) { state.bosses = r.data; if (state.view === 'rotations') render(); } });
 })();

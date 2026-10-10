@@ -1,12 +1,14 @@
 'use strict';
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webFrame } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   fetchReport: id => ipcRenderer.invoke('report:fetch', id),
   lookupItems: (ids, lang) => ipcRenderer.invoke('items:lookup', ids, lang),
   iconData: href => ipcRenderer.invoke('icon:data', href),
+  itemTooltip: (id, ilvl, lang) => ipcRenderer.invoke('items:tooltip', id, ilvl, lang),
   getBosses: () => ipcRenderer.invoke('bosses:get'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: asset => ipcRenderer.invoke('update:install', asset),
+  setZoom: f => webFrame.setZoomFactor(Math.min(1.6, Math.max(0.7, Number(f) || 1))),
   appInfo: () => ipcRenderer.invoke('app:info'),
   openExternal: url => ipcRenderer.invoke('app:open', url),
 });

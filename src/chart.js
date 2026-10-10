@@ -1,7 +1,7 @@
 'use strict';
 // Gráfica de barras en SVG (colores explícitos para poder exportarla a PNG).
 const Chart = (() => {
-  const FONT = "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif";
+  let FONT = "'Noto Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function shade(hex, amt) { // amt -1..1
@@ -39,14 +39,19 @@ const Chart = (() => {
    * opts: { height, slot, colors:{text,muted,grid,axis,bg}, yTitle, showValues, showIcons, animate, compact, tickFmt }
    */
   function build(entries, opts) {
+    FONT = (getComputedStyle(document.documentElement).getPropertyValue('--font') || '').trim() || FONT;
     const { colors, showValues = true, showIcons = true, animate = false, compact = false, yTitle = '' } = opts;
-    const slot = opts.slot || 96, plotH = opts.height || 280;
+    const maxSlot = opts.slot || 96, plotH = Math.round((opts.height || 280) * (opts.hScale || 1));
     const left = 74, right = 24, top = 70, bottom = (opts.bottom || 104) + (showValues ? 22 : 0), ls = opts.labelSize || 14, maxLines = opts.maxLines || 2;
+    // Ancho de columna: lo justo para que quepan valor, icono y nombre sin tocarse; las barras quedan más juntas
+    const wrapped = entries.map(e => wrap(e.label, Math.floor((maxSlot - 6) / (ls * 0.56)), maxLines));
+    const need = Math.max(56, ...entries.map((e, i) => Math.max(showValues && e.valueText ? e.valueText.length * 14 * 0.6 : 0, ...wrapped[i].map(l => l.length * ls * 0.58), e.sub ? e.sub.length * 11.5 * 0.55 : 0)));
+    const slot = Math.round(Math.min(maxSlot, need + 16));
     const W = left + right + Math.max(entries.length, 3) * slot, H = top + plotH + bottom;
     const max = Math.max(...entries.map(e => e.value), 0);
     const { step, top: yMax } = niceScale(max);
     const yOf = v => top + plotH - (v / yMax) * plotH;
-    const barW = Math.min(64, slot * 0.64);
+    const barW = Math.min(64, slot - 24);
     const uid = 'g' + Math.random().toString(36).slice(2, 8);
     let defs = '', grid = '', bars = '', labels = '';
 
@@ -65,8 +70,8 @@ const Chart = (() => {
       defs += `<linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${shade(base, 0.35)}"/><stop offset="0.45" stop-color="${base}"/><stop offset="1" stop-color="${shade(base, -0.35)}"/></linearGradient>`;
       defs += `<linearGradient id="${gid}v" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/></linearGradient>`;
       const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 45}ms"` : '';
-      bars += `<g class="bar${animate ? ' grow' : ''}" data-id="${esc(e.id ?? i)}"${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
-        + `<title>${esc(e.title || e.label)}</title>`
+      bars += `<g class="bar${animate ? ' grow' : ''}" data-id="${esc(e.id ?? i)}"${e.itemId ? ` data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}"` : ''}${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
+        + (e.itemId ? '' : `<title>${esc(e.title || e.label)}</title>`)
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid})"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
         + `<rect x="${x + 4}" y="${y + 2}" width="${Math.max(3, barW * 0.14)}" height="${Math.max(0, h - 4)}" rx="2" fill="#fff" opacity="0.22"/>`
@@ -90,11 +95,11 @@ const Chart = (() => {
           + `<rect x="${cx - 16.5}" y="${ly - 0.5}" width="33" height="33" rx="3" fill="none" stroke="${e.color || colors.axis}" stroke-width="1.5"/>`;
         ly += 46;
       } else ly += 12;
-      const lines = wrap(e.label, Math.floor((slot - 6) / (ls * 0.56)), maxLines);
+      const lines = wrapped[i];
       lines.forEach((ln, k) => {
         labels += `<text x="${cx}" y="${ly + k * (ls + 2)}" text-anchor="middle" font-size="${ls}" font-weight="700" fill="${e.labelColor || colors.text}" stroke="${colors.bg}" stroke-width="3" paint-order="stroke" stroke-linejoin="round" font-family="${FONT}">${esc(ln)}</text>`;
       });
-      if (e.sub) labels += `<text x="${cx}" y="${ly + lines.length * (ls + 2)}" text-anchor="middle" font-size="11.5" fill="${colors.muted}" font-family="${FONT}">${esc(e.sub)}</text>`;
+      if (e.sub) labels += `<text x="${cx}" y="${ly + lines.length * (ls + 2)}" text-anchor="middle" font-size="12" font-weight="600" fill="${e.subColor || colors.muted}" font-family="${FONT}">${esc(e.sub)}</text>`;
     });
 
     return `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="chart-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`
