@@ -10,7 +10,7 @@ const items = Object.entries(JSON.parse(fs.readFileSync(path.join(__dirname, '..
   .filter(([, v]) => v[3] >= 250 && v[2] === 4).map(([id, v]) => ({ id: Number(id), name: v[0] }));
 
 const players = [
-  ['Thor', 'Frost Mage', 'mage', 1.0], ['Los pitufos', 'Beast Mastery Hunter', 'hunter', 0.72], ['Linterna', 'Brewmaster Monk', 'monk', 0.55],
+  ['Thor', 'Frost Mage', 'mage', 1.0], ['Los pitufos', 'Beast Mastery Hunter', 'hunter', 0.72], ['Tanque', 'Brewmaster Monk', 'monk', 0.55], ['Sanador', 'Mistweaver Monk', 'monk', 0.5], ['Dps', 'Windwalker Monk', 'monk', 0.9],
   ['Crepusculo', 'Retribution Paladin', 'paladin', 0.35], ['Sombra', 'Outlaw Rogue', 'rogue', 0.8], ['Vorlag', 'Fury Warrior', 'warrior', 0.45], ['Lumen', 'Shadow Priest', 'priest', 0.62],
 ];
 const fixtures = {};
@@ -62,6 +62,13 @@ app.whenReady().then(async () => {
   const n = await js(`document.querySelectorAll('#chips .chip').length`);
   await js(`document.querySelector('#btnClear').click()`);
   await shot('7-confirm.png');
+  await js(`document.querySelector('.modal-back').remove(); document.querySelector('[data-set-theme]')`).catch(() => {});
+  await js(`localStorage.setItem('ninjaloot.settings', JSON.stringify({ ...JSON.parse(localStorage.getItem('ninjaloot.settings') || '{}'), theme: 'dark' })); document.documentElement.dataset.theme = 'dark'; document.querySelector('[data-view=rotations]').click()`);
+  await shot('8-rot.png');
+  await js(`document.querySelectorAll('.boss')[2].click(); document.querySelectorAll('.rchip')[1].click(); document.querySelectorAll('.rchip')[2].click(); document.querySelectorAll('.rchip')[3].click();`);
+  await shot('9-rot2.png');
+  await js(`document.querySelector('#btnSettings').click(); document.querySelector('[data-tab=about]').click()`);
+  await shot('10-about.png');
   fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify({ chipsAfterRemove: n, themeAttr, errors }, null, 2));
   app.exit(0);
 });

@@ -5,6 +5,10 @@ import path from 'node:path';
 import os from 'node:os';
 import { execFileSync } from 'node:child_process';
 import { PNG } from 'pngjs';
+import { createRequire } from 'node:module';
+const { SPECS } = createRequire(import.meta.url)('../src/data/classes.js');
+const { RAID_BUFFS } = createRequire(import.meta.url)('../src/data/buffs.js');
+const UI_ICONS = { lang: 'inv_misc_book_09', settings: 'trade_engineering', refresh: 'spell_holy_borrowedtime', remove: 'inv_misc_bone_skull_01', open: 'inv_misc_map_01', export: 'inv_scroll_03', charts: 'achievement_dungeon_gloryoftheraider', rotations: 'inv_banner_01' };
 
 const zip = process.argv[2];
 if (!zip) { console.error('Falta la ruta del zip de iconos'); process.exit(1); }
@@ -31,6 +35,14 @@ const jobs = []; // { entry, dest }
 for (const c of classes) {
   const e = byLower.get(`icons/classicon_${c.toLowerCase()}.tga`);
   if (e) jobs.push({ entry: e, dest: path.join(root, 'src/assets/classes', `${c.toLowerCase()}.png`) });
+}
+for (const [name, ic] of [...Object.entries(UI_ICONS), ...RAID_BUFFS.map(x => ['buff-' + x.id, x.icon])]) {
+  const e = byLower.get(`icons/${ic}.tga`);
+  if (e) jobs.push({ entry: e, dest: path.join(root, 'src/assets/ui', `${name}.png`) }); else console.warn('Falta icono de interfaz', name, ic);
+}
+for (const [cls, specs] of Object.entries(SPECS)) for (const [key, [, , ic]] of Object.entries(specs)) {
+  const e = byLower.get(`icons/${ic}.tga`);
+  if (e) jobs.push({ entry: e, dest: path.join(root, 'src/assets/specs', `${cls}-${key}.png`) }); else console.warn('Falta icono de spec', cls, key, ic);
 }
 for (const ic of new Set(wanted.map(i => i.icon.toLowerCase()))) {
   const e = byLower.get(`icons/${ic}.tga`);
@@ -86,7 +98,7 @@ const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ninjaloot-icons-'));
 let done = 0, failed = 0;
 for (let i = 0; i < jobs.length; i += 250) {
   const batch = jobs.slice(i, i + 250);
-  execFileSync('unzip', ['-q', '-o', zip, '-d', tmp, ...batch.map(j => j.entry.replace(/([\[\]*?])/g, '\$1'))], { stdio: 'ignore' });
+  execFileSync('unzip', ['-q', '-o', zip, '-d', tmp, ...[...new Set(batch.map(j => j.entry))]], { stdio: 'ignore' });
   for (const j of batch) {
     try {
       const img = decodeTGA(fs.readFileSync(path.join(tmp, j.entry)));

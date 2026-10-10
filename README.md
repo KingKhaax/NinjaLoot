@@ -6,6 +6,7 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 - Gráfica general: la mejor mejora de cada jugador, ordenada de mayor a menor, con color e icono de clase.
 - Una gráfica por jugador con todos sus objetos (iconos y nombres localizados).
 - Español / Inglés (botón 🌐), ajustes, modo claro/oscuro/sistema, colores personalizables, exportar a PNG.
+- Pestaña **Rotaciones**: jefes de la temporada activa (datos de Raidbots), banda por jefe con clics y comprobación de buffs/debuffs de banda (en rojo los que faltan).
 - Quitar una simulación (✕) o borrarlas todas.
 
 ## Desarrollo

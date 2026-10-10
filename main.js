@@ -3,6 +3,7 @@ const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { parseReport } = require('./src/parser');
+const { computeBosses } = require('./src/bosses');
 
 const APP_VERSION = require('./package.json').version;
 const userData = () => app.getPath('userData');
@@ -76,6 +77,26 @@ ipcMain.handle('icon:data', async (_e, href) => {
     if (!res.ok) return null;
     return `data:image/jpeg;base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`;
   } catch { return null; }
+});
+
+// --- Jefes de la temporada activa (Raidbots), con caché por si no hay conexión ---
+ipcMain.handle('bosses:get', async () => {
+  const cacheFile = path.join(userData(), 'bosses-cache.json');
+  try {
+    const base = 'https://www.raidbots.com/static/data/live/';
+    const [ins, seas] = await Promise.all(['instances', 'seasons'].map(async n => {
+      const r = await net.fetch(base + n + '.json', { headers: UA });
+      if (!r.ok) throw new Error(n);
+      return r.json();
+    }));
+    const data = computeBosses(ins, seas);
+    if (!data) throw new Error('season');
+    try { fs.writeFileSync(cacheFile, JSON.stringify(data)); } catch {}
+    return { ok: true, data };
+  } catch {
+    const c = readJSON(cacheFile, null);
+    return c ? { ok: true, data: c, cached: true } : { ok: false };
+  }
 });
 
 // --- Actualizaciones desde GitHub ---

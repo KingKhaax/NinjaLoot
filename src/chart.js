@@ -1,7 +1,7 @@
 'use strict';
 // Gráfica de barras en SVG (colores explícitos para poder exportarla a PNG).
 const Chart = (() => {
-  const FONT = "'Palatino Linotype', 'Book Antiqua', Georgia, serif";
+  const FONT = "'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', Roboto, Arial, sans-serif";
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function shade(hex, amt) { // amt -1..1
@@ -41,7 +41,7 @@ const Chart = (() => {
   function build(entries, opts) {
     const { colors, showValues = true, showIcons = true, animate = false, compact = false, yTitle = '' } = opts;
     const slot = opts.slot || 96, plotH = opts.height || 280;
-    const left = 74, right = 24, top = 70, bottom = opts.bottom || 104, ls = opts.labelSize || 14, maxLines = opts.maxLines || 2;
+    const left = 74, right = 24, top = 70, bottom = (opts.bottom || 104) + (showValues ? 22 : 0), ls = opts.labelSize || 14, maxLines = opts.maxLines || 2;
     const W = left + right + Math.max(entries.length, 3) * slot, H = top + plotH + bottom;
     const max = Math.max(...entries.map(e => e.value), 0);
     const { step, top: yMax } = niceScale(max);
@@ -71,11 +71,7 @@ const Chart = (() => {
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
         + `<rect x="${x + 4}" y="${y + 2}" width="${Math.max(3, barW * 0.14)}" height="${Math.max(0, h - 4)}" rx="2" fill="#fff" opacity="0.22"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
-      let ty = y - 8;
-      if (showValues && e.valueText) {
-        bars += `<text x="${cx}" y="${ty}" text-anchor="middle" font-size="13" font-weight="700" fill="${colors.text}" font-family="${FONT}">${esc(e.valueText)}</text>`;
-        ty -= 18;
-      }
+      const ty = y - 8;
       if (showIcons && e.icon) {
         const s = 34, ix = cx - s / 2, iy = ty - s + 6;
         bars += `<image href="${esc(e.icon)}" x="${ix}" y="${iy}" width="${s}" height="${s}" preserveAspectRatio="xMidYMid slice"/>`
@@ -85,6 +81,10 @@ const Chart = (() => {
 
       // Etiquetas inferiores: icono (clase u objeto), nombre y subtítulo
       let ly = top + plotH + 12;
+      if (showValues && e.valueText) {
+        labels += `<text x="${cx}" y="${ly + 12}" text-anchor="middle" font-size="14" font-weight="700" fill="${colors.text}" font-family="${FONT}">${esc(e.valueText)}</text>`;
+        ly += 22;
+      }
       if (e.bottomIcon) {
         labels += `<image href="${esc(e.bottomIcon)}" x="${cx - 16}" y="${ly}" width="32" height="32"/>`
           + `<rect x="${cx - 16.5}" y="${ly - 0.5}" width="33" height="33" rx="3" fill="none" stroke="${e.color || colors.axis}" stroke-width="1.5"/>`;
