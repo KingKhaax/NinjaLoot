@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://wow.zamimg.com; style-src 'self' 'unsafe-inline'; script-src 'self'">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NinjaLoot</title>
+<link rel="icon" href="assets/logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <img src="assets/logo.png" alt="" class="brand-icon">
+    <div><h1>NinjaLoot</h1><span id="appSub" class="sub"></span></div>
+  </div>
+  <div class="top-actions">
+    <button id="btnLang" class="btn ghost" aria-label="Language"><span class="globe">🌐</span><span id="langLabel">ES</span></button>
+    <button id="btnSettings" class="btn ghost" aria-label="Settings">⚙</button>
+  </div>
+</header>
+
+<main>
+  <section class="adder panel">
+    <textarea id="urlInput" rows="2" spellcheck="false"></textarea>
+    <div class="adder-actions">
+      <button id="btnAdd" class="btn primary"></button>
+      <button id="btnPaste" class="btn"></button>
+      <button id="btnClear" class="btn danger"></button>
+    </div>
+  </section>
+  <div id="chips" class="chips"></div>
+  <div id="content"></div>
+</main>
+
+<div id="toasts" class="toasts"></div>
+<div id="modalRoot"></div>
+
+<script src="i18n.js"></script>
+<script src="data/classes.js"></script>
+<script src="data/items.js"></script>
+<script src="chart.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

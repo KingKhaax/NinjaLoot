@@ -1,0 +1,32 @@
+{
+  "name": "ninjaloot",
+  "productName": "NinjaLoot",
+  "version": "0.1.0",
+  "description": "NinjaLoot: graficas de mejoras de objetos a partir de simulaciones de Raidbots",
+  "main": "main.js",
+  "author": "sr.kitkat",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "assets": "node tools/build-assets.mjs",
+    "dist": "electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "^38.0.0",
+    "electron-builder": "^26.0.0",
+    "pngjs": "^7.0.0"
+  },
+  "build": {
+    "appId": "com.rafael.ninjaloot",
+    "productName": "NinjaLoot",
+    "files": ["main.js", "preload.js", "src/**/*"],
+    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "NinjaLoot v${version} Setup.${ext}"
+    },
+    "portable": { "artifactName": "NinjaLoot v${version}.${ext}" }
+  }
+}
