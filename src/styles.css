@@ -138,7 +138,8 @@ select, input[type=number] { background: var(--panel); border: 1px solid var(--b
 .small-note { font-size: 12px; color: var(--muted); margin-top: 10px; }
 
 /* Iconos de interfaz (iconos de WoW) */
-.uiicon { width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; flex: none; }
+/* Los iconos de Clean Icons traen un marco negro y un borde oscurecido: se recortan para que se vean limpios */
+.uiicon { width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; flex: none; object-view-box: inset(13%); }
 .btn .uiicon { margin: -3px 7px -3px 0; }
 .btn.small .uiicon { width: 16px; height: 16px; margin-right: 5px; }
 .btn.small[title] .uiicon:only-child, .btn.ghost.small .uiicon { margin-right: 0; }
