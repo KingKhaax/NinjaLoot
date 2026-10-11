@@ -326,7 +326,7 @@
         id: sim.id, value: valueOf(best, sim), label: sim.character.name, sub: sim.difficulty ? DIFF_TAG[sim.difficulty] : '',
         color: col, labelColor: readable(col), icon: info.icon, iconBorder: QUALITY_COLORS[info.quality], valueText: valueText(best, sim),
         bottomIcon: specIcon(sim), itemId: best.id, ilvl: best.ilvl, gain: gainLine(best), onclick: true,
-        tipIcon: 'top', tip: `${exactTip(sim.character.name, best.gain, best.pct)} — ${info.name}`,
+        tipIcon: 'top', tip: exactTip(sim.character.name, best.gain, best.pct),
       };
     }).sort((a, b) => b.value - a.value);
     const draw = (list, big) => detailed() ? Chart.build(list, { ...chartOpts, ...big }) : Chart.mini(list, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate });
@@ -672,8 +672,9 @@
     }
     return rows.sort((a, b) => a.player.localeCompare(b.player) || b.dpsGain - a.dpsGain);
   }
-  function exportData(fmt) {
-    const rows = exportRows();
+  // Ámbito: todo, un jefe, un jugador o una pieza concreta
+  function exportData(fmt, scope = 'all', which = '') {
+    const rows = exportRows().filter(r => scope === 'boss' ? r.boss === which : scope === 'player' ? r.player === which : scope === 'item' ? String(r.itemId) === which : true);
     if (!rows.length) return toast(T().noSimsToExport, true);
     let data, type;
     if (fmt === 'json') { data = JSON.stringify({ app: 'NinjaLoot', version: state.info.version, exported: new Date().toISOString(), rows }, null, 2); type = 'application/json'; }
@@ -684,7 +685,8 @@
     }
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([data], { type }));
-    a.download = `ninjaloot-${new Date().toISOString().slice(0, 10)}.${fmt}`;
+    const tag = scope === 'all' ? '' : '-' + String(scope === 'item' ? (rows[0]?.item || which) : which).normalize('NFD').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, '').toLowerCase();
+    a.download = `ninjaloot${tag}-${new Date().toISOString().slice(0, 10)}.${fmt}`;
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     toast(T().exported(rows.length));
@@ -753,19 +755,22 @@
     if (!box) return;
     const t = T(), c = await window.api.discordGet();
     box.innerHTML = `<h3>${esc(t.dcTitle)}</h3><p class="hint">${esc(t.dcIntro)}</p>`
+      + `<div class="card-tools" style="margin:6px 0 14px"><button class="btn primary" data-dc-invite>${esc(t.dcInvite)}</button></div>`
       + `<label class="switch-row" style="flex-direction:row;align-items:center"><input type="checkbox" class="switch" id="dcEnabled" ${c.enabled ? 'checked' : ''}> ${esc(t.dcEnable)}</label>`
-      + `<div class="row"><label for="dcToken">${esc(t.dcToken)}</label><input id="dcToken" class="txt" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(c.hasToken ? t.dcTokenSaved : t.dcTokenPh)}" style="max-width:340px"></div>`
       + `<div class="row"><label for="dcChannel">${esc(t.dcChannel)}</label><input id="dcChannel" class="txt" spellcheck="false" value="${esc(c.channelId)}" placeholder="${esc(t.dcChannelPh)}" style="max-width:340px"></div>`
-      + `<div class="card-tools" style="margin:12px 0"><button class="btn primary" data-dc-save>${esc(t.dcSave)}</button>${c.hasToken ? `<button class="btn" data-dc-clear>${esc(t.dcClear)}</button>` : ''}</div>`
+      + `<div class="card-tools" style="margin:12px 0"><button class="btn" data-dc-save>${esc(t.dcSave)}</button></div>`
       + `<div class="status" id="dcStatus">${dcStatusText(c.status)}</div>`
-      + `<h3>${esc(t.dcHelpTitle)}</h3><ol class="steps">${t.dcSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`
-      + `<button class="btn small" data-open="https://discord.com/developers/applications">${ui('open')}${esc(t.dcPortal)}</button>`;
+      + `<h3>${esc(t.dcHelpTitle)}</h3><ol class="steps">${t.dcSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
   }
   async function saveDiscord(box) {
-    const tok = box.querySelector('#dcToken').value.trim(), ch = box.querySelector('#dcChannel').value.trim(), en = box.querySelector('#dcEnabled').checked;
-    const r = await window.api.discordSet({ ...(tok ? { token: tok } : {}), channelId: ch, enabled: en });
+    const ch = box.querySelector('#dcChannel').value.trim(), en = box.querySelector('#dcEnabled').checked;
+    const r = await window.api.discordSet({ channelId: ch, enabled: en });
     if (ch && !r.channelId) toast(T().dcBadChannel, true);
     drawDiscord(box);
+  }
+  async function inviteDiscord() {
+    const url = await window.api.discordInvite();
+    if (url) window.api.openExternal(url); else toast(T().dcNoInvite, true);
   }
   window.api.onDiscordStatus?.(st => { const el = document.getElementById('dcStatus'); if (el) el.innerHTML = dcStatusText(st); });
   // Enlaces nuevos en el canal: se añaden solos a Gráficas (los repetidos se ignoran sin avisar)
@@ -824,7 +829,7 @@
       const tb = e.target.closest('[data-tab]'); if (tb) return draw(tb.dataset.tab);
       const th = e.target.closest('[data-set-theme]'); if (th) { S().theme = th.dataset.setTheme; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); return; }
       if (e.target.closest('[data-dc-save]')) return saveDiscord(back.querySelector('#dcBox'));
-      if (e.target.closest('[data-dc-clear]')) { window.api.discordSet({ clearToken: true, enabled: false }).then(() => drawDiscord(back.querySelector('#dcBox'))); return; }
+      if (e.target.closest('[data-dc-invite]')) return inviteDiscord();
       if (e.target.closest('[data-reset-colors]')) { S().colors = null; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); }
     });
     back.addEventListener('input', e => {
@@ -1069,7 +1074,28 @@
   window.addEventListener('focus', () => trackVersion());
 
   // ---------- Eventos ----------
-  $('#btnExportData').onclick = () => modal({ title: T().exportData, body: `<p>${esc(T().exportHint)}</p>`, actions: [{ label: T().cancel }, { label: 'JSON', onclick: () => exportData('json') }, { label: 'CSV (Excel)', cls: 'primary', onclick: () => exportData('csv') }] });
+  // Exportar: formato (CSV/JSON) y qué exportar (todo, un jefe, un jugador o una pieza)
+  $('#btnExportData').onclick = () => {
+    const t = T(), rows = exportRows(), uniq = (f, lbl) => [...new Map(rows.map(r => [String(f(r)), lbl(r)])).entries()].filter(([k]) => k).sort((a, b) => a[1].localeCompare(b[1]));
+    const lists = { boss: uniq(r => r.boss, r => r.instance ? `${r.boss} · ${r.instance}` : r.boss), player: uniq(r => r.player, r => r.player), item: uniq(r => r.itemId, r => `${r.item} (${r.ilvl})`) };
+    modal({ title: t.exportData, body: `<p class="hint">${esc(t.exportHint)}</p>`
+      + `<div class="row"><label>${esc(t.exportFormat)}</label><div class="seg" id="xFmt"><button data-xf="csv" class="on">CSV (Excel)</button><button data-xf="json">JSON</button></div></div>`
+      + `<div class="row"><label for="xScope">${esc(t.exportScope)}</label><select id="xScope">${[['all', t.exportAll], ['boss', t.exportBoss], ['player', t.exportPlayer], ['item', t.exportItem]].map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join('')}</select></div>`
+      + `<div class="row" id="xWhichRow" hidden><label for="xWhich" id="xWhichLbl"></label><select id="xWhich" style="max-width:340px"></select></div>`
+      + `<div class="card-tools" style="justify-content:flex-end;margin-top:14px"><button class="btn primary" data-xgo>${esc(t.exportData)}</button></div>` });
+    const box = $('#modalRoot').lastElementChild;
+    const fill = () => {
+      const sc = box.querySelector('#xScope').value, row = box.querySelector('#xWhichRow');
+      row.hidden = sc === 'all';
+      if (sc !== 'all') { box.querySelector('#xWhichLbl').textContent = { boss: t.exportBoss, player: t.exportPlayer, item: t.exportItem }[sc]; box.querySelector('#xWhich').innerHTML = lists[sc].map(([k, l]) => `<option value="${esc(k)}">${esc(l)}</option>`).join(''); }
+    };
+    box.querySelector('#xScope').onchange = fill;
+    box.querySelector('#xFmt').onclick = e => { const b = e.target.closest('[data-xf]'); if (b) box.querySelectorAll('[data-xf]').forEach(x => x.classList.toggle('on', x === b)); };
+    box.querySelector('[data-xgo]').onclick = () => {
+      const fmt = box.querySelector('[data-xf].on').dataset.xf, sc = box.querySelector('#xScope').value, which = sc === 'all' ? '' : box.querySelector('#xWhich').value;
+      box.remove(); exportData(fmt, sc, which);
+    };
+  };
   $('#btnAdd').onclick = () => { const v = $('#urlInput').value; if (v.trim()) { $('#urlInput').value = ''; addFromText(v); } };
   $('#btnPaste').onclick = async () => { try { const v = await navigator.clipboard.readText(); if (v) addFromText(v); } catch { $('#urlInput').focus(); } };
   $('#btnClear').onclick = clearAll;

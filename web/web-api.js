@@ -1,0 +1,147 @@
+'use strict';
+// Versión web de NinjaLoot: imita en el navegador lo que en el programa hace el proceso principal (main.js + preload.js).
+// Raidbots, Wowhead, zamimg y Raider.IO permiten peticiones desde webs (CORS), así que todo se pide directamente.
+(() => {
+  const VERSION = window.NINJALOOT_WEB_VERSION || '';
+  const WH_LOCALE = { en: 0, fr: 2, de: 3, es: 6 };
+  const RIO_SLOT = { mainhand: 'main_hand', offhand: 'off_hand', shoulders: 'shoulder', wrists: 'wrist' };
+  const RELAY = 'https://ninjaloot-relay.vercel.app/api/discord';
+  const { parseReport } = window.NLParser;
+  const { computeBosses } = window.NLBosses;
+  const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
+  const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+  const getJSON = async url => { const r = await fetch(url); if (!r.ok) throw Object.assign(new Error(`HTTP_${r.status}`), { status: r.status }); return r.json(); };
+
+  // --- Informes de Raidbots ---
+  async function fetchReport(id) {
+    if (!/^[A-Za-z0-9]+$/.test(id)) return { ok: false, error: 'BAD_URL' };
+    try {
+      return { ok: true, report: parseReport(await getJSON(`https://www.raidbots.com/reports/${id}/data.json`), id) };
+    } catch (e) {
+      if (e.status === 404) return { ok: false, error: 'NOT_FOUND' };
+      if (e.status) return { ok: false, error: 'HTTP', detail: e.status };
+      if (['NO_SIM', 'NOT_DROPTIMIZER', 'NO_UPGRADES'].includes(e.message)) return { ok: false, error: e.message };
+      return { ok: false, error: 'NETWORK', detail: String(e.message || e) };
+    }
+  }
+
+  // --- Nombres de objetos (Wowhead) con caché en el navegador ---
+  const itemCache = load('ninjaloot.web.items', {});
+  async function lookupItem(id, lang) {
+    const key = `${lang}:${id}`;
+    if (itemCache[key]) return itemCache[key];
+    try {
+      const j = await getJSON(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}`);
+      if (!j.name) return null;
+      return (itemCache[key] = [j.name, String(j.icon || '').toLowerCase(), j.quality || 0]);
+    } catch { return null; }
+  }
+  async function lookupItems(ids, lang) {
+    const out = {}, queue = [...new Set(ids)].filter(n => Number.isInteger(n));
+    await Promise.all(Array.from({ length: 6 }, async () => { while (queue.length) { const id = queue.shift(); const r = await lookupItem(id, lang); if (r) out[id] = r; } }));
+    save('ninjaloot.web.items', itemCache);
+    return out;
+  }
+  const tipCache = new Map();
+  async function itemTooltip(id, ilvl, lang) {
+    id = Number(id); ilvl = Number(ilvl) || 0;
+    if (!Number.isInteger(id) || id <= 0) return { ok: false };
+    const key = `${lang}:${id}:${ilvl}`;
+    if (tipCache.has(key)) return tipCache.get(key);
+    try {
+      const j = await getJSON(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}`);
+      if (!j.tooltip) return { ok: false };
+      const r = { ok: true, html: j.tooltip };
+      tipCache.set(key, r);
+      return r;
+    } catch { return { ok: false }; }
+  }
+
+  // --- Iconos como data URL (para exportar gráficas a PNG) ---
+  async function iconData(href) {
+    try {
+      if (!/^(?:\.\/)?assets\/(items|classes)\/[\w.\-]+\.png$/.test(href) && !/^https:\/\/wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg$/.test(href)) return null;
+      const r = await fetch(href);
+      if (!r.ok) return null;
+      const blob = await r.blob();
+      return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(null); fr.readAsDataURL(blob); });
+    } catch { return null; }
+  }
+
+  // --- Equipo actual (Raider.IO) ---
+  async function fetchGear(region, realm, name) {
+    if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+    try {
+      const j = await getJSON(`https://raider.io/api/v1/characters/profile?${new URLSearchParams({ region, realm, name, fields: 'gear' })}`);
+      const items = {};
+      for (const [k, v] of Object.entries((j.gear && j.gear.items) || {})) if (v && v.item_id) items[RIO_SLOT[k] || k] = { id: v.item_id, ilvl: v.item_level || 0 };
+      return { ok: true, items, crawled: j.last_crawled_at ? Date.parse(j.last_crawled_at) : null, fetched: Date.now() };
+    } catch (e) {
+      if (e.status === 400 || e.status === 404) return { ok: false, error: 'NOT_FOUND' };
+      return e.status ? { ok: false, error: 'HTTP', detail: e.status } : { ok: false, error: 'NETWORK', detail: String(e.message || e) };
+    }
+  }
+
+  // --- Jefes de la temporada activa (Raidbots) ---
+  async function getBosses() {
+    try {
+      const base = 'https://www.raidbots.com/static/data/live/';
+      const [ins, seas] = await Promise.all(['instances', 'seasons'].map(n => getJSON(base + n + '.json')));
+      const data = computeBosses(ins, seas);
+      if (!data) throw new Error('season');
+      save('ninjaloot.web.bosses', data);
+      return { ok: true, data };
+    } catch {
+      const c = load('ninjaloot.web.bosses', null);
+      return c ? { ok: true, data: c, cached: true } : { ok: false };
+    }
+  }
+
+  // --- Discord (bot compartido, mismo servidor intermedio que el programa) ---
+  const dcListeners = { sims: [], status: [] };
+  let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '' }), dcTimer = null, dcStatus = { state: 'off' };
+  const dcEmit = st => { dcStatus = st; dcListeners.status.forEach(f => f(st)); };
+  async function relay(query) {
+    const r = await fetch(`${RELAY}?${query}`), j = await r.json().catch(() => ({}));
+    if (!r.ok) throw Object.assign(new Error(j.error || 'NETWORK'), { code: j.error || 'NETWORK', retry: j.retry });
+    return j;
+  }
+  async function dcTick() {
+    dcTimer = null;
+    if (!dc.enabled || !dc.channelId) return dcEmit({ state: 'off' });
+    let wait = 6000;
+    try {
+      if (!dc.lastId) { const r = await relay(`channel=${dc.channelId}`); dc.channelName = r.channel || dc.channelId; dc.lastId = r.lastId || '0'; save('ninjaloot.web.discord', dc); dcEmit({ state: 'ok', channel: dc.channelName }); }
+      else {
+        const r = await relay(`channel=${dc.channelId}&after=${dc.lastId}`);
+        if (r.lastId && r.lastId !== dc.lastId) { dc.lastId = r.lastId; save('ninjaloot.web.discord', dc); }
+        if (r.ids && r.ids.length) dcListeners.sims.forEach(f => f(r.ids));
+        dcEmit({ state: 'ok', channel: dc.channelName, warn: r.empty ? 'INTENT' : '' });
+      }
+    } catch (e) { if (e.code === 'RATE') wait = e.retry || 15000; else { dcEmit({ state: 'error', error: e.code }); wait = 20000; } }
+    dcTimer = setTimeout(dcTick, wait);
+  }
+  const dcRestart = () => { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); };
+  setTimeout(dcTick, 3000);
+
+  window.api = {
+    fetchReport, lookupItems, iconData, itemTooltip, getBosses, fetchGear,
+    // En la web siempre se usa la última versión publicada: no hay nada que actualizar
+    checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
+    installUpdate: async () => ({ ok: false }),
+    onUpdateProgress: () => {},
+    discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, status: dcStatus }),
+    discordSet: async (o = {}) => {
+      if (o.channelId !== undefined) { const id = (String(o.channelId).trim().match(/(\d{15,25})\/?$/) || [])[1] || ''; if (id !== dc.channelId) { dc.lastId = ''; dc.channelName = ''; } dc.channelId = id; }
+      if (o.enabled !== undefined) { if (o.enabled && !dc.enabled) dc.lastId = ''; dc.enabled = !!o.enabled; }
+      save('ninjaloot.web.discord', dc); dcRestart();
+      return { ok: true, channelId: dc.channelId };
+    },
+    discordInvite: async () => { try { const r = await relay('op=info'); return r.clientId ? `https://discord.com/oauth2/authorize?client_id=${r.clientId}&scope=bot&permissions=66560` : null; } catch { return null; } },
+    onDiscordSims: cb => dcListeners.sims.push(cb),
+    onDiscordStatus: cb => dcListeners.status.push(cb),
+    setZoom: f => { document.documentElement.style.zoom = String(Math.min(1.6, Math.max(0.7, Number(f) || 1))); },
+    appInfo: async () => ({ version: VERSION, electron: null, web: true }),
+    openExternal: url => { if (/^https:\/\//.test(url)) window.open(url, '_blank', 'noopener'); },
+  };
+})();

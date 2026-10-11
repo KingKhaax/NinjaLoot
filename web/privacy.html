@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NinjaLoot — Privacy Policy</title>
+<link rel="icon" href="assets/logo.png">
+<style>
+  :root { --bg: #0f0f11; --panel: #17171a; --text: #e8e8ec; --muted: #9a9aa3; --accent: #8b5cf6; --border: #2a2a30; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 'Segoe UI', system-ui, sans-serif; }
+  main { max-width: 780px; margin: 0 auto; padding: 40px 20px 60px; }
+  h1 { font-size: 28px; margin: 0 0 4px; } h2 { font-size: 18px; margin: 28px 0 8px; }
+  .muted { color: var(--muted); } a { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; } header img { width: 40px; height: 40px; }
+</style>
+</head>
+<body>
+<main>
+<header><img src="assets/logo.png" alt=""><b>NinjaLoot</b></header>
+<h1>Privacy Policy</h1>
+<p class="muted">Last updated: October 11, 2026</p>
+
+<p>NinjaLoot is a free, open source tool for World of Warcraft players that turns Raidbots simulations into charts. It is available as a Windows program, a portable program, a website and a Discord bot (“NinjaLoot”). This policy explains what data each part uses. The source code is public at <a href="https://github.com/KingKhaax/NinjaLoot">github.com/KingKhaax/NinjaLoot</a>, so anyone can check it.</p>
+
+<h2>What we do not do</h2>
+<p>NinjaLoot has no user accounts, does not collect telemetry or analytics, does not use advertising or tracking cookies, and does not sell or share personal data.</p>
+
+<h2>Data stored on your device</h2>
+<p>The simulations you load, your settings and caches of item names and boss lists are stored only on your device (in the program's data folder, or in your browser's local storage for the website). You can delete them at any time from the program, by clearing your browser data or by uninstalling.</p>
+
+<h2>Services NinjaLoot connects to</h2>
+<table>
+<tr><th>Service</th><th>When</th><th>What is sent</th></tr>
+<tr><td><a href="https://www.raidbots.com/">Raidbots</a></td><td>When you add a Raidbots report, and at startup</td><td>The report code you add; request for the current season's boss list</td></tr>
+<tr><td><a href="https://www.wowhead.com/">Wowhead</a> / zamimg.com</td><td>When item names, tooltips or icons are shown</td><td>Item IDs</td></tr>
+<tr><td><a href="https://raider.io/">Raider.IO</a></td><td>When checking whether a simulation is out of date</td><td>The character name, realm and region from the simulation</td></tr>
+<tr><td><a href="https://github.com/">GitHub</a></td><td>Program: at startup and when you update. Website: it is hosted on GitHub Pages</td><td>Request for the latest version and download of updates</td></tr>
+<tr><td>NinjaLoot bot server (<a href="https://vercel.com/">Vercel</a>)</td><td>Only if you turn on Settings → Discord</td><td>The Discord channel ID you choose; see below</td></tr>
+</table>
+<p>These services receive the request itself and your IP address, as with any website. Their own privacy policies apply: <a href="https://www.raidbots.com/privacy">Raidbots</a>, <a href="https://www.wowhead.com/privacy">Wowhead</a>, <a href="https://raider.io/privacy-policy">Raider.IO</a>, <a href="https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement">GitHub</a>, <a href="https://vercel.com/legal/privacy-policy">Vercel</a>, <a href="https://discord.com/privacy">Discord</a>.</p>
+
+<h2>The NinjaLoot Discord bot</h2>
+<p>The bot only works in servers whose administrators invite it, and only reads channels it has permission to see. When a NinjaLoot user connects a channel, the bot server reads the new messages in that channel and returns <b>only the codes of Raidbots report links</b> found in them (for example the code in <code>raidbots.com/simbot/report/…</code>). Message text, authors, attachments and any other content are not stored, logged or shared. The server keeps a cache of the last few seconds in memory to avoid repeated requests, and nothing is written to disk. The bot does not send messages, does not use commands and does not access direct messages.</p>
+<p>Our hosting provider (Vercel) may keep standard request logs (IP address, time, requested URL) for a limited time for security and operation.</p>
+<p>To stop the bot from reading a channel, turn off the Discord option in NinjaLoot, remove the bot's permissions on the channel, or remove the bot from your server.</p>
+
+<h2>Children</h2>
+<p>NinjaLoot is not directed to children under 13 (or the minimum age required by Discord in your country) and does not knowingly process their data.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the new version will be published on this page with a new date.</p>
+
+<h2>Contact</h2>
+<p>Questions or requests about your data: open an issue at <a href="https://github.com/KingKhaax/NinjaLoot/issues">github.com/KingKhaax/NinjaLoot/issues</a>, or contact <b>sr.kitkat</b> on Discord.</p>
+
+<p class="muted"><a href="terms.html">Terms of Service</a> · <a href="./">Open NinjaLoot</a></p>
+</main>
+</body>
+</html>

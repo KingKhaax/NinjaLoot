@@ -12,6 +12,7 @@ contextBridge.exposeInMainWorld('api', {
   onUpdateProgress: cb => ipcRenderer.on('update:progress', (_e, f) => cb(f)),
   discordGet: () => ipcRenderer.invoke('discord:get'),
   discordSet: o => ipcRenderer.invoke('discord:set', o),
+  discordInvite: () => ipcRenderer.invoke('discord:invite'),
   onDiscordSims: cb => ipcRenderer.on('discord:sims', (_e, ids) => cb(ids)),
   onDiscordStatus: cb => ipcRenderer.on('discord:status', (_e, s) => cb(s)),
   setZoom: f => webFrame.setZoomFactor(Math.min(1.6, Math.max(0.7, Number(f) || 1))),

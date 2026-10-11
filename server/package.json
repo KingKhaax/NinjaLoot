@@ -1,0 +1,7 @@
+{
+  "name": "ninjaloot-relay",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Servidor intermedio del bot compartido de NinjaLoot para Vercel (token del bot como variable de entorno)",
+  "engines": { "node": "22.x" }
+}

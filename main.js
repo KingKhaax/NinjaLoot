@@ -1,5 +1,5 @@
 'use strict';
-const { app, BrowserWindow, ipcMain, shell, net, safeStorage } = require('electron');
+const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { parseReport } = require('./src/parser');
@@ -214,65 +214,50 @@ ipcMain.handle('update:install', async (e, url) => {
 ipcMain.handle('app:info', () => ({ version: APP_VERSION, electron: process.versions.electron }));
 ipcMain.handle('app:open', (_e, url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); });
 
-// --- Discord: un bot propio de la guild lee un canal y la app añade sola las sims de Raidbots que se peguen ahí ---
-// El token se guarda cifrado con Windows (safeStorage) y nunca vuelve a la interfaz. Solo se leen mensajes nuevos desde que se conecta.
+// --- Discord: bot compartido NinjaLoot. Cualquiera lo invita a su servidor y pega el canal de sims;
+// la app pregunta al servidor intermedio (Vercel, con el token del bot) por los enlaces nuevos de Raidbots. Aquí no hay ningún token.
+const RELAY = 'https://ninjaloot-relay.vercel.app/api/discord';
 const discordFile = () => path.join(userData(), 'discord.json');
 let dc = null, dcTimer = null, dcStatus = { state: 'off' };
-const dcLoad = () => (dc ??= readJSON(discordFile(), { enabled: false, channelId: '', channelName: '', token: '', lastId: '' }));
+const dcLoad = () => (dc ??= (() => { const c = readJSON(discordFile(), {}); return { enabled: !!c.enabled, channelId: c.channelId || '', channelName: c.channelName || '', lastId: c.lastId || '' }; })());
 const dcSave = () => { try { fs.writeFileSync(discordFile(), JSON.stringify(dc)); } catch {} };
-function dcToken() {
-  const t = dcLoad().token;
-  if (!t) return '';
-  try { return t.startsWith('enc:') ? safeStorage.decryptString(Buffer.from(t.slice(4), 'base64')) : t.slice(4); } catch { return ''; }
-}
-const dcSetToken = v => { dc.token = !v ? '' : safeStorage.isEncryptionAvailable() ? 'enc:' + safeStorage.encryptString(v).toString('base64') : 'raw:' + v; };
 const dcEmit = status => { dcStatus = status; for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:status', status); };
-async function dcFetch(pathQuery) {
-  const res = await net.fetch(`https://discord.com/api/v10${pathQuery}`, { headers: { Authorization: `Bot ${dcToken()}`, 'User-Agent': `DiscordBot (https://github.com/KingKhaax/NinjaLoot, ${APP_VERSION})` } });
-  if (res.status === 429) { const j = await res.json().catch(() => ({})); throw Object.assign(new Error('RATE'), { retry: Math.ceil((j.retry_after || 5) * 1000) }); }
-  if (!res.ok) throw Object.assign(new Error(`HTTP_${res.status}`), { status: res.status });
-  return res.json();
+async function relay(query) {
+  const res = await net.fetch(`${RELAY}?${query}`, { headers: UA });
+  const j = await res.json().catch(() => ({}));
+  if (!res.ok) throw Object.assign(new Error(j.error || `HTTP_${res.status}`), { code: j.error || 'NETWORK', retry: j.retry });
+  return j;
 }
-const RAIDBOTS_LINK = /raidbots\.com\/simbot\/report\/([A-Za-z0-9]+)/g;
-const linksOf = m => [...[m.content, ...(m.embeds || []).flatMap(e => [e.url, e.title, e.description])].filter(Boolean).join(' ').matchAll(RAIDBOTS_LINK)].map(x => x[1]);
 async function dcTick() {
   dcTimer = null;
   const c = dcLoad();
-  if (!c.enabled || !c.channelId || !dcToken()) return dcEmit({ state: 'off' });
-  let wait = 5000, warn = '';
+  if (!c.enabled || !c.channelId) return dcEmit({ state: 'off' });
+  let wait = 6000;
   try {
     if (!c.lastId) { // al conectar: nombre del canal y último mensaje (lo anterior no se importa)
-      const ch = await dcFetch(`/channels/${c.channelId}`);
-      c.channelName = ch.name || c.channelId;
-      const last = await dcFetch(`/channels/${c.channelId}/messages?limit=1`);
-      c.lastId = last[0]?.id || '0'; dcSave();
+      const r = await relay(`channel=${c.channelId}`);
+      c.channelName = r.channel || c.channelId; c.lastId = r.lastId || '0'; dcSave();
+      dcEmit({ state: 'ok', channel: c.channelName });
     } else {
-      const msgs = await dcFetch(`/channels/${c.channelId}/messages?limit=50&after=${c.lastId}`);
-      if (msgs.length) {
-        msgs.sort((a, b) => (BigInt(a.id) < BigInt(b.id) ? -1 : 1));
-        c.lastId = msgs[msgs.length - 1].id; dcSave();
-        const ids = [...new Set(msgs.flatMap(linksOf))];
-        if (ids.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', ids);
-        // Sin «Message Content Intent» Discord manda los mensajes vacíos
-        if (msgs.some(m => !m.content && !(m.embeds || []).length && !(m.attachments || []).length && !m.author?.bot)) warn = 'INTENT';
-      }
+      const r = await relay(`channel=${c.channelId}&after=${c.lastId}`);
+      if (r.lastId && r.lastId !== c.lastId) { c.lastId = r.lastId; dcSave(); }
+      if (r.ids && r.ids.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', r.ids);
+      dcEmit({ state: 'ok', channel: c.channelName, warn: r.empty ? 'INTENT' : '' });
     }
-    dcEmit({ state: 'ok', channel: c.channelName, warn: warn || (dcStatus.warn === 'INTENT' ? 'INTENT' : '') });
   } catch (e) {
-    if (e.message === 'RATE') wait = e.retry;
-    else {
-      dcEmit({ state: 'error', error: e.status === 401 ? 'TOKEN' : e.status === 403 ? 'ACCESS' : e.status === 404 ? 'CHANNEL' : 'NETWORK' });
-      wait = e.status === 401 ? 0 : 20000; // con un token malo no se insiste
-    }
+    if (e.code === 'RATE') wait = e.retry || 15000;
+    else { dcEmit({ state: 'error', error: e.code }); wait = 20000; }
   }
-  if (wait) dcTimer = setTimeout(dcTick, wait);
+  dcTimer = setTimeout(dcTick, wait);
 }
 function dcRestart() { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); }
-ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: !!c.enabled, channelId: c.channelId || '', hasToken: !!dcToken(), status: dcStatus }; });
+ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, status: dcStatus }; });
+// Enlace para invitar el bot (el id de la aplicación lo da el servidor intermedio)
+ipcMain.handle('discord:invite', async () => {
+  try { const r = await relay('op=info'); return r.clientId ? `https://discord.com/oauth2/authorize?client_id=${r.clientId}&scope=bot&permissions=66560` : null; } catch { return null; }
+});
 ipcMain.handle('discord:set', (_e, o = {}) => {
   const c = dcLoad();
-  if (o.token) dcSetToken(String(o.token).trim());
-  if (o.clearToken) dcSetToken('');
   if (o.channelId !== undefined) { // vale el ID o el enlace del canal (https://discord.com/channels/servidor/canal)
     const id = (String(o.channelId).trim().match(/(\d{15,25})\/?$/) || [])[1] || '';
     if (id !== c.channelId) { c.lastId = ''; c.channelName = ''; }

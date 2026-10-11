@@ -1,0 +1,6 @@
+{
+  "regions": ["fra1"],
+  "rewrites": [
+    { "source": "/discord", "destination": "/api/discord" }
+  ]
+}

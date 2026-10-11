@@ -12,11 +12,13 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 
 ## Descarga
 
-Descarga la última versión desde [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest):
+Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
-- `NinjaLoot vX.Y.Z Setup.exe`: instalador (se desinstala desde *Configuración → Aplicaciones* de Windows).
-- `NinjaLoot vX.Y.Z.exe`: versión portable, no necesita instalación.
-- `SHA256SUMS.txt`: hashes para comprobar los archivos.
+- **Web, sin instalar nada:** [kingkhaax.github.io/NinjaLoot](https://kingkhaax.github.io/NinjaLoot/) (siempre la última versión; tus datos se quedan en tu navegador).
+- **Instalable:** `NinjaLoot vX.Y.Z Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest) (se actualiza solo y se desinstala desde *Configuración → Aplicaciones* de Windows).
+- **Portable:** `NinjaLoot vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
+
+`SHA256SUMS.txt` lleva los hashes para comprobar los archivos.
 
 Los ejecutables están firmados digitalmente (ver [Code signing policy](#code-signing-policy)).
 
@@ -52,9 +54,11 @@ NinjaLoot does not collect, store or send personal data or telemetry. To work, i
 | [Raidbots](https://www.raidbots.com/) | When you add a Raidbots report, and at startup | Download the reports you add and the current season's boss list |
 | [Wowhead](https://www.wowhead.com/) / zamimg.com | When item names, tooltips or icons are shown | Localized item names, tooltips and icons |
 | [GitHub](https://github.com/) | At startup, and when you click update | Check for a new version and download the installer |
-| [Discord](https://discord.com/) | Only if you turn on Settings → Discord | Your own guild bot reads new messages in the channel you choose, to pick up Raidbots links. The bot token is stored encrypted on your PC and only sent to Discord |
+| NinjaLoot Discord bot (server on [Vercel](https://vercel.com/)) | Only if you turn on Settings → Discord | The channel ID you choose; the bot server reads new messages there and returns only the codes of Raidbots links. Nothing else is stored |
 
 Their privacy policies: [Raidbots](https://www.raidbots.com/privacy), [Wowhead](https://www.wowhead.com/privacy), [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement), [Discord](https://discord.com/privacy).
+
+Full documents: [Privacy Policy](https://kingkhaax.github.io/NinjaLoot/privacy.html) · [Terms of Service](https://kingkhaax.github.io/NinjaLoot/terms.html)
 
 ## License
 
