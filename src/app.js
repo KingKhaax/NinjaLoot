@@ -181,6 +181,9 @@
   }
 
   const act0 = () => activeSims();
+  // Filtro de fuente efectivo: si el guardado no corresponde a ninguna fuente de las simulaciones actuales, se usa "Todo"
+  function srcCats() { const cats = new Set(); for (const s of act0()) for (const it of s.items) cats.add(catOfSrc(srcOf(it))); return cats; }
+  const effCat = () => S().srcCat !== 'all' && srcCats().has(S().srcCat) ? S().srcCat : 'all';
   function toolbarHtml() {
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
     let h = `<div class="charts-bar"><div class="seg"><button data-mode="boss" class="${mode === 'boss' ? 'on' : ''}">${esc(t.modeBoss)}</button><button data-mode="player" class="${mode === 'player' ? 'on' : ''}">${esc(t.modePlayer)}</button></div>`;
@@ -189,7 +192,7 @@
       const cats = {};
       for (const s of act0()) for (const it of s.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
       const keys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
-      if (keys.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-cat="all" class="${S().srcCat === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${keys.map(k => `<button data-cat="${k}" class="${S().srcCat === k ? 'on' : ''}">${esc(t['cat' + k[0].toUpperCase() + k.slice(1)] || k)}</button>`).join('')}</div></div>`;
+      if (keys.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-cat="all" class="${effCat() === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${keys.map(k => `<button data-cat="${k}" class="${effCat() === k ? 'on' : ''}">${esc(t['cat' + k[0].toUpperCase() + k.slice(1)] || k)}</button>`).join('')}</div></div>`;
     }
     const hidden = eff ? state.sims.filter(s => s.difficulty && s.difficulty !== eff).length : 0;
     if (hidden) h += `<span class="meta warnnote">${esc(t.diffHidden(hidden, t.diffNames[eff]))}</span>`;
@@ -199,11 +202,11 @@
   // ---------- Gráficas por jefe: todas las piezas que dan DPS, ordenadas, comparadas entre jugadores ----------
   function bossCharts(act, chartOpts) {
     const t = T(), min = Number(S().minGain) || 0, pct = S().unit === 'pct';
-    const byEnc = new Map();
+    const byEnc = new Map(), cat = effCat();
     for (const sim of act) for (const it of sim.items) {
       if (it.gain < min) continue;
       const src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0;
-      if (S().srcCat !== 'all' && catOfSrc(src) !== S().srcCat) continue;
+      if (cat !== 'all' && catOfSrc(src) !== cat) continue;
       let m = byEnc.get(enc); if (!m) byEnc.set(enc, m = new Map());
       let g = m.get(it.id); if (!g) m.set(it.id, g = { id: it.id, name: it.name, it, gains: [] });
       g.gains.push({ sim, gain: it.gain, pct: it.pct, ilvl: it.ilvl });
@@ -812,7 +815,7 @@
     if ((el = q('data-remove'))) removeSim(el.dataset.remove);
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
-    else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-diff'))) { S().diff = el.dataset.diff; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-cat'))) { S().srcCat = el.dataset.cat; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
