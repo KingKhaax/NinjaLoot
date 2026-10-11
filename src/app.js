@@ -7,7 +7,7 @@
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, checkGear: true, staleDays: 7, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
@@ -393,17 +393,18 @@
     return html;
   }
 
-  // Dónde tirar moneda: las 5 piezas de jefe que más DPS te dan y de qué jefe sale cada una
+  // Dónde tirar moneda: tantas piezas de jefe como monedas tengas (las que más DPS te dan) y de qué jefe sale cada una
   function coinSection(p) {
-    const t = T();
-    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, 5);
+    const t = T(), coins = Math.max(1, Math.min(20, Number(S().coins) || 5));
+    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, coins);
+    const pick = `<label class="coin-count">${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     rows.forEach(({ it }, i) => {
       const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
       body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><b>${esc(st.name)}</b><div class="meta">${esc(st.sub)}</div></div><div class="coin-items">`
         + `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
     });
-    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2></div><div class="hint">${esc(t.coinHint)}</div>${body}</section>`;
+    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
   async function loadPersonal(text) {
@@ -809,13 +810,14 @@
       + `</div><h3>${esc(t.tierPieces)}</h3><div class="ptable-wrap"><table class="ptable"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.statsLabel)}</th><th>${esc(t.colBoss)}</th></tr></thead><tbody>`
       + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
         return `<tr data-item="${it.id}" data-ilvl=""><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
-          + `<td>${esc(t.slots[it.slot] || it.slot)}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td><b>${esc(bossLabel(it.boss) || '')}</b></td></tr>`; }).join('')
+          + `<td>${esc(capFirst(t.slots[it.slot] || it.slot))}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td><b>${esc(bossLabel(it.boss) || '')}</b></td></tr>`; }).join('')
       + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div></section>`;
     return html;
   }
 
   // ---------- Actualizaciones ----------
   const semver = v => String(v || '').replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
+  function capFirst(s) { s = String(s || ''); return s.charAt(0).toLocaleUpperCase() + s.slice(1); }
   const isNewer = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
   // Pestaña Versión: tu versión y su estado, un solo botón que busca, descarga, instala y reabre, y el historial de versiones
   async function runUpdateCheck(box) {
@@ -924,6 +926,7 @@
   // La URL de la simulación personal se conserva al cambiar de pestaña y entre sesiones
   document.addEventListener('input', e => { if (e.target.id === 'personalUrl') { state.personalUrl = e.target.value; save('ninjaloot.personalUrl', state.personalUrl); } });
   document.addEventListener('change', e => {
+    if (e.target.id === 'coinCount') { S().coins = Math.max(1, Math.min(20, Number(e.target.value) || 5)); persistSettings(); render(); return; }
     if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
     if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
     if (e.target.id !== 'personalPick') return;

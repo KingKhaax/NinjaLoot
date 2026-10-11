@@ -434,3 +434,7 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 .sc-slot { min-width: 96px; font-weight: 700; color: #ee5a45; text-transform: capitalize; }
 .sc-item { display: inline-flex; align-items: center; gap: 5px; cursor: help; }
 .sc-item img { width: 20px; height: 20px; border-radius: 3px; border: 1px solid; }
+
+/* Dónde tirar moneda: ¿cuántas monedas tienes? */
+.coin-count { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--muted); }
+.coin-count select { min-width: 64px; }
