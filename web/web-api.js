@@ -97,6 +97,27 @@
     }
   }
 
+  // --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda desde el reinicio (Blizzard vía el servidor de WipeTime) ---
+  async function fetchVault(region, realm, name) {
+    if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+    const reset = weeklyReset(region), out = { ok: true, reset, runs: null, raid: null, fetched: Date.now() }, RANK = { LFR: 1, NORMAL: 2, HEROIC: 3, MYTHIC: 4 };
+    const rio = getJSON(`https://raider.io/api/v1/characters/profile?${new URLSearchParams({ region, realm, name, fields: 'mythic_plus_weekly_highest_level_runs' })}`).then(j => {
+      out.runs = (j.mythic_plus_weekly_highest_level_runs || []).filter(r => Date.parse(r.completed_at) >= reset).map(r => ({ level: r.mythic_level, dungeon: r.dungeon })).sort((a, b) => b.level - a.level);
+    }).catch(() => {});
+    const slug = String(realm).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
+    const path = `/profile/wow/character/${slug}/${encodeURIComponent(name.toLowerCase())}/encounters/raids?namespace=profile-${region}&locale=en_US`;
+    const bnet = getJSON(`https://wipetime-proxy.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`).then(j => {
+      const best = new Map(), ex = (j.expansions || []).find(e => /current season/i.test(e.expansion?.name || '')) || (j.expansions || []).at(-1);
+      for (const inst of ex?.instances || []) for (const m of inst.modes || []) for (const e of m.progress?.encounters || []) {
+        const d = RANK[m.difficulty?.type] || 0;
+        if (e.last_kill_timestamp >= reset && d > (best.get(e.encounter.id)?.diff || 0)) best.set(e.encounter.id, { name: e.encounter.name, diff: d });
+      }
+      out.raid = [...best.values()].sort((a, b) => b.diff - a.diff);
+    }).catch(() => {});
+    await Promise.all([rio, bnet]);
+    return out.runs || out.raid ? out : { ok: false, error: 'NOT_FOUND' };
+  }
+
   // --- Discord (bot compartido, mismo servidor intermedio que el programa) ---
   const dcListeners = { sims: [], status: [] };
   let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '', region: 'eu' }), dcTimer = null, dcStatus = { state: 'off' };
@@ -134,7 +155,7 @@
   setTimeout(dcTick, 3000);
 
   window.api = {
-    fetchReport, lookupItems, iconData, itemTooltip, getBosses, fetchGear,
+    fetchReport, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
     // En la web siempre se usa la última versión publicada: no hay nada que actualizar
     checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
     installUpdate: async () => ({ ok: false }),
