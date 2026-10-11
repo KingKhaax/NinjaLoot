@@ -138,15 +138,45 @@ ipcMain.handle('update:check', async () => {
     };
   } catch (e) { return { ok: false, error: String(e.message || e) }; }
 });
-ipcMain.handle('update:install', async (_e, url) => {
+// Instalado con el Setup: electron-updater descarga solo las partes que han cambiado (latest.yml + .blockmap de la release),
+// instala en silencio y vuelve a abrir el programa. Devuelve false si no se puede (portable, release sin latest.yml...).
+async function quickUpdate(sender) {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_FILE) return false;
+  const { autoUpdater } = require('electron-updater');
+  autoUpdater.autoDownload = false;
+  autoUpdater.autoInstallOnAppQuit = false;
+  const onProgress = p => { if (!sender.isDestroyed()) sender.send('update:progress', p.percent / 100); };
+  autoUpdater.on('download-progress', onProgress);
   try {
+    const r = await autoUpdater.checkForUpdates();
+    if (!r || !r.isUpdateAvailable) return false;
+    await autoUpdater.downloadUpdate();
+    setImmediate(() => autoUpdater.quitAndInstall(true, true));
+    return true;
+  } catch (e) {
+    console.warn('electron-updater', e);
+    return false;
+  } finally {
+    autoUpdater.removeListener('download-progress', onProgress);
+  }
+}
+
+ipcMain.handle('update:install', async (e, url) => {
+  try {
+    if (await quickUpdate(e.sender)) return { ok: true };
     if (!String(url).startsWith(`https://github.com/${REPO}/releases/download/`)) return { ok: false };
     const res = await net.fetch(url, { headers: UA });
     if (!res.ok) return { ok: false };
     const file = path.join(require('os').tmpdir(), 'NinjaLoot-Setup.exe');
     fs.writeFileSync(file, Buffer.from(await res.arrayBuffer()));
-    await shell.openPath(file);
-    setTimeout(() => app.quit(), 800);
+    if (process.env.PORTABLE_EXECUTABLE_FILE) {
+      await shell.openPath(file); // portable: instalador normal, que elija dónde
+      setTimeout(() => app.quit(), 800);
+    } else {
+      // Instalación silenciosa y reapertura automática (los mismos argumentos que usa electron-updater)
+      require('child_process').spawn(file, ['/S', '--updated', '--force-run'], { detached: true, stdio: 'ignore' }).unref();
+      setTimeout(() => app.quit(), 400);
+    }
     return { ok: true };
   } catch { return { ok: false }; }
 });

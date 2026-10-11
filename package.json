@@ -19,14 +19,40 @@
   "build": {
     "appId": "com.rafael.ninjaloot",
     "productName": "NinjaLoot",
-    "files": ["main.js", "preload.js", "src/**/*"],
-    "win": { "target": ["nsis", "portable"], "icon": "build/icon.png" },
+    "files": [
+      "main.js",
+      "preload.js",
+      "src/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "build/app-update.yml",
+        "to": "app-update.yml"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "build/icon.png"
+    },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "artifactName": "NinjaLoot v${version} Setup.${ext}"
     },
-    "portable": { "artifactName": "NinjaLoot v${version}.${ext}" }
+    "portable": {
+      "artifactName": "NinjaLoot v${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "KingKhaax",
+      "repo": "NinjaLoot"
+    }
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

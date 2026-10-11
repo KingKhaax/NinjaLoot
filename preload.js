@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld('api', {
   getBosses: () => ipcRenderer.invoke('bosses:get'),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: asset => ipcRenderer.invoke('update:install', asset),
+  onUpdateProgress: cb => ipcRenderer.on('update:progress', (_e, f) => cb(f)),
   setZoom: f => webFrame.setZoomFactor(Math.min(1.6, Math.max(0.7, Number(f) || 1))),
   appInfo: () => ipcRenderer.invoke('app:info'),
   openExternal: url => ipcRenderer.invoke('app:open', url),

@@ -763,6 +763,7 @@
     box.querySelector('[data-upd-install]')?.addEventListener('click', async e => {
       const btn = e.currentTarget;
       btn.disabled = true; box.querySelector('#updNote').textContent = t.updDownloading;
+      window.api.onUpdateProgress?.(f => { const n = box.querySelector('#updNote'); if (n) n.textContent = `${t.updDownloading} ${Math.round(f * 100)}%`; });
       const res = await window.api.installUpdate(r.release.asset);
       if (!res.ok) { box.querySelector('#updNote').textContent = t.updError; btn.disabled = false; }
     });

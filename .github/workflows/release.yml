@@ -130,7 +130,13 @@ jobs:
           $v = '${{ steps.ver.outputs.version }}'
           $src = if ('${{ steps.sign.outputs.on }}' -eq 'true') { 'signed-installers' } else { 'dist' }
           New-Item -ItemType Directory -Force out | Out-Null
-          Copy-Item "$src/NinjaLoot v$v Setup.exe", "$src/NinjaLoot v$v.exe" out/
+          # Mismos nombres que GitHub da a los assets (espacios -> puntos): latest.yml tiene que coincidir
+          $setup = "NinjaLoot.v$v.Setup.exe"
+          Copy-Item "$src/NinjaLoot v$v Setup.exe" "out/$setup"
+          Copy-Item "$src/NinjaLoot v$v.exe" "out/NinjaLoot.v$v.exe"
+          # latest.yml + .blockmap del instalador ya firmado: electron-updater descarga solo lo que cambia
+          node tools/update-info.js out $setup $v
+          if ($LASTEXITCODE) { throw "No se pudo generar latest.yml" }
           Get-ChildItem out/*.exe | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content out/SHA256SUMS.txt -Encoding utf8
           Get-Content out/SHA256SUMS.txt
 
