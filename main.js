@@ -140,17 +140,32 @@ const ghJson = async url => {
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 };
+// Última versión: primero latest.yml de la release (descarga normal de github.com, sin el límite de 60 consultas/hora
+// de la API de GitHub) y, si no existe, la API. El resultado se guarda 5 minutos para no repetir consultas.
+async function latestFromYml() {
+  const res = await net.fetch(`https://github.com/${REPO}/releases/latest/download/latest.yml`, { headers: UA });
+  if (!res.ok) return null;
+  const yml = await res.text(), v = (yml.match(/^version:\s*['"]?([\d.]+)/m) || [])[1], file = (yml.match(/^path:\s*['"]?([^'"\r\n]+)/m) || [])[1];
+  if (!v) return null;
+  return { version: v, url: `https://github.com/${REPO}/releases/tag/v${v}`, asset: file ? `https://github.com/${REPO}/releases/download/v${v}/${encodeURIComponent(file)}` : null };
+}
+async function latestFromApi() {
+  const rel = await ghJson(`https://api.github.com/repos/${REPO}/releases/latest`);
+  if (!rel) return null;
+  const asset = (rel.assets || []).find(a => /Setup\.exe$/i.test(a.name));
+  return { version: String(rel.tag_name || '').replace(/^v/i, ''), url: rel.html_url, asset: asset ? asset.browser_download_url : null };
+}
+let updCache = null;
 ipcMain.handle('update:check', async () => {
+  if (updCache && Date.now() - updCache.at < 5 * 60 * 1000) return updCache.r;
   try {
-    const [rel, pkg] = await Promise.all([
-      ghJson(`https://api.github.com/repos/${REPO}/releases/latest`),
-      ghJson(`https://raw.githubusercontent.com/${REPO}/main/package.json`),
+    const [release, pkg] = await Promise.all([
+      latestFromYml().catch(() => null).then(r => r || latestFromApi()),
+      ghJson(`https://raw.githubusercontent.com/${REPO}/main/package.json`).catch(() => null),
     ]);
-    const asset = rel && (rel.assets || []).find(a => /Setup\.exe$/i.test(a.name));
-    return {
-      ok: true, current: APP_VERSION, main: (pkg && pkg.version) || null,
-      release: rel ? { version: String(rel.tag_name || '').replace(/^v/i, ''), url: rel.html_url, asset: asset ? asset.browser_download_url : null } : null,
-    };
+    const r = { ok: true, current: APP_VERSION, main: (pkg && pkg.version) || null, release };
+    updCache = { at: Date.now(), r };
+    return r;
   } catch (e) { return { ok: false, error: String(e.message || e) }; }
 });
 // Instalado con el Setup: electron-updater descarga solo las partes que han cambiado (latest.yml + .blockmap de la release),
