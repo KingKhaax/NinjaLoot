@@ -79,6 +79,10 @@ function parseProfilesetName(name) {
   return { id: nums[idx], ilvl, slot, name: itemName, source: parts.length >= 6 && idx === 3 ? { instance: nums[0], difficulty: nums[1], encounter: nums[2] } : null };
 }
 
+// Tipo de armadura: tela/cuero/malla/placas solo en armaduras que no sean capa (inventoryType 16); el resto vale para cualquiera
+const ARMOR_BY_SUBCLASS = { 1: 'c', 2: 'l', 3: 'm', 4: 'p' };
+const armorOf = it => (it && it.itemClass === 4 && it.inventoryType !== 16 && ARMOR_BY_SUBCLASS[it.itemSubClass]) || 'any';
+
 const DIFF_BY_ID = { 14: 'nm', 15: 'hc', 16: 'mm', 17: 'lfr' };
 // Dificultad de la simulación: la más frecuente entre los objetos (2º dato del nombre del profileset); si no, el formulario de Raidbots
 function detectDifficulty(items, raw) {
@@ -102,8 +106,9 @@ function parseReport(json, id) {
 
   const cls = detectClass(player, raw);
   // Piezas de tier: "fromToken" = sale de la ficha del jefe (clic derecho); "catalyst" = se convierte en el catalizador
-  const tierOf = new Map();
-  const lib = json.simbot && json.simbot.meta && json.simbot.meta.itemLibrary;
+  const tierOf = new Map(), armor = new Map();
+  const meta = (json.simbot && json.simbot.meta) || {}, lib = meta.itemLibrary;
+  for (const e of [...(Array.isArray(lib) ? lib : []), ...(Array.isArray(meta.encounterItems) ? meta.encounterItems : [])]) if (e && e.itemClass != null) armor.set(e.id, armorOf(e));
   for (const e of Array.isArray(lib) ? lib : []) {
     const k = `${e.id}:${e.encounterId}`;
     if (e.fromToken) tierOf.set(k, 'token');
@@ -118,7 +123,7 @@ function parseReport(json, id) {
     const key = `${p.id}:${p.ilvl}`;
     const prev = best.get(key);
     const tier = (p.catalystFrom && 'catalyst') || (p.source && tierOf.get(`${p.id}:${p.source.encounter}`)) || null;
-    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier });
+    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier, armor: armor.get(p.id) || null });
   }
   if (!best.size) {
     const any = results.some(r => parseProfilesetName(r.name));
@@ -139,4 +144,4 @@ function parseReport(json, id) {
   };
 }
 
-module.exports = { extractReportId, extractReportIds, parseReport, parseProfilesetName };
+module.exports = { extractReportId, extractReportIds, parseReport, parseProfilesetName, armorOf };

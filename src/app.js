@@ -166,7 +166,9 @@
   const catOfType = ty => /raid/.test(ty) ? 'raid' : /mplus|dungeon/.test(ty) ? 'dungeon' : /delve/.test(ty) ? 'delve' : /prey/.test(ty) ? 'prey' : /catalyst/.test(ty) ? 'catalyst' : /pvp/.test(ty) ? 'pvp' : /profession/.test(ty) ? 'craft' : /bonus/.test(ty) ? 'bonus' : 'other';
   const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
   const bossLabel = enc => (state.bosses.names || {})[enc] || '';
-  const instName = id => ((state.bosses.inst || {})[id] || {}).n || '';
+  // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
+  const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
+  const instName = id =>((state.bosses.inst || {})[id] || {}).n || '';
   // Fuente de un objeto: en mazmorras el nombre de la mítica; en raid el jefe, con (Tier) si sale de su ficha o (Catalizador) si se convierte
   function srcText(it) {
     const t = T(), s = srcOf(it), enc = s && s.encounter != null ? s.encounter : 0;
@@ -203,7 +205,7 @@
       const src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0;
       if (S().srcCat !== 'all' && catOfSrc(src) !== S().srcCat) continue;
       let m = byEnc.get(enc); if (!m) byEnc.set(enc, m = new Map());
-      let g = m.get(it.id); if (!g) m.set(it.id, g = { id: it.id, name: it.name, gains: [] });
+      let g = m.get(it.id); if (!g) m.set(it.id, g = { id: it.id, name: it.name, it, gains: [] });
       g.gains.push({ sim, gain: it.gain, pct: it.pct, ilvl: it.ilvl });
     }
     const rowsOf = enc => [...byEnc.get(enc).values()].map(g => { g.gains.sort((x, y) => y.gain - x.gain); return { ...g, best: g.gains[0] }; }).sort((x, y) => y.best.gain - x.best.gain);
@@ -213,16 +215,17 @@
     let html = `<div class="hint boss-hint">${esc(t.bossChartsHint)}</div>`;
     for (const enc of encs) {
       const rows = rowsOf(enc), key = `boss${enc}`, n = S().topN, lim = state.expanded.has(key) || n === 0 ? rows.length : n;
-      const entries = rows.slice(0, lim).map(r => {
+      // Una tarjeta por objeto: icono, nombre, de dónde sale y tipo de armadura, y una barra por jugador de más a menos
+      const cards = rows.slice(0, lim).map(r => {
         state.shown.add(r.id);
-        const info = itemInfo(r), best = r.best, col = clsColor(best.sim), vt = { gain: best.gain, pct: best.pct };
-        return {
-          id: `${enc}-${r.id}`, value: pct ? best.pct : best.gain, label: info.name + (info.tag ? ' ' + info.tag : ''), labelColor: readable(QUALITY_COLORS[info.quality]), color: col,
-          icon: specIcon(best.sim), iconBorder: col, bottomIcon: info.icon, sub: best.sim.character.name, subColor: readable(col), valueText: valueText(vt, best.sim),
-          itemId: r.id, ilvl: best.ilvl, gain: r.gains.slice(0, 6).map(x => `${x.sim.character.name}: +${nf().format(x.gain)} DPS (${x.pct.toFixed(2)}%)`).join('\n'),
-        };
-      });
-      const name = bossLabel(enc) || (enc ? `#${enc}` : t.bossOtherSources);
+        const info = itemInfo(r), st = srcText(r.it), col = QUALITY_COLORS[info.quality];
+        const entries = r.gains.map(x => ({ value: pct ? x.pct : x.gain, label: x.sim.character.name, color: clsColor(x.sim), labelColor: readable(clsColor(x.sim)), valueText: valueText({ gain: x.gain, pct: x.pct }, x.sim) }));
+        return `<div class="item-card"><div class="ic-head"><img class="ic-icon" src="${info.icon}" alt="" style="border-color:${col}" data-item="${r.id}" data-ilvl="${r.best.ilvl || 0}" data-tip-always>`
+          + `<div><b style="color:${readable(col)}">${esc(info.name)}</b>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}<div class="meta">${esc([st && st.name, armorLabel(r.it)].filter(Boolean).join(' · '))}</div></div></div>`
+          + `<div class="ic-chart">${Chart.mini(entries, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate })}</div></div>`;
+      }).join('');
+      const first = rows[0] && srcText(rows[0].it), isDungeon = rows[0] && catOfSrc(srcOf(rows[0].it)) === 'dungeon';
+      const name = (isDungeon && first && first.name) || bossLabel(enc) || (enc ? `#${enc}` : t.bossOtherSources);
       // Tabla bajo la gráfica: cada objeto con todos los jugadores a los que les sube, de más a menos
       const table = `<div class="ptable-wrap"><table class="ptable boss-table"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colIlvl)}</th><th>${esc(t.colPlayers)}</th></tr></thead><tbody>`
         + rows.slice(0, lim).map((r, i) => { const info = itemInfo(r);
@@ -232,8 +235,7 @@
         + '</tbody></table></div>';
       html += `<section class="panel card" id="boss-${enc}"><div class="card-head"><div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
         + (n !== 0 && rows.length > n ? `<button class="btn small" data-toggle="${key}">${esc(state.expanded.has(key) ? t.showLess : t.showAll)}</button>` : '')
-        + `<button class="btn small" data-export="boss-${enc}">${ui('export')}${esc(t.exportPng)}</button></div></div>`
-        + `<div class="chart-wrap" data-chart="boss-${enc}">${Chart.build(entries, { ...chartOpts, slot: 116, height: 260, bottom: 150, labelSize: 12.5, maxLines: 3 })}</div>${table}</section>`;
+        + `</div></div><div class="item-cards">${cards}</div><details class="boss-details"><summary>${esc(t.bossTable)}</summary>${table}</details></section>`;
     }
     return html;
   }
@@ -609,7 +611,7 @@
     tipEl.innerHTML = tipCache.get(key) + foot; tipEl.hidden = false; placeTip(x, y);
   }
   document.addEventListener('mouseover', e => {
-    if (S().tooltips === false) return;
+    if (S().tooltips === false && !e.target.closest?.('[data-tip-always]')) return;
     const g = e.target.closest?.('[data-item]');
     if (!g) { if (tipKey) { tipKey = null; tipEl.hidden = true; } return; }
     if (g.dataset.item + ':' + g.dataset.ilvl + S().lang !== (tipEl.dataset.cur || '')) { tipEl.dataset.cur = g.dataset.item + ':' + g.dataset.ilvl + S().lang; showTip(g, e.clientX, e.clientY); }

@@ -106,5 +106,36 @@ const Chart = (() => {
       + `<defs>${defs}</defs>${grid}${bars}${labels}</svg>`;
   }
 
-  return { build, fmtNum };
+  /**
+   * Gráfica compacta de un objeto: una barra por jugador (color de clase) con su nombre inclinado debajo.
+   * entries: [{ value, label, color, labelColor, valueText, title }] (ya ordenadas) · opts: { colors, compact, tickFmt, animate }
+   */
+  function mini(entries, opts) {
+    FONT = (getComputedStyle(document.documentElement).getPropertyValue('--font') || '').trim() || FONT;
+    const { colors, compact = false, animate = false } = opts;
+    const left = 48, right = 10, top = 12, plotH = 150;
+    const longest = Math.max(4, ...entries.map(e => String(e.label).length));
+    const bottom = Math.min(120, 20 + longest * 7);
+    const slot = Math.max(30, Math.min(56, 380 / Math.max(entries.length, 1)));
+    const W = Math.max(300, left + right + entries.length * slot), H = top + plotH + bottom;
+    const { step, top: yMax } = niceScale(Math.max(...entries.map(e => e.value), 0), 5);
+    const yOf = v => top + plotH - (v / yMax) * plotH;
+    const barW = Math.min(30, slot * 0.72);
+    let grid = '', bars = '';
+    for (let v = 0; v <= yMax + step / 2; v += step) {
+      const y = yOf(v);
+      grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="1"/>`
+        + `<text x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${colors.muted}" font-family="${FONT}">${esc(opts.tickFmt ? opts.tickFmt(v) : fmtNum(v, compact))}</text>`;
+    }
+    entries.forEach((e, i) => {
+      const cx = left + slot * i + slot / 2, y = yOf(e.value), h = Math.max(2, top + plotH - y);
+      const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 35}ms"` : '';
+      bars += `<g class="bar${animate ? ' grow' : ''}"${delay}><title>${esc(e.title || `${e.label}: ${e.valueText || e.value}`)}</title>`
+        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}"/></g>`
+        + `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}" font-family="${FONT}">${esc(e.label)}</text>`;
+    });
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMinYMin meet" font-family="${FONT}">${grid}${bars}</svg>`;
+  }
+
+  return { build, mini, fmtNum };
 })();

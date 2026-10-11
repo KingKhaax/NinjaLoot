@@ -366,3 +366,14 @@ body.compact .cell { min-height: 30px; }
 .bt-players { display: flex; flex-wrap: wrap; gap: 6px; }
 .bt-p { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; background: var(--panel2); border: 1px solid; border-left-width: 3px; font-size: 13px; white-space: nowrap; }
 .bt-p img { width: 18px; height: 18px; border-radius: 3px; }
+
+/* ---------- Tarjetas de objeto (por jefe) ---------- */
+.item-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 14px; margin-top: 10px; }
+.item-card { padding: 14px 16px 6px; border-radius: 12px; background: var(--panel2); border: 1px solid var(--border); }
+.ic-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.ic-head b { font-size: 16px; }
+.ic-head .meta { color: var(--muted); font-size: 13px; margin-top: 2px; }
+.ic-icon { width: 48px; height: 48px; border-radius: 8px; border: 2px solid; flex: none; cursor: help; }
+.ic-chart svg { display: block; max-height: 320px; }
+.boss-details { margin-top: 12px; }
+.boss-details summary { cursor: pointer; color: var(--muted); font-size: 13px; font-weight: 600; }
