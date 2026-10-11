@@ -13,6 +13,8 @@ contextBridge.exposeInMainWorld('api', {
   discordGet: () => ipcRenderer.invoke('discord:get'),
   discordSet: o => ipcRenderer.invoke('discord:set', o),
   discordInvite: () => ipcRenderer.invoke('discord:invite'),
+  discordDm: users => ipcRenderer.invoke('discord:dm', users),
+  rosterGuild: (region, realm, name) => ipcRenderer.invoke('roster:guild', region, realm, name),
   onDiscordSims: cb => ipcRenderer.on('discord:sims', (_e, ids) => cb(ids)),
   onDiscordStatus: cb => ipcRenderer.on('discord:status', (_e, s) => cb(s)),
   setZoom: f => webFrame.setZoomFactor(Math.min(1.6, Math.max(0.7, Number(f) || 1))),
