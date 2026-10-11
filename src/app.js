@@ -217,21 +217,31 @@
   function staleInfo(sim) {
     const t = T(), out = [], days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
     if (days != null && days > (Number(S().staleDays) || 7)) out.push(t.staleOld(Math.floor(days)));
-    const g = gearOf(sim), eq = sim.equippedAtSim || {};
+    const g = gearOf(sim);
     if (g) {
-      const changed = Object.entries(eq).filter(([s, v]) => g[s] && (g[s].id !== v.id || g[s].ilvl - v.ilvl >= 3)).length;
-      if (changed >= 3) out.push(t.staleGear(changed));
+      const changed = gearChanges(sim).length;
+      if (changed) out.push(t.staleGear(changed));
       const own = sim.items.filter(it => owned(sim, it)).length;
       if (own) out.push(t.staleOwned(own));
     }
     return out;
   }
+  // Piezas que han cambiado desde la sim: ranura, lo que llevaba (objeto y nivel) y lo que lleva ahora
+  const SLOT_ORDER = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet', 'finger1', 'finger2', 'trinket1', 'trinket2', 'main_hand', 'off_hand'];
+  function gearChanges(sim) {
+    const g = gearOf(sim), eq = sim.equippedAtSim || {};
+    if (!g) return [];
+    return SLOT_ORDER.filter(s => eq[s] && g[s] && (g[s].id !== eq[s].id || g[s].ilvl !== eq[s].ilvl)).map(s => ({ slot: s, from: eq[s], to: g[s] }));
+  }
   function stalePanel(sims) {
     const t = T(), rows = sims.map(s => [s, staleInfo(s)]).filter(([, r]) => r.length);
     if (!rows.length) return '';
+    const piece = x => { state.shown.add(x.id); const info = itemInfo({ id: x.id }); return { info, html: `<span class="sc-item" data-item="${x.id}" data-ilvl="${x.ilvl}" data-tip-always><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><b style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</b></span>` }; };
     return `<section class="panel card stale-panel"><div class="card-head"><h2>${esc(t.staleTitle)}</h2></div><div class="hint">${esc(t.staleHint)}</div>`
       + rows.map(([s, r]) => `<div class="stale-row">${specIcon(s) ? `<img src="${specIcon(s)}" alt="">` : ''}<b style="color:${readable(clsColor(s))}">${esc(s.character.name)}</b><span class="reasons">${esc(r.join(' · '))}</span>`
-        + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`).join('') + '</section>';
+        + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`
+        + (c => c.length ? `<ul class="stale-changes">${c.map(({ slot, from, to }) => { const a = piece(from), b = piece(to);
+          return `<li><span class="sc-slot">${esc(t.slots[slot] || slot)}</span>${from.id === to.id ? t.gearUpgraded(a.html, from.ilvl, to.ilvl) : t.gearSwapped(a.html, from.ilvl, b.html, to.ilvl)}</li>`; }).join('')}</ul>` : '')(gearChanges(s))).join('') + '</section>';
   }
   function toolbarHtml() {
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;

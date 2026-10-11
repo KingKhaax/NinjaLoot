@@ -411,7 +411,7 @@ select.txt.small { padding: 4px 8px; font-size: 13px; min-width: 190px; }
 .stale-panel h2 { color: #f0a030; }
 .stale-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); flex-wrap: wrap; }
 .stale-row img { width: 26px; height: 26px; border-radius: 4px; }
-.stale-row .reasons { flex: 1; color: var(--muted); font-size: 13.5px; }
+.stale-row .reasons { flex: 1; color: #ee5a45; font-weight: 700; font-size: 13.5px; }
 
 /* ---------- Ajustes > Versión (como WipeTime) ---------- */
 .ver-card { display: flex; align-items: center; gap: 22px; padding: 18px 22px; border-radius: 12px; border: 1px solid var(--border); background: var(--panel2); margin-bottom: 18px; }
@@ -428,3 +428,9 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 .chlog-title { margin: 22px 0 10px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 18px; }
 .chlog-row { display: grid; grid-template-columns: 64px 1fr; gap: 12px; margin-bottom: 12px; }
 .chlog-row p { margin: 0; color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.stale-changes { list-style: none; margin: 0 0 10px 36px; padding: 0; display: grid; gap: 6px; font-size: 13.5px; color: #ee5a45; }
+.stale-changes li { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.stale-changes > li > b { color: #ff7a66; }
+.sc-slot { min-width: 96px; font-weight: 700; color: #ee5a45; text-transform: capitalize; }
+.sc-item { display: inline-flex; align-items: center; gap: 5px; cursor: help; }
+.sc-item img { width: 20px; height: 20px; border-radius: 3px; border: 1px solid; }
