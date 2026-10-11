@@ -111,17 +111,21 @@ const Chart = (() => {
 
   /**
    * Gráfica compacta de un objeto: una barra por jugador (color de clase) con su nombre inclinado debajo.
-   * entries: [{ value, label, color, labelColor, tip, itemId, ilvl, gain }] (ya ordenadas) · opts: { colors, compact, tickFmt, animate }
+   * entries: [{ value, label, color, labelColor, tip, itemId, ilvl, gain, icon, iconBorder, bottomIcon, tipIcon }] (ya ordenadas) · opts: { colors, compact, tickFmt, animate }
    * tip: texto exacto al pasar el ratón por la barra; itemId: el nombre de debajo muestra el tooltip del objeto
+   * tipIcon 'top': icono del objeto encima de la barra · tipIcon 'bottom': icono del objeto debajo en vez del nombre (ambos con su tooltip)
    */
   function mini(entries, opts) {
     FONT = (getComputedStyle(document.documentElement).getPropertyValue('--font') || '').trim() || FONT;
     const { colors, compact = false, animate = false } = opts;
-    const left = 48, right = 10, top = 12, plotH = 150;
+    const topIcons = entries.some(e => e.icon && e.tipIcon === 'top');
+    const iconLabels = entries.length > 0 && entries.every(e => e.bottomIcon && e.tipIcon === 'bottom');
+    const left = 48, right = 10, top = topIcons ? 40 : 12, plotH = 150;
     const short = s => { s = String(s); return s.length > 26 ? s.slice(0, 25) + '…' : s; };
     const longest = Math.max(4, ...entries.map(e => short(e.label).length));
-    const bottom = Math.min(170, 26 + longest * 5.6);
-    const slot = Math.max(30, Math.min(56, 380 / Math.max(entries.length, 1)));
+    const bottom = iconLabels ? 44 : Math.min(170, 26 + longest * 5.6);
+    const slot = Math.max(iconLabels || topIcons ? 36 : 30, Math.min(56, 380 / Math.max(entries.length, 1)));
+    const is = Math.min(28, slot - 6);
     const W = Math.max(300, left + right + entries.length * slot), H = top + plotH + bottom;
     const { step, top: yMax } = niceScale(Math.max(...entries.map(e => e.value), 0), 5);
     const yOf = v => top + plotH - (v / yMax) * plotH;
@@ -135,10 +139,15 @@ const Chart = (() => {
     entries.forEach((e, i) => {
       const cx = left + slot * i + slot / 2, y = yOf(e.value), h = Math.max(2, top + plotH - y);
       const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 35}ms"` : '';
+      const itemAttrs = e.itemId ? ` data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}" data-tip-always` : '';
+      const icon = (href, ix, iy, border) => `<g class="ic"${itemAttrs}${e.owned ? ' opacity="0.45"' : ''}><image href="${esc(href)}" x="${ix}" y="${iy}" width="${is}" height="${is}" preserveAspectRatio="xMidYMid slice"/>`
+        + `<rect x="${ix - 0.5}" y="${iy - 0.5}" width="${is + 1}" height="${is + 1}" rx="3" fill="none" stroke="${border || '#a335ee'}" stroke-width="1.5"/></g>`;
       bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}"${delay}${e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}>${e.tip ? '' : `<title>${esc(`${e.label}: ${e.valueText || e.value}`)}</title>`}`
-        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}" stroke="#000" stroke-opacity="0.85" stroke-width="1"/></g>`
-        + `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}"${e.owned ? ' text-decoration="line-through" opacity="0.55"' : ''} font-family="${FONT}"`
-        + `${e.itemId ? ` class="lbl-item" data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}" data-tip-always` : ''}>${esc(short(e.label))}</text>`;
+        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}" stroke="#000" stroke-opacity="0.85" stroke-width="1"/></g>`;
+      if (e.icon && e.tipIcon === 'top') bars += icon(e.icon, cx - is / 2, top + plotH - h - is - 5, e.iconBorder);
+      if (iconLabels) bars += icon(e.bottomIcon, cx - is / 2, top + plotH + 8, e.labelColor);
+      else bars += `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}"${e.owned ? ' text-decoration="line-through" opacity="0.55"' : ''} font-family="${FONT}"`
+        + `${e.itemId && !e.tipIcon ? ` class="lbl-item"${itemAttrs}` : ''}>${esc(short(e.label))}</text>`;
     });
     return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMinYMin meet" font-family="${FONT}">${grid}${bars}</svg>`;
   }

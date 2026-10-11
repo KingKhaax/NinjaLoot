@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.1.10', 'Gráficas con barras simples: en «Mejor mejora por jugador» sale el icono del objeto encima de cada barra, y en la gráfica de cada jugador el icono del objeto sustituye al nombre larguísimo de debajo; al pasar el ratón por cualquiera de ellos se ve el tooltip del objeto.'],
     ['0.1.9', 'Arreglado el error «No se pudo consultar GitHub»: la búsqueda de actualizaciones ya no usa la API de GitHub (limitada a 60 consultas por hora), sino el archivo de cada versión, y guarda el resultado unos minutos.'],
     ['0.1.8', 'Sims caducadas más claras y en rojo: dice exactamente cuántos días lleva cada jugador sin una sim nueva y, pieza por pieza, qué ranura ha cambiado, qué objeto llevaba y de qué nivel, y por cuál lo ha cambiado y de qué nivel.'],
     ['0.1.7', 'Sims caducadas: NinjaLoot mira en Raider.IO el equipo actual de cada personaje, tacha las mejoras de objetos que ya lleva y avisa si la sim tiene más de X días o si ha cambiado mucho el equipo. Gráficas con barras simples o detalladas, DPS exacto al pasar el ratón por cada barra y tooltip del objeto en su icono. En Por jefe se puede elegir raid (The Venomous Abyss o The Tidebound Grotto) y jefe, y siempre empieza en Todo. Buffs corregidos: Furia del cielo, Toque místico, Veneno atrófico (−4%), Intelecto arcano (+3%) y Bendición de bronce, con sus iconos oficiales. Iconos de la barra superior sin el marco oscuro. Nueva pestaña Versión con historial y actualizaciones más rápidas que solo descargan lo que cambia.'],
@@ -13,6 +14,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.1.10', 'Simple bar charts: «Best upgrade per player» shows the item icon above each bar, and each player chart shows the item icon instead of the very long name below; hover any of them to see the item tooltip.'],
     ['0.1.9', 'Fixed the "Could not reach GitHub" error: checking for updates no longer uses the GitHub API (limited to 60 requests per hour) but each release’s own file, and caches the result for a few minutes.'],
     ['0.1.8', 'Clearer stale sims, in red: it says exactly how many days each player has gone without a new sim and, piece by piece, which slot changed, which item they had and its item level, and what they swapped it for and its item level.'],
     ['0.1.7', 'Stale sims: NinjaLoot checks each character’s current gear on Raider.IO, crosses out upgrades they already wear and warns when a sim is older than X days or the gear changed a lot. Simple or detailed bars, exact DPS when hovering each bar and the item tooltip on its icon. By boss lets you pick the raid (The Venomous Abyss or The Tidebound Grotto) and the boss, and always starts on All. Fixed buffs: Skyfury, Mystic Touch, Atrophic Poison (−4%), Arcane Intellect (+3%) and Blessing of the Bronze, with their official icons. Top bar icons without the dark frame. New Version tab with history and faster updates that only download what changed.'],
