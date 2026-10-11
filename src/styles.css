@@ -170,7 +170,8 @@ select, input[type=number] { background: var(--panel); border: 1px solid var(--b
 .about.big p { margin: 6px 0; font-size: 16px; line-height: 1.5; color: var(--text); }
 .about-es { display: inline-flex; align-items: center; gap: 6px; font-weight: 700; }
 .about-dc { display: flex; align-items: center; gap: 10px; }
-.about-dc.first { margin-top: 28px; }
+.about.big .about-dc.first { margin-top: 36px; padding-top: 22px; border-top: 1px solid var(--border); }
+.about.big .about-dc { margin: 10px 0; }
 .about-dc .muted { font-size: 13px; color: var(--muted); }
 .about .heart { color: #ff4f7b; }
 .credits { margin-top: 26px !important; font-size: 12px !important; color: var(--muted) !important; max-width: 520px; }
