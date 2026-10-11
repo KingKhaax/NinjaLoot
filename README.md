@@ -52,8 +52,9 @@ NinjaLoot does not collect, store or send personal data or telemetry. To work, i
 | [Raidbots](https://www.raidbots.com/) | When you add a Raidbots report, and at startup | Download the reports you add and the current season's boss list |
 | [Wowhead](https://www.wowhead.com/) / zamimg.com | When item names, tooltips or icons are shown | Localized item names, tooltips and icons |
 | [GitHub](https://github.com/) | At startup, and when you click update | Check for a new version and download the installer |
+| [Discord](https://discord.com/) | Only if you turn on Settings → Discord | Your own guild bot reads new messages in the channel you choose, to pick up Raidbots links. The bot token is stored encrypted on your PC and only sent to Discord |
 
-Their privacy policies: [Raidbots](https://www.raidbots.com/privacy), [Wowhead](https://www.wowhead.com/privacy), [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement).
+Their privacy policies: [Raidbots](https://www.raidbots.com/privacy), [Wowhead](https://www.wowhead.com/privacy), [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement), [Discord](https://discord.com/privacy).
 
 ## License
 

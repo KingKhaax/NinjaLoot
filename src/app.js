@@ -671,6 +671,40 @@
   }
   const closeTopModal = () => { const m = [...document.querySelectorAll('.modal-back')].pop(); if (m) { m.remove(); return true; } return false; };
 
+  // ---------- Discord: sims automáticas desde un canal ----------
+  const dcStatusText = st => {
+    const t = T();
+    if (!st || st.state === 'off') return `<span class="na">${esc(t.dcOff)}</span>`;
+    if (st.state === 'error') return `<span class="bad">${esc(t.dcErr[st.error] || st.error)}</span>`;
+    return `<span class="ok">${esc(t.dcOn(st.channel || ''))}</span>` + (st.warn === 'INTENT' ? `<div class="small-note warn">${esc(t.dcIntent)}</div>` : '');
+  };
+  async function drawDiscord(box) {
+    if (!box) return;
+    const t = T(), c = await window.api.discordGet();
+    box.innerHTML = `<h3>${esc(t.dcTitle)}</h3><p class="hint">${esc(t.dcIntro)}</p>`
+      + `<label class="switch-row" style="flex-direction:row;align-items:center"><input type="checkbox" class="switch" id="dcEnabled" ${c.enabled ? 'checked' : ''}> ${esc(t.dcEnable)}</label>`
+      + `<div class="row"><label for="dcToken">${esc(t.dcToken)}</label><input id="dcToken" class="txt" type="password" autocomplete="off" spellcheck="false" placeholder="${esc(c.hasToken ? t.dcTokenSaved : t.dcTokenPh)}" style="max-width:340px"></div>`
+      + `<div class="row"><label for="dcChannel">${esc(t.dcChannel)}</label><input id="dcChannel" class="txt" spellcheck="false" value="${esc(c.channelId)}" placeholder="${esc(t.dcChannelPh)}" style="max-width:340px"></div>`
+      + `<div class="card-tools" style="margin:12px 0"><button class="btn primary" data-dc-save>${esc(t.dcSave)}</button>${c.hasToken ? `<button class="btn" data-dc-clear>${esc(t.dcClear)}</button>` : ''}</div>`
+      + `<div class="status" id="dcStatus">${dcStatusText(c.status)}</div>`
+      + `<h3>${esc(t.dcHelpTitle)}</h3><ol class="steps">${t.dcSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`
+      + `<button class="btn small" data-open="https://discord.com/developers/applications">${ui('open')}${esc(t.dcPortal)}</button>`;
+  }
+  async function saveDiscord(box) {
+    const tok = box.querySelector('#dcToken').value.trim(), ch = box.querySelector('#dcChannel').value.trim(), en = box.querySelector('#dcEnabled').checked;
+    const r = await window.api.discordSet({ ...(tok ? { token: tok } : {}), channelId: ch, enabled: en });
+    if (ch && !r.channelId) toast(T().dcBadChannel, true);
+    drawDiscord(box);
+  }
+  window.api.onDiscordStatus?.(st => { const el = document.getElementById('dcStatus'); if (el) el.innerHTML = dcStatusText(st); });
+  // Enlaces nuevos en el canal: se añaden solos a Gráficas (los repetidos se ignoran sin avisar)
+  window.api.onDiscordSims?.(async ids => {
+    for (const id of ids) {
+      if (state.sims.some(s => s.id === id)) continue;
+      if (await addSim(id, false, true) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === id)?.character.name || id}`);
+    }
+  });
+
   function openSettings(tab = 'general') {
     const back = document.createElement('div');
     back.className = 'modal-back';
@@ -678,7 +712,7 @@
     const close = () => back.remove();
     const draw = view => {
       const t = T(), s = S();
-      const tabs = [['general', t.tabGeneral], ['appearance', t.tabAppearance], ['update', t.tabUpdate], ['about', t.tabAbout]];
+      const tabs = [['general', t.tabGeneral], ['appearance', t.tabAppearance], ['discord', t.tabDiscord], ['update', t.tabUpdate], ['about', t.tabAbout]];
       const check = (key, label) => `<div class="row"><label for="s-${key}">${esc(label)}</label><input type="checkbox" id="s-${key}" data-key="${key}" ${s[key] ? 'checked' : ''}></div>`;
       const cur = k => hex((s.colors || {})[k]) || hex(getComputedStyle(document.documentElement).getPropertyValue(`--${k}`).trim()) || '#000000';
       const views = {
@@ -696,6 +730,7 @@
           + `<h3>${esc(t.customColors)}</h3><div class="colors">`
           + [['bg', t.colorBg], ['panel', t.colorPanel], ['accent', t.colorAccent], ['text', t.colorText]].map(([k, l]) => `<label>${esc(l)}<input type="color" data-color="${k}" value="${cur(k)}"></label>`).join('')
           + `</div><button class="btn small" data-reset-colors>${esc(t.resetColors)}</button>`,
+        discord: () => `<div id="dcBox"><div class="spinner"></div></div>`,
         update: () => `<div id="updBox"></div>`,
         about: () => `<div class="about big"><img src="assets/logo.png" alt="" width="120" height="120"><div>`
           + `<h2>NinjaLoot <span class="v">v${esc(state.info.version)}</span></h2>`
@@ -710,12 +745,15 @@
         + `<button class="btn side-close" data-close>${esc(t.close)}</button></aside><section class="pane">${views[view]()}</section></div>`;
       back.dataset.view = view;
       if (view === 'update') runUpdateCheck(back.querySelector('#updBox'));
+      if (view === 'discord') drawDiscord(back.querySelector('#dcBox'));
     };
     back.addEventListener('mousedown', e => { if (e.target === back) close(); });
     back.addEventListener('click', e => {
       if (e.target.closest('[data-close]')) return close();
       const tb = e.target.closest('[data-tab]'); if (tb) return draw(tb.dataset.tab);
       const th = e.target.closest('[data-set-theme]'); if (th) { S().theme = th.dataset.setTheme; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); return; }
+      if (e.target.closest('[data-dc-save]')) return saveDiscord(back.querySelector('#dcBox'));
+      if (e.target.closest('[data-dc-clear]')) { window.api.discordSet({ clearToken: true, enabled: false }).then(() => drawDiscord(back.querySelector('#dcBox'))); return; }
       if (e.target.closest('[data-reset-colors]')) { S().colors = null; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); }
     });
     back.addEventListener('input', e => {
