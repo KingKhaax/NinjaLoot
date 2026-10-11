@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.1.16', 'Exportar datos a CSV (Excel, Google Sheets) o JSON con todas las mejoras de todas las sims. Nueva vista «Comparar sims» en Simulación personal: una fila por objeto y una columna por sim (1 objetivo 5 min, 5 objetivos 1 min, raid, míticas…), con la mejor resaltada; cada sim muestra su tipo de pelea. «Dónde tirar moneda» ahora es un plan para varias semanas que no gasta dos monedas en la misma ranura. Los enlaces pegados sin espacio se separan solos.'],
     ['0.1.15', 'Sims automáticas desde Discord (Ajustes → Discord): conecta el bot NinjaLoot de tu guild a un canal y, mientras el programa está abierto, cada enlace de Raidbots que se pegue ahí se añade solo a Gráficas. El token del bot se guarda cifrado en tu PC. Incluye los pasos para crear el bot.'],
     ['0.1.14', 'Simulación personal con huecos fijos para cada tipo de contenido: Raid, Míticas+ y Delves. Cada hueco tiene su propia caja para pegar la sim y se queda en el hueco donde la cargas; las sims de otro tipo salen como un hueco más. Las ranuras de la tabla empiezan en mayúscula.'],
     ['0.1.13', 'Nuevo diseño más sobrio y profesional: fondos gris oscuro neutro en vez de morado, tarjetas planas con borde fino, el morado solo en lo activo (botón principal, pestaña y opción elegidas), sin degradados ni brillos, barras de las gráficas planas y títulos de sección más discretos. También en el tema claro.'],
@@ -19,6 +20,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.1.16', 'Export data to CSV (Excel, Google Sheets) or JSON with every upgrade from all sims. New «Compare sims» view in Personal simulation: one row per item and one column per sim (1 target 5 min, 5 targets 1 min, raid, Mythic+…), with the best one highlighted; each sim shows its fight type. «Where to use a coin» is now a plan over several weeks that never spends two coins on the same slot. Links pasted without a space are split automatically.'],
     ['0.1.15', 'Automatic sims from Discord (Settings → Discord): connect your guild’s NinjaLoot bot to a channel and, while the program is open, every Raidbots link posted there is added to Charts by itself. The bot token is stored encrypted on your PC. Includes the steps to create the bot.'],
     ['0.1.14', 'Personal simulation with fixed slots for each content type: Raid, Mythic+ and Delves. Each slot has its own box to paste the sim, and the sim stays in the slot you loaded it into; sims of other types show up as an extra slot. Slot names in the table start with a capital letter.'],
     ['0.1.13', 'New, more sober and professional design: neutral dark grey backgrounds instead of purple, flat cards with thin borders, purple only for what is active (main button, selected tab and option), no gradients or glows, flat chart bars and quieter section titles. Also in the light theme.'],

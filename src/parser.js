@@ -148,6 +148,12 @@ function parseReport(json, id) {
     equippedAtSim,
     baseDps: Math.round(base),
     difficulty: detectDifficulty(items, raw),
+    // Tipo de pelea simulada (p. ej. Patchwerk, 1 objetivo, 300 s) para comparar sims 1T/5T, 1 min/5 min...
+    fight: {
+      style: String((sim.options && sim.options.fight_style) || (raw && raw.fightStyle) || ''),
+      targets: Number((sim.options && sim.options.desired_targets) || (raw && raw.enemyCount)) || null,
+      secs: Number((sim.options && sim.options.max_time) || (raw && raw.fightLength)) || null,
+    },
     gear: extractGear(raw && raw.character) || extractGear(player) || null,
     items,
   };

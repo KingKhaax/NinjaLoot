@@ -400,10 +400,11 @@
         + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
     }).join('');
     html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
-    const pm = S().persMode || 'all';
-    html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button><button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div>`
+    const pm = S().persMode === 'cmp' && !multi ? 'all' : (S().persMode || 'all');
+    html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button>${multi ? `<button data-pmode="cmp" class="${pm === 'cmp' ? 'on' : ''}">${esc(t.pCompare)}</button>` : ''}<button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div>`
       + (pm === 'all' && catKeys.length > 1 ? `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-pcat="all" class="${pcat === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${catKeys.map(k => `<button data-pcat="${k}" class="${pcat === k ? 'on' : ''}">${esc(catName(k))}</button>`).join('')}</div></div>` : '') + `</div>`;
     if (pm === 'coin') return html + coinSection(p);
+    if (pm === 'cmp') return html + compareSection(list);
     // Comparativa: la mejor pieza de cada fuente (raid, mazmorras...) para ver de un vistazo dónde está el mayor salto
     if (catKeys.length > 1) {
       const bestOf = k => p.items.find(it => catOfSrc(srcOf(it)) === k && !owned(p, it)) || p.items.find(it => catOfSrc(srcOf(it)) === k);
@@ -421,10 +422,42 @@
     return html;
   }
 
-  // Dónde tirar moneda: tantas piezas de jefe como monedas tengas (las que más DPS te dan) y de qué jefe sale cada una
+  // Comparar sims del mismo personaje (1T 5m, 5T 1m, raid, míticas...): una fila por objeto y una columna por sim
+  function compareSection(list) {
+    const t = T(), min = Number(S().minGain) || 0, rows = new Map();
+    list.forEach((r, si) => r.items.forEach(it => {
+      const k = `${it.id}:${it.ilvl}`;
+      if (!rows.has(k)) rows.set(k, { it, gains: [] });
+      const row = rows.get(k);
+      if (!(row.gains[si] && row.gains[si].gain >= it.gain)) row.gains[si] = it;
+    }));
+    const sorted = [...rows.values()].map(r => ({ ...r, top: Math.max(...r.gains.filter(Boolean).map(g => g.gain)) })).filter(r => r.top >= min).sort((a, b) => b.top - a.top);
+    const head = list.map((r, i) => `<th class="cmp-col"><span class="sim-dot" style="background:${SIM_COLORS[i % SIM_COLORS.length]}"></span>${esc(simLabel(r))}</th>`).join('');
+    const body = sorted.map(({ it, gains, top }) => {
+      state.shown.add(it.id);
+      const info = itemInfo(it), st = srcText(it);
+      return `<tr data-item="${it.id}" data-ilvl="${it.ilvl}"><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
+        + `<td>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</td><td>${it.ilvl || ''}</td><td class="bs">${st ? esc(st.name) : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
+        + list.map((_, i) => { const g = gains[i]; return g ? `<td class="cmp-cell${g.gain === top && gains.filter(Boolean).length > 1 ? ' cmp-best' : ''}">+${nf().format(g.gain)} <span class="meta">(${g.pct.toFixed(2)}%)</span></td>` : `<td class="cmp-cell meta">—</td>`; }).join('')
+        + `</tr>`;
+    }).join('');
+    return `<section class="panel card"><div class="card-head"><h2>${esc(t.cmpTitle)}</h2></div><div class="hint">${esc(t.cmpHint)}</div>`
+      + `<div class="ptable-wrap"><table class="ptable cmp-table"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.colIlvl)}</th><th>${esc(t.colBoss)}</th>${head}</tr></thead><tbody>${body}</tbody></table></div></section>`;
+  }
+
+  // Dónde tirar moneda: plan para varias semanas, una moneda por ranura (anillos y abalorios, hasta 2), de más a menos DPS
   function coinSection(p) {
     const t = T(), coins = Math.max(1, Math.min(20, Number(S().coins) || 5));
-    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, coins);
+    const cands = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain);
+    // Si ya te llevas un casco con la moneda 1, otro casco no aporta: se salta a la mejor pieza de otra ranura
+    const group = sl => /^finger/.test(sl) ? 'finger' : /^trinket/.test(sl) ? 'trinket' : sl || '?', cap = g => g === 'finger' || g === 'trinket' ? 2 : 1;
+    const used = {}, ids = new Set(), rows = [];
+    for (const r of cands) {
+      if (rows.length >= coins) break;
+      const g = group(r.it.slot);
+      if ((used[g] || 0) >= cap(g) || ids.has(r.it.id)) continue;
+      used[g] = (used[g] || 0) + 1; ids.add(r.it.id); rows.push(r);
+    }
     const pick = `<label class="coin-count">${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     rows.forEach(({ it }, i) => {
@@ -459,7 +492,9 @@
     return top.length > 1 && top[0][1] / tot < 0.75 ? 'mixed' : (top[0] || ['other'])[0];
   }
   const catName = k => k === 'mixed' ? T().persMixed : (T()['cat' + k[0].toUpperCase() + k.slice(1)] || k);
-  const simLabel = r => [catName(simCategory(r)), r.difficulty ? DIFF_TAG[r.difficulty] : ''].filter(Boolean).join(' ');
+  // Tipo de pelea: «1T 5m», «5T 1m»... (y el estilo si no es el normal, p. ej. DungeonSlice)
+  const fightLabel = r => r.fight && r.fight.targets ? `${r.fight.targets}T ${Math.round((r.fight.secs || 300) / 60)}m${r.fight.style && !/patchwerk/i.test(r.fight.style) ? ' ' + r.fight.style : ''}` : '';
+  const simLabel = r => [catName(simCategory(r)), r.difficulty ? DIFF_TAG[r.difficulty] : '', fightLabel(r)].filter(Boolean).join(' ');
   const SIM_COLORS = ['#b04df5', '#3fcf6a', '#f0a030', '#3fc7eb', '#ee5a45', '#e8d44d'];
   const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; return d == null ? '' : d < 1 ? T().simToday : T().simDays(d); };
 
@@ -510,6 +545,7 @@
     $('#appSub').textContent = t.appSub;
     $('#urlInput').placeholder = t.urlPlaceholder;
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
+    $('#btnExportData').textContent = t.exportData; $('#btnExportData').disabled = !state.sims.length;
     $('#btnClear').disabled = !state.sims.length;
     $('#langLabel').textContent = t.language; renderLangMenu();
     $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers;$('#navPers').textContent = t.navPersonal;
@@ -576,6 +612,8 @@
   const errText = r => `${T()['err' + r.error] || r.error}${r.detail ? ` (${r.detail})` : ''}`;
 
   function extractIds(text) {
+    // Enlaces pegados sin espacio («…abcdhttps://…»): se separan antes de leerlos
+    text = String(text || '').replace(/(?!^)(https?:\/\/)/gi, ' $1');
     const ids = [], re = /raidbots\.com\/simbot\/report\/([A-Za-z0-9]+)/gi;
     let m;
     while ((m = re.exec(text))) ids.push(m[1]);
@@ -619,6 +657,39 @@
   }
 
   // ---------- Exportar a PNG ----------
+  // Exportar todas las mejoras de todas las sims a CSV (Excel / Google Sheets) o JSON
+  function exportRows() {
+    const rows = [];
+    for (const sim of state.sims) for (const it of sim.items) {
+      const info = itemInfo(it), src = srcText(it), s = srcOf(it);
+      rows.push({
+        player: sim.character.name, realm: sim.character.realm || '', class: clsName(sim), spec: specName(sim),
+        difficulty: sim.difficulty ? DIFF_TAG[sim.difficulty] : '', baseDps: Math.round(sim.baseDps || 0),
+        itemId: it.id, item: info.name, slot: T().slots[it.slot] || it.slot || '', ilvl: it.ilvl || '',
+        source: s ? catName(catOfSrc(s)) : '', boss: src ? src.name : '', instance: src ? src.sub : '',
+        dpsGain: Math.round(it.gain), pctGain: Number((it.pct || 0).toFixed(2)), owned: owned(sim, it) ? 1 : 0, simUrl: sim.url,
+      });
+    }
+    return rows.sort((a, b) => a.player.localeCompare(b.player) || b.dpsGain - a.dpsGain);
+  }
+  function exportData(fmt) {
+    const rows = exportRows();
+    if (!rows.length) return toast(T().noSimsToExport, true);
+    let data, type;
+    if (fmt === 'json') { data = JSON.stringify({ app: 'NinjaLoot', version: state.info.version, exported: new Date().toISOString(), rows }, null, 2); type = 'application/json'; }
+    else {
+      const cols = Object.keys(rows[0]), cell = v => { v = String(v ?? ''); return /[";\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v; };
+      // «;» y BOM: Excel en español lo abre bien con doble clic
+      data = '﻿' + [cols.join(';'), ...rows.map(r => cols.map(c => cell(r[c])).join(';'))].join('\r\n'); type = 'text/csv';
+    }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([data], { type }));
+    a.download = `ninjaloot-${new Date().toISOString().slice(0, 10)}.${fmt}`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+    toast(T().exported(rows.length));
+  }
+
   async function exportChart(key) {
     try {
       const svg = document.querySelector(`[data-chart="${CSS.escape(key)}"] svg`);
@@ -998,6 +1069,7 @@
   window.addEventListener('focus', () => trackVersion());
 
   // ---------- Eventos ----------
+  $('#btnExportData').onclick = () => modal({ title: T().exportData, body: `<p>${esc(T().exportHint)}</p>`, actions: [{ label: T().cancel }, { label: 'JSON', onclick: () => exportData('json') }, { label: 'CSV (Excel)', cls: 'primary', onclick: () => exportData('csv') }] });
   $('#btnAdd').onclick = () => { const v = $('#urlInput').value; if (v.trim()) { $('#urlInput').value = ''; addFromText(v); } };
   $('#btnPaste').onclick = async () => { try { const v = await navigator.clipboard.readText(); if (v) addFromText(v); } catch { $('#urlInput').focus(); } };
   $('#btnClear').onclick = clearAll;

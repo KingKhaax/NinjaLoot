@@ -38,3 +38,8 @@
 .pslot-sim > div { flex: 1; min-width: 0; }
 .pslot-form { display: flex; gap: 6px; }
 .pslot-form .txt { min-width: 0; padding: 7px 10px; font-size: 13px; }
+
+/* Comparar sims: una columna por sim, la mejor de cada fila resaltada */
+.cmp-table .cmp-col { white-space: nowrap; }
+.cmp-table .cmp-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cmp-table .cmp-best { color: #3fcf6a; font-weight: 700; background: color-mix(in srgb, #3fcf6a 8%, transparent); }
