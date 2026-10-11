@@ -5,9 +5,10 @@
 //   GET  /api/discord?channel=ID                           -> { channel, lastId }  (al conectar)
 //   GET  /api/discord?op=history&channel=ID&since=MS       -> { channel, lastId, sims }  (sims publicadas desde «since», p. ej. el reinicio semanal)
 //   GET  /api/discord?channel=ID&after=MSG_ID              -> { lastId, ids, sims, empty }
-//   POST /api/discord?op=dm  { channel, users: [{ id, chars: [nombres] }] }  -> { sent, failed }
-//        Recordatorio por mensaje privado a quien le falta la sim. Solo a usuarios que hayan escrito en ese canal
-//        y como mucho una tanda por canal cada 3 horas, para que nadie pueda usar el bot para hacer spam.
+//   POST /api/discord?op=dm  { channel, rl, missing: [nombres], total }  -> { sent }
+//        Manda al RL (por mensaje privado) la lista de quién no ha subido su sim esta semana.
+//        Solo a un usuario que haya escrito en ese canal y como mucho una vez cada 30 minutos por canal, para que nadie
+//        pueda usar el bot para escribir a desconocidos.
 
 const API = 'https://discord.com/api/v10';
 const RAIDBOTS = /raidbots\.com\/(?:simbot\/report|reports)\/([A-Za-z0-9]+)/g;
@@ -60,31 +61,34 @@ async function history(channel, since, maxPages = 6) {
 }
 
 async function sendDms(body) {
-  const channel = String(body.channel || '');
-  const users = Array.isArray(body.users) ? body.users.slice(0, 40) : [];
-  if (!/^\d{15,25}$/.test(channel) || !users.length) return [400, { error: 'BAD_REQUEST' }];
+  const channel = String(body.channel || ''), rl = String(body.rl || '');
+  const missing = (Array.isArray(body.missing) ? body.missing : []).map(String).filter(n => NAME.test(n)).slice(0, 200);
+  const total = Math.max(missing.length, Math.min(500, Number(body.total) || 0));
+  if (!/^\d{15,25}$/.test(channel) || !/^\d{15,25}$/.test(rl)) return [400, { error: 'BAD_REQUEST' }];
   const last = dmLast.get(channel) || 0;
-  if (Date.now() - last < 3 * 3600 * 1000) return [429, { error: 'DM_COOLDOWN', retry: last + 3 * 3600 * 1000 - Date.now() }];
-  // Solo a quien haya escrito en ese canal en los últimos 60 días
+  if (Date.now() - last < 30 * 60 * 1000) return [429, { error: 'DM_COOLDOWN', retry: last + 30 * 60 * 1000 - Date.now() }];
+  // Solo a quien haya escrito en ese canal en los últimos 60 días (el RL)
   const recent = await history(channel, Date.now() - 60 * 864e5, 8);
-  const authors = new Set(recent.map(m => m.author && m.author.id).filter(Boolean));
+  if (!recent.some(m => m.author && m.author.id === rl)) return [403, { error: 'RL_NOT_IN_CHANNEL' }];
   const ch = await discord(`/channels/${channel}`);
   const guild = ch.guild_id ? await discord(`/guilds/${ch.guild_id}`).catch(() => null) : null;
   dmLast.set(channel, Date.now());
-  const sent = [], failed = [];
-  for (const u of users) {
-    const id = String(u.id || ''), chars = (Array.isArray(u.chars) ? u.chars : []).map(String).filter(n => NAME.test(n)).slice(0, 5);
-    if (!/^\d{15,25}$/.test(id) || !chars.length || !authors.has(id)) { failed.push({ id, error: 'NOT_IN_CHANNEL' }); continue; }
-    try {
-      const dm = await discord('/users/@me/channels', { method: 'POST', body: JSON.stringify({ recipient_id: id }) });
-      const content = `👋 ¡Hola! Te falta subir tu simulación de Raidbots de esta semana para **${chars.join(', ')}**.\n`
-        + `Pega el enlace de tu Droptimizer en el canal **#${ch.name}**${guild ? ` de **${guild.name}**` : ''} para que salga en NinjaLoot. ¡Gracias!\n`
-        + `-# Aviso enviado por el bot NinjaLoot a petición de tu guild.`;
-      await discord(`/channels/${dm.id}/messages`, { method: 'POST', body: JSON.stringify({ content, allowed_mentions: { parse: [] } }) });
-      sent.push(id);
-    } catch (e) { failed.push({ id, error: e.status === 403 ? 'DM_CLOSED' : 'ERROR' }); }
+  const head = missing.length
+    ? `📋 **Sims de esta semana${guild ? ` en ${guild.name}` : ''}:** ${total - missing.length} de ${total} subidas.\nFaltan por subir su simulación (${missing.length}):`
+    : `✅ **Sims de esta semana${guild ? ` en ${guild.name}` : ''}:** ¡todo el roster (${total}) ha subido su simulación!`;
+  // Discord permite 2000 caracteres por mensaje: la lista se parte en varios si hace falta
+  const parts = [], lines = missing.map(n => `• ${n}`);
+  let cur = head;
+  for (const l of lines) { if ((cur + '\n' + l).length > 1900) { parts.push(cur); cur = l; } else cur += '\n' + l; }
+  parts.push(cur + `\n-# Enviado por el bot NinjaLoot desde el canal #${ch.name}.`);
+  try {
+    const dm = await discord('/users/@me/channels', { method: 'POST', body: JSON.stringify({ recipient_id: rl }) });
+    for (const content of parts) await discord(`/channels/${dm.id}/messages`, { method: 'POST', body: JSON.stringify({ content, allowed_mentions: { parse: [] } }) });
+    return [200, { sent: 1 }];
+  } catch (e) {
+    dmLast.delete(channel);
+    return [e.status === 403 ? 403 : 502, { error: e.status === 403 ? 'DM_CLOSED' : 'ERROR' }];
   }
-  return [200, { sent, failed }];
 }
 
 module.exports = async (req, res) => {

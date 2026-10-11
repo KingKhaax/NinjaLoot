@@ -266,7 +266,7 @@ ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.en
 ipcMain.handle('discord:dm', async (_e, users) => {
   const c = dcLoad();
   if (!c.channelId) return { error: 'NO_CHANNEL' };
-  try { return await relay('op=dm', { method: 'POST', body: JSON.stringify({ channel: c.channelId, users }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
+  try { return await relay('op=dm', { method: 'POST', body: JSON.stringify({ ...(users || {}), channel: c.channelId }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
 });
 // Miembros de una guild (Raider.IO) para el roster
 ipcMain.handle('roster:guild', async (_e, region, realm, name) => {
