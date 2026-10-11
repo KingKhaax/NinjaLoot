@@ -98,6 +98,21 @@ ipcMain.handle('icon:data', async (_e, href) => {
 });
 
 // --- Jefes de la temporada activa (Raidbots), con caché por si no hay conexión ---
+// --- Equipo actual del personaje (Raider.IO), para detectar mejoras que ya lleva y sims caducadas ---
+const RIO_SLOT = { mainhand: 'main_hand', offhand: 'off_hand', shoulders: 'shoulder', wrists: 'wrist' };
+ipcMain.handle('gear:fetch', async (_e, region, realm, name) => {
+  if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+  try {
+    const q = new URLSearchParams({ region, realm, name, fields: 'gear' });
+    const res = await net.fetch(`https://raider.io/api/v1/characters/profile?${q}`, { headers: UA });
+    if (res.status === 400 || res.status === 404) return { ok: false, error: 'NOT_FOUND' };
+    if (!res.ok) return { ok: false, error: 'HTTP', detail: res.status };
+    const j = await res.json(), items = {};
+    for (const [k, v] of Object.entries((j.gear && j.gear.items) || {})) if (v && v.item_id) items[RIO_SLOT[k] || k] = { id: v.item_id, ilvl: v.item_level || 0 };
+    return { ok: true, items, crawled: j.last_crawled_at ? Date.parse(j.last_crawled_at) : null, fetched: Date.now() };
+  } catch (e) { return { ok: false, error: 'NETWORK', detail: String(e.message || e) }; }
+});
+
 ipcMain.handle('bosses:get', async () => {
   const cacheFile = path.join(userData(), 'bosses-cache.json');
   try {

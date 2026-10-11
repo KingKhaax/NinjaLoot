@@ -70,19 +70,22 @@ const Chart = (() => {
       defs += `<linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${shade(base, 0.35)}"/><stop offset="0.45" stop-color="${base}"/><stop offset="1" stop-color="${shade(base, -0.35)}"/></linearGradient>`;
       defs += `<linearGradient id="${gid}v" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/></linearGradient>`;
       const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 45}ms"` : '';
-      bars += `<g class="bar${animate ? ' grow' : ''}" data-id="${esc(e.id ?? i)}"${e.itemId ? ` data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}"` : ''}${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
-        + (e.itemId ? '' : `<title>${esc(e.title || e.label)}</title>`)
+      // Con tipIcon ('top'/'bottom') el tooltip del objeto va en ese icono y la barra muestra solo su mejora exacta (e.tip)
+      const itemAttrs = e.itemId ? ` data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}" data-tip-always` : '';
+      const onBar = e.itemId && !e.tipIcon;
+      bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}" data-id="${esc(e.id ?? i)}"${onBar ? itemAttrs : e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
+        + (onBar || e.tip ? '' : `<title>${esc(e.title || e.label)}</title>`)
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid})"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
         + `<rect x="${x + 4}" y="${y + 2}" width="${Math.max(3, barW * 0.14)}" height="${Math.max(0, h - 4)}" rx="2" fill="#fff" opacity="0.22"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
       const ty = y - 8;
+      bars += '</g>';
       if (showIcons && e.icon) {
         const s = 34, ix = cx - s / 2, iy = ty - s + 6;
-        bars += `<image href="${esc(e.icon)}" x="${ix}" y="${iy}" width="${s}" height="${s}" preserveAspectRatio="xMidYMid slice"/>`
-          + `<rect x="${ix - 0.5}" y="${iy - 0.5}" width="${s + 1}" height="${s + 1}" rx="3" fill="none" stroke="${e.iconBorder || '#a335ee'}" stroke-width="2"/>`;
+        bars += `<g class="ic"${e.tipIcon === 'top' ? itemAttrs : ''}><image href="${esc(e.icon)}" x="${ix}" y="${iy}" width="${s}" height="${s}" preserveAspectRatio="xMidYMid slice"/>`
+          + `<rect x="${ix - 0.5}" y="${iy - 0.5}" width="${s + 1}" height="${s + 1}" rx="3" fill="none" stroke="${e.iconBorder || '#a335ee'}" stroke-width="2"/></g>`;
       }
-      bars += '</g>';
 
       // Etiquetas inferiores: icono (clase u objeto), nombre y subtítulo
       let ly = top + plotH + 12;
@@ -91,13 +94,13 @@ const Chart = (() => {
         ly += 22;
       }
       if (e.bottomIcon) {
-        labels += `<image href="${esc(e.bottomIcon)}" x="${cx - 16}" y="${ly}" width="32" height="32"/>`
-          + `<rect x="${cx - 16.5}" y="${ly - 0.5}" width="33" height="33" rx="3" fill="none" stroke="${e.color || colors.axis}" stroke-width="1.5"/>`;
+        labels += `<g class="ic"${e.tipIcon === 'bottom' ? itemAttrs : ''}><image href="${esc(e.bottomIcon)}" x="${cx - 16}" y="${ly}" width="32" height="32"/>`
+          + `<rect x="${cx - 16.5}" y="${ly - 0.5}" width="33" height="33" rx="3" fill="none" stroke="${e.color || colors.axis}" stroke-width="1.5"/></g>`;
         ly += 46;
       } else ly += 12;
       const lines = wrapped[i];
       lines.forEach((ln, k) => {
-        labels += `<text x="${cx}" y="${ly + k * (ls + 2)}" text-anchor="middle" font-size="${ls}" font-weight="700" fill="${e.labelColor || colors.text}" stroke="${colors.bg}" stroke-width="3" paint-order="stroke" stroke-linejoin="round" font-family="${FONT}">${esc(ln)}</text>`;
+        labels += `<text x="${cx}" y="${ly + k * (ls + 2)}" text-anchor="middle" font-size="${ls}" font-weight="700" fill="${e.labelColor || colors.text}"${e.owned ? ' text-decoration="line-through" opacity="0.55"' : ''} stroke="${colors.bg}" stroke-width="3" paint-order="stroke" stroke-linejoin="round" font-family="${FONT}">${esc(ln)}</text>`;
       });
       if (e.sub) labels += `<text x="${cx}" y="${ly + lines.length * (ls + 2)}" text-anchor="middle" font-size="12" font-weight="600" fill="${e.subColor || colors.muted}" font-family="${FONT}">${esc(e.sub)}</text>`;
     });
@@ -108,14 +111,16 @@ const Chart = (() => {
 
   /**
    * Gráfica compacta de un objeto: una barra por jugador (color de clase) con su nombre inclinado debajo.
-   * entries: [{ value, label, color, labelColor, valueText, title }] (ya ordenadas) · opts: { colors, compact, tickFmt, animate }
+   * entries: [{ value, label, color, labelColor, tip, itemId, ilvl, gain }] (ya ordenadas) · opts: { colors, compact, tickFmt, animate }
+   * tip: texto exacto al pasar el ratón por la barra; itemId: el nombre de debajo muestra el tooltip del objeto
    */
   function mini(entries, opts) {
     FONT = (getComputedStyle(document.documentElement).getPropertyValue('--font') || '').trim() || FONT;
     const { colors, compact = false, animate = false } = opts;
     const left = 48, right = 10, top = 12, plotH = 150;
-    const longest = Math.max(4, ...entries.map(e => String(e.label).length));
-    const bottom = Math.min(120, 20 + longest * 7);
+    const short = s => { s = String(s); return s.length > 26 ? s.slice(0, 25) + '…' : s; };
+    const longest = Math.max(4, ...entries.map(e => short(e.label).length));
+    const bottom = Math.min(170, 26 + longest * 5.6);
     const slot = Math.max(30, Math.min(56, 380 / Math.max(entries.length, 1)));
     const W = Math.max(300, left + right + entries.length * slot), H = top + plotH + bottom;
     const { step, top: yMax } = niceScale(Math.max(...entries.map(e => e.value), 0), 5);
@@ -130,11 +135,12 @@ const Chart = (() => {
     entries.forEach((e, i) => {
       const cx = left + slot * i + slot / 2, y = yOf(e.value), h = Math.max(2, top + plotH - y);
       const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 35}ms"` : '';
-      bars += `<g class="bar${animate ? ' grow' : ''}"${delay}><title>${esc(e.title || `${e.label}: ${e.valueText || e.value}`)}</title>`
-        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}"/></g>`
-        + `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}" font-family="${FONT}">${esc(e.label)}</text>`;
+      bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}"${delay}${e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}>${e.tip ? '' : `<title>${esc(`${e.label}: ${e.valueText || e.value}`)}</title>`}`
+        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}" stroke="#000" stroke-opacity="0.85" stroke-width="1"/></g>`
+        + `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}"${e.owned ? ' text-decoration="line-through" opacity="0.55"' : ''} font-family="${FONT}"`
+        + `${e.itemId ? ` class="lbl-item" data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}" data-tip-always` : ''}>${esc(short(e.label))}</text>`;
     });
-    return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="xMinYMin meet" font-family="${FONT}">${grid}${bars}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMinYMin meet" font-family="${FONT}">${grid}${bars}</svg>`;
   }
 
   return { build, mini, fmtNum };

@@ -131,12 +131,21 @@ function parseReport(json, id) {
   }
   const items = [...best.values()].sort((a, b) => b.gain - a.gain);
   const character = raw && raw.character || {};
+  // Para comprobar el equipo actual (Raider.IO): región, reino y lo que llevaba puesto al simular
+  const ident = (raw && raw.profile && raw.profile.identity) || {}, armory = (raw && raw.armory) || {};
+  const equippedAtSim = {};
+  for (const [k, v] of Object.entries((raw && raw.droptimizer && raw.droptimizer.equipped) || {})) {
+    const s = normSlot(k);
+    if (s && v && v.id) equippedAtSim[s] = { id: v.id, ilvl: ilvlOf(v) || v.itemLevel || 0 };
+  }
   return {
     id,
     url: `https://www.raidbots.com/simbot/report/${id}`,
     title: (json.simbot && (json.simbot.publicTitle || json.simbot.title)) || '',
     fetchedAt: Date.now(),
-    character: { name: player.name || character.name || id, realm: character.realm || '', cls, spec: detectSpec(player, cls) },
+    character: { name: player.name || character.name || id, realm: character.realm || ident.realm || armory.realm || '', region: ident.region || armory.region || '', cls, spec: detectSpec(player, cls) },
+    simDate: (json.simbot && (json.simbot.date || json.simbot.jobEnqueued)) || null,
+    equippedAtSim,
     baseDps: Math.round(base),
     difficulty: detectDifficulty(items, raw),
     gear: extractGear(raw && raw.character) || extractGear(player) || null,

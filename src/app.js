@@ -7,13 +7,13 @@
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, checkGear: true, staleDays: 7, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
     settings: { ...DEFAULTS, ...load('ninjaloot.settings', {}) },
     sims: [], loading: new Set(), names: { es: {}, en: {}, fr: {}, de: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'home', personal: load('ninjaloot.personal', null), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    view: 'home', personal: load('ninjaloot.personal', null), gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
   const S = () => state.settings;
@@ -107,7 +107,8 @@
     }
     return list;
   }
-  const bestOf = sim => sim.items.find(i => i.gain >= (Number(S().minGain) || 0)) || sim.items[0];
+  // Mejor mejora: la primera que supere el mínimo y que no lleve ya puesta (Raider.IO)
+  const bestOf = sim => sim.items.find(i => i.gain >= (Number(S().minGain) || 0) && !owned(sim, i)) || sim.items[0];
   const clsName = sim => sim.character.cls ? T().classes[sim.character.cls] : '';
   // Especialización: nombre localizado e icono propio (cada spec tiene el suyo; si no se reconoce, icono de clase)
   const specKey = sim => String(sim.character.spec || '').toLowerCase().replace(/[^a-z]/g, '');
@@ -184,6 +185,54 @@
   // Filtro de fuente efectivo: si el guardado no corresponde a ninguna fuente de las simulaciones actuales, se usa "Todo"
   function srcCats() { const cats = new Set(); for (const s of act0()) for (const it of s.items) cats.add(catOfSrc(srcOf(it))); return cats; }
   const effCat = () => S().srcCat !== 'all' && srcCats().has(S().srcCat) ? S().srcCat : 'all';
+  // Filtros de raid y jefe en "Por jefe" (si lo guardado ya no existe en la temporada, se usa "todas"/"todos")
+  const effRaid = () => state.bosses.groups.some(g => g.id === S().raidPick) ? S().raidPick : 'all';
+  const raidBossList = () => state.bosses.groups.filter(g => effRaid() === 'all' || g.id === effRaid()).flatMap(g => g.bosses);
+  const effBossPick = () => raidBossList().some(b => b.id === S().bossPick) ? S().bossPick : 'all';
+  const encAllowed = enc => effBossPick() !== 'all' ? enc === effBossPick() : effRaid() === 'all' || raidBossList().some(b => b.id === enc);
+  // Estilo de barras por vista: en "por jefe" simples por defecto y en "por jugador" detalladas
+  const barKey = () => S().chartMode === 'player' ? 'barStylePlayer' : 'barStyleBoss';
+  const detailed = () => (S()[barKey()] || (S().chartMode === 'player' ? 'detailed' : 'simple')) === 'detailed';
+  const exactTip = (name, gain, pct) => `${name}: +${nf().format(gain)} DPS (${pct.toFixed(2)}%)`;
+
+  // ---------- Sims caducadas: equipo actual de cada personaje (Raider.IO) ----------
+  const GEAR_TTL = 30 * 60 * 1000, gearPending = new Set();
+  const gearSims = () => [...state.sims, ...(state.personal && !state.sims.some(s => s.id === state.personal.id) ? [state.personal] : [])];
+  function refreshGear(force = false) {
+    if (S().checkGear === false) return;
+    for (const sim of gearSims()) {
+      const c = sim.character, g = state.gear[sim.id];
+      if (!c.region || !c.realm || gearPending.has(sim.id) || (!force && g && Date.now() - g.fetched < GEAR_TTL)) continue;
+      gearPending.add(sim.id);
+      window.api.fetchGear(c.region, c.realm, c.name).then(r => {
+        gearPending.delete(sim.id);
+        state.gear[sim.id] = r && r.ok ? r : { ok: false, fetched: Date.now() };
+        save('ninjaloot.gear', state.gear); state.animateNext = false; render();
+      });
+    }
+  }
+  const gearOf = sim => { const g = S().checkGear !== false && state.gear[sim.id]; return g && g.ok ? g.items : null; };
+  // Ya lo lleva: el mismo objeto equipado ahora a su nivel o más (si lo lleva a menos nivel, la mejora sigue valiendo)
+  const owned = (sim, it) => { const g = gearOf(sim); return !!g && Object.values(g).some(x => x.id === it.id && x.ilvl >= (it.ilvl || 0)); };
+  function staleInfo(sim) {
+    const t = T(), out = [], days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
+    if (days != null && days > (Number(S().staleDays) || 7)) out.push(t.staleOld(Math.floor(days)));
+    const g = gearOf(sim), eq = sim.equippedAtSim || {};
+    if (g) {
+      const changed = Object.entries(eq).filter(([s, v]) => g[s] && (g[s].id !== v.id || g[s].ilvl - v.ilvl >= 3)).length;
+      if (changed >= 3) out.push(t.staleGear(changed));
+      const own = sim.items.filter(it => owned(sim, it)).length;
+      if (own) out.push(t.staleOwned(own));
+    }
+    return out;
+  }
+  function stalePanel(sims) {
+    const t = T(), rows = sims.map(s => [s, staleInfo(s)]).filter(([, r]) => r.length);
+    if (!rows.length) return '';
+    return `<section class="panel card stale-panel"><div class="card-head"><h2>${esc(t.staleTitle)}</h2></div><div class="hint">${esc(t.staleHint)}</div>`
+      + rows.map(([s, r]) => `<div class="stale-row">${specIcon(s) ? `<img src="${specIcon(s)}" alt="">` : ''}<b style="color:${readable(clsColor(s))}">${esc(s.character.name)}</b><span class="reasons">${esc(r.join(' · '))}</span>`
+        + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`).join('') + '</section>';
+  }
   function toolbarHtml() {
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
     let h = `<div class="charts-bar"><div class="seg"><button data-mode="boss" class="${mode === 'boss' ? 'on' : ''}">${esc(t.modeBoss)}</button><button data-mode="player" class="${mode === 'player' ? 'on' : ''}">${esc(t.modePlayer)}</button></div>`;
@@ -193,6 +242,12 @@
       for (const s of act0()) for (const it of s.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
       const keys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
       if (keys.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-cat="all" class="${effCat() === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${keys.map(k => `<button data-cat="${k}" class="${effCat() === k ? 'on' : ''}">${esc(t['cat' + k[0].toUpperCase() + k.slice(1)] || k)}</button>`).join('')}</div></div>`;
+      // Raid (todas o una) y jefe (todos o uno) de la temporada
+      if (['all', 'raid'].includes(effCat()) && state.bosses.groups.length) {
+        const raid = effRaid(), list = raidBossList();
+        if (state.bosses.groups.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.raidLabel)}:</span><div class="seg"><button data-raid="all" class="${raid === 'all' ? 'on' : ''}">${esc(t.raidAll)}</button>${state.bosses.groups.map(g => `<button data-raid="${g.id}" class="${raid === g.id ? 'on' : ''}">${esc(g.name)}</button>`).join('')}</div></div>`;
+        h += `<div class="diffbar"><span class="meta">${esc(t.bossPickLabel)}:</span><select id="bossPick" class="txt small"><option value="all">${esc(t.bossAll)}</option>${list.map(b => `<option value="${b.id}"${effBossPick() === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></div>`;
+      }
     }
     const hidden = eff ? state.sims.filter(s => s.difficulty && s.difficulty !== eff).length : 0;
     if (hidden) h += `<span class="meta warnnote">${esc(t.diffHidden(hidden, t.diffNames[eff]))}</span>`;
@@ -207,6 +262,7 @@
       if (it.gain < min) continue;
       const src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0;
       if (cat !== 'all' && catOfSrc(src) !== cat) continue;
+      if ((effRaid() !== 'all' || effBossPick() !== 'all') && !encAllowed(enc)) continue;
       let m = byEnc.get(enc); if (!m) byEnc.set(enc, m = new Map());
       let g = m.get(it.id); if (!g) m.set(it.id, g = { id: it.id, name: it.name, it, gains: [] });
       g.gains.push({ sim, gain: it.gain, pct: it.pct, ilvl: it.ilvl });
@@ -216,16 +272,19 @@
     const top = new Map([...byEnc.keys()].map(e => [e, rowsOf(e)[0]?.best.gain || 0]));
     const encs = [...byEnc.keys()].sort((a, b) => { const ia = order.indexOf(a), ib = order.indexOf(b); return (ia >= 0 || ib >= 0) ? (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib) : top.get(b) - top.get(a); });
     let html = `<div class="hint boss-hint">${esc(t.bossChartsHint)}</div>`;
+    if (!encs.length) html += `<div class="panel card"><div class="hint">${esc(t.bossNone)}</div></div>`;
     for (const enc of encs) {
       const rows = rowsOf(enc), key = `boss${enc}`, n = S().topN, lim = state.expanded.has(key) || n === 0 ? rows.length : n;
       // Una tarjeta por objeto: icono, nombre, de dónde sale y tipo de armadura, y una barra por jugador de más a menos
       const cards = rows.slice(0, lim).map(r => {
         state.shown.add(r.id);
         const info = itemInfo(r), st = srcText(r.it), col = QUALITY_COLORS[info.quality];
-        const entries = r.gains.map(x => ({ value: pct ? x.pct : x.gain, label: x.sim.character.name, color: clsColor(x.sim), labelColor: readable(clsColor(x.sim)), valueText: valueText({ gain: x.gain, pct: x.pct }, x.sim) }));
-        return `<div class="item-card"><div class="ic-head"><img class="ic-icon" src="${info.icon}" alt="" style="border-color:${col}" data-item="${r.id}" data-ilvl="${r.best.ilvl || 0}" data-tip-always>`
+        const entries = r.gains.map(x => ({ value: pct ? x.pct : x.gain, label: x.sim.character.name, color: clsColor(x.sim), labelColor: readable(clsColor(x.sim)), valueText: valueText({ gain: x.gain, pct: x.pct }, x.sim),
+          tip: exactTip(x.sim.character.name, x.gain, x.pct) + (owned(x.sim, { id: r.id, ilvl: x.ilvl }) ? ` (${t.ownedTag})` : ''), owned: owned(x.sim, { id: r.id, ilvl: x.ilvl }), bottomIcon: specIcon(x.sim), sub: x.sim.difficulty ? DIFF_TAG[x.sim.difficulty] : '' }));
+        const chart = detailed() ? Chart.build(entries, { ...chartOpts, slot: 92, height: 190, bottom: 104, labelSize: 12.5, yTitle: '' }) : Chart.mini(entries, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate });
+        return `<div class="item-card${detailed() ? ' detailed' : ''}"><div class="ic-head"><img class="ic-icon" src="${info.icon}" alt="" style="border-color:${col}" data-item="${r.id}" data-ilvl="${r.best.ilvl || 0}" data-tip-always>`
           + `<div><b style="color:${readable(col)}">${esc(info.name)}</b>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}<div class="meta">${esc([st && st.name, armorLabel(r.it)].filter(Boolean).join(' · '))}</div></div></div>`
-          + `<div class="ic-chart">${Chart.mini(entries, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate })}</div></div>`;
+          + `<div class="ic-chart">${chart}</div></div>`;
       }).join('');
       const first = rows[0] && srcText(rows[0].it), isDungeon = rows[0] && catOfSrc(srcOf(rows[0].it)) === 'dungeon';
       const name = (isDungeon && first && first.name) || bossLabel(enc) || (enc ? `#${enc}` : t.bossOtherSources);
@@ -234,7 +293,7 @@
         + rows.slice(0, lim).map((r, i) => { const info = itemInfo(r);
           return `<tr data-item="${r.id}" data-ilvl="${r.best.ilvl}" data-gain="${esc(r.gains.slice(0, 6).map(x => `${x.sim.character.name}: +${nf().format(x.gain)} DPS (${x.pct.toFixed(2)}%)`).join('\n'))}"><td class="rk">${i + 1}</td>`
             + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td><td>${r.best.ilvl || ''}</td>`
-            + `<td class="bt-players">${r.gains.map(x => `<span class="bt-p" style="border-color:${clsColor(x.sim)}">${specIcon(x.sim) ? `<img src="${specIcon(x.sim)}" alt="">` : ''}<b style="color:${readable(clsColor(x.sim))}">${esc(x.sim.character.name)}</b> ${esc(valueText({ gain: x.gain, pct: x.pct }, x.sim))}</span>`).join('')}</td></tr>`; }).join('')
+            + `<td class="bt-players">${r.gains.map(x => `<span class="bt-p${owned(x.sim, { id: r.id, ilvl: x.ilvl }) ? ' owned' : ''}" style="border-color:${clsColor(x.sim)}">${specIcon(x.sim) ? `<img src="${specIcon(x.sim)}" alt="">` : ''}<b style="color:${readable(clsColor(x.sim))}">${esc(x.sim.character.name)}</b> ${esc(valueText({ gain: x.gain, pct: x.pct }, x.sim))}</span>`).join('')}</td></tr>`; }).join('')
         + '</tbody></table></div>';
       html += `<section class="panel card" id="boss-${enc}"><div class="card-head"><div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
         + (n !== 0 && rows.length > n ? `<button class="btn small" data-toggle="${key}">${esc(state.expanded.has(key) ? t.showLess : t.showAll)}</button>` : '')
@@ -254,17 +313,20 @@
         id: sim.id, value: valueOf(best, sim), label: sim.character.name, sub: sim.difficulty ? DIFF_TAG[sim.difficulty] : '',
         color: col, labelColor: readable(col), icon: info.icon, iconBorder: QUALITY_COLORS[info.quality], valueText: valueText(best, sim),
         bottomIcon: specIcon(sim), itemId: best.id, ilvl: best.ilvl, gain: gainLine(best), onclick: true,
+        tipIcon: 'top', tip: `${exactTip(sim.character.name, best.gain, best.pct)} — ${info.name}`,
       };
     }).sort((a, b) => b.value - a.value);
+    const draw = (list, big) => detailed() ? Chart.build(list, { ...chartOpts, ...big }) : Chart.mini(list, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate });
     let html = `<section class="panel card" id="overview"><div class="card-head"><h2>${esc(t.overviewTitle)}</h2><span class="spacer"></span>`
       + `<div class="card-tools"><button class="btn small" data-export="overview">${ui('export')}${esc(t.exportPng)}</button></div></div>`
-      + `<div class="hint">${esc(t.overviewHint)}</div><div class="chart-wrap" data-chart="overview">${Chart.build(entries, { ...chartOpts, slot: 112, height: 300 })}</div></section>`;
+      + `<div class="hint">${esc(t.overviewHint)}</div><div class="chart-wrap${detailed() ? '' : ' simple'}" data-chart="overview">${draw(entries, { slot: 112, height: 300 })}</div></section>`;
     for (const sim of sims) {
       const col = clsColor(sim), list = visibleItems(sim), total = sim.items.filter(i => i.gain >= (Number(S().minGain) || 0)).length;
       const items = list.map(it => {
         const info = itemInfo(it);
         state.shown.add(it.id);
-        return { id: it.id, value: valueOf(it, sim), label: info.name + (info.tag ? ' ' + info.tag : ''), itemId: it.id, ilvl: it.ilvl, gain: gainLine(it), color: col, labelColor: readable(QUALITY_COLORS[info.quality]), icon: null, bottomIcon: info.icon, valueText: valueText(it, sim) };
+        return { id: it.id, value: valueOf(it, sim), label: info.name + (info.tag ? ' ' + info.tag : ''), itemId: it.id, ilvl: it.ilvl, gain: gainLine(it), color: col, labelColor: readable(QUALITY_COLORS[info.quality]), icon: null, bottomIcon: info.icon, valueText: valueText(it, sim),
+          tipIcon: 'bottom', tip: exactTip(sim.character.name, it.gain, it.pct) + (owned(sim, it) ? ` (${t.ownedTag})` : ''), owned: owned(sim, it) };
       });
       const canToggle = S().topN !== 0 && total > S().topN;
       html += `<section class="panel card" id="sim-${esc(sim.id)}"><div class="card-head">`
@@ -277,7 +339,7 @@
         + `<button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button>`
         + `<button class="btn small" data-export="${esc(sim.id)}">${ui('export')}${esc(t.exportPng)}</button>`
         + `<button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
-        + `<div class="chart-wrap" data-chart="${esc(sim.id)}">${Chart.build(items, { ...chartOpts, slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3 })}</div></section>`;
+        + `<div class="chart-wrap${detailed() ? '' : ' simple'}" data-chart="${esc(sim.id)}">${draw(items, { slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3 })}</div></section>`;
     }
     return html;
   }
@@ -304,12 +366,13 @@
     const rows = p.items.filter(i => i.gain >= min).map((it, i) => {
       state.shown.add(it.id);
       const info = itemInfo(it), st = srcText(it), boss = st && st.name, group = st && st.sub;
-      return `<tr data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
-        + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td>`
+      return `<tr class="${owned(p, it) ? 'owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
+        + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${owned(p, it) ? `<span class="owned-tag">${esc(t.ownedTag)}</span>` : ''}</td>`
         + `<td>${esc(t.slots[it.slot] || it.slot || '')}</td><td>${it.ilvl || ''}</td>`
         + `<td class="bs">${boss ? `<b>${esc(boss)}</b>${group ? `<div class="meta">${esc(group)}</div>` : ''}` : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
         + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
     }).join('');
+    html += stalePanel([p]);
     const pm = S().persMode || 'all';
     html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button><button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div></div>`;
     if (pm === 'coin') return html + coinSection(p);
@@ -323,7 +386,7 @@
   // Dónde tirar moneda: las 5 piezas de jefe que más DPS te dan y de qué jefe sale cada una
   function coinSection(p) {
     const t = T();
-    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, 5);
+    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, 5);
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     rows.forEach(({ it }, i) => {
       const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
@@ -338,13 +401,14 @@
     if (!ids.length) { toast(T().noUrls, true); return; }
     const r = await window.api.fetchReport(ids[0]);
     if (!r.ok) { toast(`${ids[0]}: ${errText(r)}`, true); return; }
-    state.personal = r.report; save('ninjaloot.personal', state.personal);
+    state.personal = r.report; save('ninjaloot.personal', state.personal); refreshGear();
     state.animateNext = true; render();
   }
 
   // ---------- Render ----------
   function render() {
     const t = T();
+    if (tipEl) { tipEl.hidden = true; tipEl.dataset.cur = ''; tipKey = null; } // el contenido se redibuja: fuera tooltips colgados
     document.documentElement.lang = S().lang;
     $('#appSub').textContent = t.appSub;
     $('#urlInput').placeholder = t.urlPlaceholder;
@@ -380,8 +444,9 @@
     state.animateNext = false;
     const act = activeSims(), pct = S().unit === 'pct';
     const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
-    let html = toolbarHtml();
-    html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div></div>`;
+    let html = toolbarHtml() + stalePanel(act);
+    html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
+      + `<div class="seg"><button data-barstyle="simple" class="${detailed() ? '' : 'on'}">${esc(t.barSimple)}</button><button data-barstyle="detailed" class="${detailed() ? 'on' : ''}">${esc(t.barDetailed)}</button></div></div>`;
     html += S().chartMode === 'player' ? playerCharts(act, chartOpts) : bossCharts(act, chartOpts);
     if (S().showCaution) html += cautionSection();
     const scroll = document.scrollingElement.scrollTop;
@@ -397,7 +462,7 @@
     for (const sim of state.sims) {
       const col = clsColor(sim), dim = eff && sim.difficulty && sim.difficulty !== eff;
       h += `<span class="chip${dim ? ' dim' : ''}" style="border-left-color:${col}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}`
-        + `<span style="color:${readable(col)};font-weight:700">${esc(sim.character.name)}</span>${diffBadge(sim.difficulty)}`
+        + `<span style="color:${readable(col)};font-weight:700">${esc(sim.character.name)}</span>${diffBadge(sim.difficulty)}${(r => r.length ? `<span class="stale-mark" title="${esc(r.join(' · '))}">⚠</span>` : '')(staleInfo(sim))}`
         + `<button class="x" data-remove="${esc(sim.id)}" title="${esc(T().remove)}">${xmark}</button></span>`;
     }
     chips.innerHTML = h;
@@ -439,7 +504,7 @@
     if (!r.ok) { renderChips(); toast(`${id}: ${errText(r)}`, true); return 'err'; }
     const i = state.sims.findIndex(s => s.id === id);
     if (i >= 0) state.sims[i] = r.report; else state.sims.push(r.report);
-    persistSims(); state.animateNext = true; render();
+    persistSims(); state.animateNext = true; render(); refreshGear();
     if (!quiet) toast(`${refresh ? T().updated : T().added}: ${r.report.character.name}`);
     return 'ok';
   }
@@ -523,7 +588,7 @@
         general: () => `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.minGain)}</label><input type="number" min="0" step="50" style="width:110px" data-key="minGain" value="${Number(s.minGain) || 0}"></div>`
-          + check('showValues', t.showValues) + check('showCaution', t.showCaution) + check('tooltips', t.tooltips) + check('chartTall', t.chartTall) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>` + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
+          + check('checkGear', t.checkGear) + `<div class="row"><label>${esc(t.staleDays)}</label><input type="number" min="1" max="60" style="width:90px" data-key="staleDays" value="${Number(s.staleDays) || 7}"></div>` + check('showValues', t.showValues) + check('showCaution', t.showCaution) + check('tooltips', t.tooltips) + check('chartTall', t.chartTall) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>` + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
           + check('animations', t.animations) + check('persist', t.persist) + check('confirmClear', t.confirmClear)
           + `<div class="small-note">${esc(t.shortcuts)}</div>`,
         appearance: () => `<div class="row"><label>${esc(t.theme)}</label><div class="seg">${[['dark', t.themeDark], ['light', t.themeLight], ['auto', t.themeAuto]].map(([k, l]) => `<button data-set-theme="${k}" class="${s.theme === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div></div>`
@@ -566,6 +631,7 @@
       s[key] = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && !['lang', 'font', 'density'].includes(key) ? Number(el.value) : el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value;
       persistSettings();
       if (key === 'persist') persistSims();
+      if (key === 'checkGear') refreshGear();
       if (['animations', 'font', 'fontScale', 'density'].includes(key)) applyTheme();
       state.animateNext = false;
       if (key === 'lang' || key === 'font') draw(back.dataset.view);
@@ -614,13 +680,16 @@
     tipEl.innerHTML = tipCache.get(key) + foot; tipEl.hidden = false; placeTip(x, y);
   }
   document.addEventListener('mouseover', e => {
+    // Barras: mejora exacta de esa persona con ese objeto
+    const bt = !e.target.closest?.('[data-item]') && e.target.closest?.('[data-bartip]');
+    if (bt) { tipKey = 'bar'; tipEl.dataset.cur = ''; tipEl.innerHTML = `<div class="tip-bar">${esc(bt.dataset.bartip)}</div>`; tipEl.hidden = false; placeTip(e.clientX, e.clientY); return; }
     if (S().tooltips === false && !e.target.closest?.('[data-tip-always]')) return;
     const g = e.target.closest?.('[data-item]');
     if (!g) { if (tipKey) { tipKey = null; tipEl.hidden = true; } return; }
     if (g.dataset.item + ':' + g.dataset.ilvl + S().lang !== (tipEl.dataset.cur || '')) { tipEl.dataset.cur = g.dataset.item + ':' + g.dataset.ilvl + S().lang; showTip(g, e.clientX, e.clientY); }
   });
   document.addEventListener('mousemove', e => { if (!tipEl.hidden) placeTip(e.clientX, e.clientY); });
-  document.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('[data-item]')) { tipKey = null; tipEl.hidden = true; tipEl.dataset.cur = ''; } });
+  document.addEventListener('mouseout', e => { if (!e.relatedTarget || !e.relatedTarget.closest?.('[data-item],[data-bartip]')) { tipKey = null; tipEl.hidden = true; tipEl.dataset.cur = ''; } });
   window.addEventListener('scroll', () => { tipEl.hidden = true; tipEl.dataset.cur = ''; tipKey = null; }, true);
 
   // ---------- Rotaciones: tabla jugador x jefe ----------
@@ -738,37 +807,35 @@
   // ---------- Actualizaciones ----------
   const semver = v => String(v || '').replace(/^v/i, '').split('.').map(n => parseInt(n, 10) || 0);
   const isNewer = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+  // Pestaña Versión: tu versión y su estado, un solo botón que busca, descarga, instala y reabre, y el historial de versiones
   async function runUpdateCheck(box) {
-    const t = T();
-    const draw = body => { if (box.isConnected) box.innerHTML = body; };
-    draw(`<div class="spinner"></div> ${esc(t.checking)}`);
-    const r = await window.api.checkUpdate();
-    if (r.ok) setBadge(r);
-    if (!r.ok) {
-      draw(`<div class="status bad">${esc(t.updError)}</div><button class="btn small" data-upd-check>${esc(t.checkAgain)}</button>`);
-      box.querySelector('[data-upd-check]')?.addEventListener('click', () => runUpdateCheck(box));
-      return;
-    }
-    const latest = r.release?.version || r.main || null;
-    const outdated = latest && isNewer(latest, r.current);
-    const cls = !latest ? 'na' : outdated ? 'bad' : 'ok';
-    const msg = !latest ? t.updNone : outdated ? t.updOutdated : t.updCurrent;
-    draw(`<div class="ver"><span>${esc(t.updInstalled)}</span><b class="${cls}">v${esc(r.current)}</b>`
-      + `<span>${esc(t.updRelease)}</span><b>${r.release ? 'v' + esc(r.release.version) : '—'}</b>`
-      + `<span>${esc(t.updMain)}</span><b>${r.main ? 'v' + esc(r.main) : '—'}</b></div>`
-      + `<div class="status ${cls}">${esc(msg)}</div>`
-      + `<div style="display:flex;gap:8px;flex-wrap:wrap">`
-      + (outdated && r.release?.asset ? `<button class="btn primary" data-upd-install>${esc(t.updInstall)}</button>` : '')
-      + (r.release ? `<button class="btn" data-upd-open="${esc(r.release.url)}">${esc(t.updOpen)} ↗</button>` : '')
-      + `<button class="btn" data-upd-check>${esc(t.checkAgain)}</button></div><div class="small-note" id="updNote"></div>`);
-    box.querySelector('[data-upd-check]')?.addEventListener('click', () => runUpdateCheck(box));
-    box.querySelector('[data-upd-open]')?.addEventListener('click', e => window.api.openExternal(e.currentTarget.dataset.updOpen));
-    box.querySelector('[data-upd-install]')?.addEventListener('click', async e => {
+    const t = T(), cur = state.info.version;
+    const log = (CHANGELOG[S().lang] || CHANGELOG.en || CHANGELOG.es);
+    box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(cur)}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
+      + `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`
+      + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
+      + `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog">${log.map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('')}</div>`;
+    const status = (cls, msg) => { const el = box.querySelector('#verStatus'); if (el) { el.className = `ver-status ${cls}`; el.textContent = msg; } };
+    const note = msg => { const n = box.querySelector('#updNote'); if (n) n.textContent = msg; };
+    box.querySelector('#autoUpd').addEventListener('change', e => { S().autoUpdateCheck = e.target.checked; persistSettings(); });
+    const check = async () => {
+      const r = await window.api.checkUpdate();
+      if (!r.ok) { status('bad', t.updError); return null; }
+      setBadge(r);
+      const latest = r.release?.version || r.main || null, outdated = latest && isNewer(latest, r.current);
+      status(!latest ? 'na' : outdated ? 'bad' : 'ok', !latest ? t.updNone : outdated ? `${t.updOutdated}: v${latest}` : t.updCurrent);
+      return { r, outdated };
+    };
+    check();
+    box.querySelector('[data-upd-go]').addEventListener('click', async e => {
       const btn = e.currentTarget;
-      btn.disabled = true; box.querySelector('#updNote').textContent = t.updDownloading;
-      window.api.onUpdateProgress?.(f => { const n = box.querySelector('#updNote'); if (n) n.textContent = `${t.updDownloading} ${Math.round(f * 100)}%`; });
-      const res = await window.api.installUpdate(r.release.asset);
-      if (!res.ok) { box.querySelector('#updNote').textContent = t.updError; btn.disabled = false; }
+      btn.disabled = true; note(t.checking);
+      const c = await check();
+      if (!c || !c.outdated || !c.r.release?.asset) { note(c ? t.updCurrent : t.updError); btn.disabled = false; return; }
+      note(t.updDownloading);
+      window.api.onUpdateProgress?.(f => note(`${t.updDownloading} ${Math.round(f * 100)}%`));
+      const res = await window.api.installUpdate(c.r.release.asset);
+      if (!res.ok) { note(t.updError); btn.disabled = false; }
     });
   }
 
@@ -786,6 +853,7 @@
   }
   let lastCheck = 0;
   async function trackVersion(force = false) {
+    if (S().autoUpdateCheck === false) return; // "Buscar actualizaciones al abrir" desactivado
     if (!force && Date.now() - lastCheck < 30000) return;
     lastCheck = Date.now();
     try { setBadge(await window.api.checkUpdate()); } catch {}
@@ -831,6 +899,8 @@
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
     else if ((el = q('data-toggle'))) { const id = el.dataset.toggle; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); state.animateNext = false; render(); }
+    else if ((el = q('data-barstyle'))) { S()[barKey()] = el.dataset.barstyle; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-raid'))) { S().raidPick = el.dataset.raid === 'all' ? 'all' : Number(el.dataset.raid); S().bossPick = 'all'; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-unit'))) { S().unit = el.dataset.unit; persistSettings(); state.animateNext = true; render(); }
     else if ((el = e.target.closest('#overview .bar[role="button"]'))) document.getElementById(`sim-${el.dataset.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   });
@@ -844,6 +914,7 @@
   // La URL de la simulación personal se conserva al cambiar de pestaña y entre sesiones
   document.addEventListener('input', e => { if (e.target.id === 'personalUrl') { state.personalUrl = e.target.value; save('ninjaloot.personalUrl', state.personalUrl); } });
   document.addEventListener('change', e => {
+    if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
     if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
     if (e.target.id !== 'personalPick') return;
     const s = state.sims.find(x => x.id === e.target.value);
@@ -863,6 +934,7 @@
   // ---------- Inicio ----------
   applyTheme();
   render();
+  refreshGear();
   window.api.appInfo().then(i => { state.info = i; setBadge(null); trackVersion(true); });
   window.api.getBosses().then(r => { if (r && r.ok) { state.bosses = r.data; if (state.view === 'rotations') render(); } });
 })();

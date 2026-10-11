@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('api', {
   iconData: href => ipcRenderer.invoke('icon:data', href),
   itemTooltip: (id, ilvl, lang) => ipcRenderer.invoke('items:tooltip', id, ilvl, lang),
   getBosses: () => ipcRenderer.invoke('bosses:get'),
+  fetchGear: (region, realm, name) => ipcRenderer.invoke('gear:fetch', region, realm, name),
   checkUpdate: () => ipcRenderer.invoke('update:check'),
   installUpdate: asset => ipcRenderer.invoke('update:install', asset),
   onUpdateProgress: cb => ipcRenderer.on('update:progress', (_e, f) => cb(f)),

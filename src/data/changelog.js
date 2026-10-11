@@ -1,0 +1,22 @@
+'use strict';
+// Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
+const CHANGELOG = {
+  es: [
+    ['0.1.7', 'Sims caducadas: NinjaLoot mira en Raider.IO el equipo actual de cada personaje, tacha las mejoras de objetos que ya lleva y avisa si la sim tiene más de X días o si ha cambiado mucho el equipo. Gráficas con barras simples o detalladas, DPS exacto al pasar el ratón por cada barra y tooltip del objeto en su icono. En Por jefe se puede elegir raid (The Venomous Abyss o The Tidebound Grotto) y jefe, y siempre empieza en Todo. Buffs corregidos: Furia del cielo, Toque místico, Veneno atrófico (−4%), Intelecto arcano (+3%) y Bendición de bronce, con sus iconos oficiales. Iconos de la barra superior sin el marco oscuro. Nueva pestaña Versión con historial y actualizaciones más rápidas que solo descargan lo que cambia.'],
+    ['0.1.6', 'Rotaciones a un clic: ✓ no rota, ✗ rota y ? pendiente en cada casilla, botones para toda la fila y Todo a pendiente. El cofre semanal empieza siempre en 0/6 y solo cuenta los jefes marcados con ✓. Columna opcional para el jefe de la raid nueva. Tiers pasa al lado de Simulación personal y Rotaciones queda a la derecha.'],
+    ['0.1.5', 'Gráficas por jefe con una tarjeta por objeto: icono, jefe o mítica de la que sale, tipo de armadura (tela, cuero, malla, placas o cualquiera) y una barra por jugador con el color de su clase, de más a menos. Tooltip del objeto siempre en el icono.'],
+    ['0.1.4', 'Vuelve a salir de qué jefe es cada objeto (Raidbots cambió el formato de sus datos), con la mítica en mazmorras y (Tier) o (Catalizador) en las piezas de tier. Dónde tirar moneda muestra el top 5. Nueva pestaña Tiers con los bonus de 2 y 4 piezas de cada especialización y las piezas de tier con sus estadísticas. Rotaciones con aviso para RLs y oficiales y cofre semanal. La URL de la simulación personal ya no se borra al cambiar de pestaña.'],
+    ['0.1.2', 'Pantalla de inicio, gráficas por jefe, filtro por dificultad, simulación personal con Dónde tirar moneda, tabla de rotaciones con buffs y debuffs de banda, avisos de Cuidado, trinkets de healer y tank, cuatro idiomas y más ajustes de apariencia.'],
+    ['0.1.1', 'Rotaciones, iconos por especialización y nueva interfaz.'],
+    ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
+  ],
+  en: [
+    ['0.1.7', 'Stale sims: NinjaLoot checks each character’s current gear on Raider.IO, crosses out upgrades they already wear and warns when a sim is older than X days or the gear changed a lot. Simple or detailed bars, exact DPS when hovering each bar and the item tooltip on its icon. By boss lets you pick the raid (The Venomous Abyss or The Tidebound Grotto) and the boss, and always starts on All. Fixed buffs: Skyfury, Mystic Touch, Atrophic Poison (−4%), Arcane Intellect (+3%) and Blessing of the Bronze, with their official icons. Top bar icons without the dark frame. New Version tab with history and faster updates that only download what changed.'],
+    ['0.1.6', 'One-click rotations: ✓ doesn’t rotate, ✗ rotates and ? pending in every cell, whole-row buttons and Reset all to pending. The Great Vault always starts at 0/6 and only counts bosses marked ✓. Optional column for the new raid boss. Tiers moves next to Personal sim and Rotations sits on the right.'],
+    ['0.1.5', 'By-boss charts with one card per item: icon, boss or dungeon it drops from, armor type (cloth, leather, mail, plate or any) and one bar per player in their class color, from most to least. Item tooltip always on the icon.'],
+    ['0.1.4', 'The boss of every item shows again (Raidbots changed its data format), with the dungeon name for Mythic+ and (Tier) or (Catalyst) on tier pieces. Where to use a coin shows the top 5. New Tiers tab with every spec’s 2 and 4-piece bonuses and the tier pieces with their stats. Rotations with a warning for raid leaders and officers and the Great Vault. The personal sim URL is kept when switching tabs.'],
+    ['0.1.2', 'Home screen, by-boss charts, difficulty filter, personal sim with Where to use a coin, rotations table with raid buffs and debuffs, Watch out warnings, healer and tank trinkets, four languages and more appearance settings.'],
+    ['0.1.1', 'Rotations, spec icons and a new interface.'],
+    ['0.1.0', 'First version: item upgrade charts from Raidbots sims.'],
+  ],
+};
