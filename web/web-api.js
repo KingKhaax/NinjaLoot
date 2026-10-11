@@ -142,7 +142,7 @@
     discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, channelName: dc.channelName, region: dc.region || 'eu', reset: weeklyReset(dc.region), status: dcStatus }),
     discordDm: async users => {
       if (!dc.channelId) return { error: 'NO_CHANNEL' };
-      try { return await relay('op=dm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ channel: dc.channelId, users }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
+      try { return await relay('op=dm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ...(users || {}), channel: dc.channelId }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
     },
     rosterGuild: async (region, realm, name) => {
       if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };

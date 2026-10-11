@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.2.4', 'Roster: el aviso de quién falta ya no se manda a cada jugador, sino que el bot NinjaLoot te lo envía a ti (el RL) por mensaje privado de Discord en un solo mensaje con la lista. Elige tu usuario de Discord en el Roster y pulsa «Enviarme por DM quién falta».'],
     ['0.2.3', 'Nueva pestaña Roster: añade a tu raid a mano o importa la guild desde Raider.IO y ve quién ha subido su sim esta semana y a quién le falta; a los que falten se les puede avisar por mensaje privado de Discord con el bot NinjaLoot. El bot de Discord ahora recoge al conectar las sims publicadas desde el reinicio semanal, ignora las de semanas anteriores, se queda con la más nueva de cada jugador y vincula cada personaje con quien pegó su sim.'],
     ['0.2.2', 'En el inicio aparece «Hecho por Drakko ♥».'],
     ['0.2.1', 'Simulación personal: el tercer hueco pasa de «Delves» a «Otro contenido» y acepta cualquier sim que no sea de raid ni de míticas (delves, profesiones, PvP…).'],
@@ -24,6 +25,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.2.4', 'Roster: the reminder of who is missing is no longer sent to each player; the NinjaLoot bot sends it to you (the RL) as a single Discord direct message with the list. Pick your Discord user in the Roster and click «DM me who is missing».'],
     ['0.2.3', 'New Roster tab: add your raid manually or import the guild from Raider.IO and see who has uploaded their sim this week and who is missing; the missing ones can be reminded by Discord direct message through the NinjaLoot bot. When connecting, the Discord bot now picks up the sims posted since the weekly reset, ignores older weeks, keeps only each player’s newest sim and links each character to whoever posted it.'],
     ['0.2.2', 'The home screen now shows «Made by Drakko ♥».'],
     ['0.2.1', 'Personal simulation: the third slot changes from «Delves» to «Other content» and accepts any sim that is not raid or Mythic+ (delves, professions, PvP…).'],

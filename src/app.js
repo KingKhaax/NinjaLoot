@@ -834,8 +834,9 @@
       + `<button class="btn" data-ro="import">${esc(t.roImport)}</button></div></div></div></section>`;
     if (!state.roster.length) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;
     html += `<section class="panel card"><div class="card-head"><h2>${esc(t.roStatus(rows.length - missing.length, rows.length))}</h2><span class="spacer"></span><div class="card-tools">`
-      + `<button class="btn primary" data-ro="dm"${withDc.length ? '' : ' disabled'}>${esc(t.roDm(withDc.length))}</button><button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
-      + (missing.length && missing.length > withDc.length ? `<div class="hint">${esc(t.roNoLink(missing.length - withDc.length))}</div>` : '')
+      + `<select id="roRl" title="${esc(t.roRl)}"><option value="">${esc(t.roRlNone)}</option>${authors.map(([id, n]) => `<option value="${esc(id)}"${S().rlDiscord === id ? ' selected' : ''}>@${esc(n)}</option>`).join('')}</select>`
+      + `<button class="btn primary" data-ro="dm"${S().rlDiscord ? '' : ' disabled'}>${esc(t.roDm(missing.length))}</button><button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
+      + `<div class="hint">${esc(authors.length ? t.roRlHint : t.roRlNoAuthors)}</div>`
       + `<div class="ptable-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th>${esc(t.roColDiscord)}</th><th></th></tr></thead><tbody>`
       + rows.map(({ m, sim, ok, when, link }) => {
         const col = m.cls ? (CLASS_COLORS[m.cls] || CLASS_COLORS[String(m.cls).toLowerCase().replace(/ /g, '')] || '') : (sim ? clsColor(sim) : '');
@@ -879,22 +880,18 @@
       const doIt = () => { state.roster = []; saveRoster(); render(); };
       S().confirmClear ? modal({ title: t.roClear, body: `<p>${esc(t.roClearConfirm)}</p>`, actions: [{ label: t.cancel }, { label: t.confirm, cls: 'danger', onclick: doIt }] }) : doIt();
     } else if (a === 'dm') {
-      const reset = lastReset(S().rosterRegion || 'eu'), byUser = new Map();
-      for (const m of state.roster) {
-        const sim = rosterSim(m), link = linkOf(m);
-        if (!link || (sim && (sim.simDate || sim.fetchedAt || 0) >= reset)) continue;
-        if (!byUser.has(link.id)) byUser.set(link.id, { id: link.id, chars: [] });
-        byUser.get(link.id).chars.push(m.name);
-      }
-      if (!byUser.size) return;
+      if (!S().rlDiscord) return toast(t.roRlNone, true);
+      const reset = lastReset(S().rosterRegion || 'eu');
+      const missing = state.roster.filter(m => { const sim = rosterSim(m); return !(sim && (sim.simDate || sim.fetchedAt || 0) >= reset); }).map(m => m.name).sort((x, y) => x.localeCompare(y));
       el.disabled = true;
-      const r = await window.api.discordDm([...byUser.values()]);
+      const r = await window.api.discordDm({ rl: S().rlDiscord, missing, total: state.roster.length });
       el.disabled = false;
-      if (r.error) return toast(r.error === 'DM_COOLDOWN' ? t.roDmCooldown(Math.ceil((r.retry || 0) / 60000)) : r.error === 'NO_CHANNEL' ? t.roDmNoChannel : `${t.roDmError}: ${r.error}`, true);
-      toast(t.roDmSent((r.sent || []).length, (r.failed || []).length));
+      if (r.error) return toast(r.error === 'DM_COOLDOWN' ? t.roDmCooldown(Math.ceil((r.retry || 0) / 60000)) : r.error === 'NO_CHANNEL' ? t.roDmNoChannel : r.error === 'RL_NOT_IN_CHANNEL' ? t.roRlNotInChannel : r.error === 'DM_CLOSED' ? t.roDmClosed : `${t.roDmError}: ${r.error}`, true);
+      toast(t.roDmSent);
     }
   });
   document.addEventListener('change', e => {
+    if (e.target.id === 'roRl') { S().rlDiscord = e.target.value; persistSettings(); render(); return; }
     const sel = e.target.closest?.('[data-ro-link]');
     if (!sel) return;
     if (sel.value) state.dcLinks[sel.dataset.roLink] = { id: sel.value, name: state.dcAuthors[sel.value] || sel.value };
