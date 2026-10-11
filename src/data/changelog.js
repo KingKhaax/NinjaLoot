@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.2.8', 'Cofre semanal: al pasar el ratón por una casilla ves todo el contenido que has hecho esta semana (jefes con su dificultad, llaves con su mazmorra o actividades del mundo), con su nivel de objeto, y resaltado lo que cuenta para esa casilla.'],
     ['0.2.7', 'La pestaña de la versión web se llama ahora solo «NinjaLoot».'],
     ['0.2.6', 'Cofre semanal: cada casilla muestra el nivel de objeto, la calidad con su color (Aventurero, Veterano, Campeón, Héroe, Mito) y el rango (1/6, 2/6...). Nueva fila «Mundo» (bajadas y presas) que apuntas tú, porque Blizzard no publica esos datos. Arreglado: en la versión web la banda salía «No disponible». Botón «?» en «Simulaciones que conviene repetir» que explica el motivo exacto. Nuevos efectos animados en Inicio. Las fechas del reinicio semanal se actualizan solas aunque tengas la app abierta.'],
     ['0.2.5', 'Simulación personal: nuevo apartado «Cofre semanal» con el estado del cofre del personaje de la sim (jefes de banda y llaves de míticas+ de esta semana y qué te dará cada casilla). «Dónde tirar moneda» ahora incluye también piezas de míticas+ (con su mazmorra), bajadas y presas, no solo de banda.'],
@@ -28,6 +29,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.2.8', 'Great Vault: hovering a slot shows all the content you did this week (bosses with difficulty, keys with dungeon or world activities), with item level, highlighting what counts for that slot.'],
     ['0.2.7', 'The web version tab is now called just «NinjaLoot».'],
     ['0.2.6', 'Great Vault: every slot shows the item level, the quality in its color (Adventurer, Veteran, Champion, Hero, Myth) and the rank (1/6, 2/6...). New «World» row (delves and prey) that you fill in yourself, since Blizzard does not publish that data. Fixed: in the web version the raid row showed «Not available». «?» button in «Sims worth redoing» that explains the exact reason. New animated effects on Home. Weekly reset dates update by themselves even with the app open.'],
     ['0.2.5', 'Personal sim: new «Great Vault» section with the vault status of the sim’s character (this week’s raid bosses and Mythic+ keys, and what each slot will give you). «Where to use a coin» now also includes Mythic+ items (with their dungeon), delves and prey, not just raid.'],

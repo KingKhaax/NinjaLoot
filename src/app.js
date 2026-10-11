@@ -426,20 +426,24 @@
     if (!v.ok) return `<section class="panel card vault">${head}<div class="meta vault-load">${esc(t.gvError)}</div></section>`;
     const reward = r => r ? `<span class="gv-ilvl">${r.ilvl}</span><span class="gv-trk trk-${r.track}"><i></i>${esc(t.gvTrack[r.track])} ${r.rank}/6</span>` : '';
     // Una casilla: ✓ y lo que te dará si está desbloqueada; si no, cuánto falta
-    const slot = (i, n, have, src, r, extra = '') => {
+    const slot = (i, n, have, src, r, extra = '', pop = '') => {
       const done = have >= n;
       return `<div class="vault-slot${done ? ' on' : ''}${done && r ? ' trkb-' + r.track : ''}" style="--i:${i}"><span class="vs-n">${done ? `✓ ${esc(t.gvNeed(n))}` : `${Math.min(have, n)}/${n} · ${esc(t.gvNeed(n))}`}</span>`
-        + (done ? `${reward(r)}<span class="meta">${esc(src)}</span>` : `<b>${esc(t.gvLocked)}</b>`) + extra + `</div>`;
+        + (done ? `${reward(r)}<span class="meta">${esc(src)}</span>` : `<b>${esc(t.gvLocked)}</b>`) + extra + (pop ? `<div class="gv-pop" role="tooltip">${pop}</div>` : '') + `</div>`;
     };
     const rowHead = (title, sub, cls = '') => `<div class="vault-row-t${cls}"><b>${esc(title)}</b><span class="meta">${esc(sub)}</span></div>`;
     const raid = (v.raid || []).map(b => ({ ...b, r: gvRaidReward(b) })).sort((a, b) => (b.r?.ilvl || 0) - (a.r?.ilvl || 0));
     const runs = v.runs || [];
+    const pop = (title, rows, n) => rows.length ? `<b>${esc(title)}</b><ol>${rows.map((x, j) => `<li class="${j < n ? 'cnt' : ''}">${x}</li>`).join('')}</ol><span class="meta">${esc(t.gvPopNote(n))}</span>` : `<span class="meta">${esc(t.gvPopNone)}</span>`;
+    const ilvlTag = r => r ? ` <span class="gv-trk trk-${r.track}">${r.ilvl} · ${esc(t.gvTrack[r.track])} ${r.rank}/6</span>` : '';
+    const raidRows = raid.map(b => `${esc(t.gvDiff[b.diff])} · ${esc(b.name)}${ilvlTag(b.r)}`);
+    const runRows = runs.map(k => `+${k.level} · ${esc(k.dungeon)}${ilvlTag(gvKeyReward(k.level))}`);
     let html = `<section class="panel card vault">${head}<div class="vault-grid">`;
     html += `<div class="vault-row">${rowHead(t.gvRaid, v.raid ? t.gvBosses(raid.length) : t.gvNA)}`
-      + (v.raid ? [2, 4, 6].map((n, i) => { const b = raid[n - 1]; return slot(i, n, raid.length, b ? `${t.gvDiff[b.diff]} · ${b.name}` : '', b && b.r); }).join('')
+      + (v.raid ? [2, 4, 6].map((n, i) => { const b = raid[n - 1]; return slot(i, n, raid.length, b ? `${t.gvDiff[b.diff]} · ${b.name}` : '', b && b.r, '', pop(t.gvPopRaid(raid.length), raidRows, n)); }).join('')
         : [0, 1, 2].map(() => `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`).join('')) + `</div>`;
     html += `<div class="vault-row">${rowHead(t.gvMplus, v.runs ? t.gvRuns(runs.length) : t.gvNA)}`
-      + (v.runs ? [1, 4, 8].map((n, i) => { const k = runs[n - 1]; return slot(i, n, runs.length, k ? `+${k.level} · ${k.dungeon}` : '', k && gvKeyReward(k.level)); }).join('')
+      + (v.runs ? [1, 4, 8].map((n, i) => { const k = runs[n - 1]; return slot(i, n, runs.length, k ? `+${k.level} · ${k.dungeon}` : '', k && gvKeyReward(k.level), '', pop(t.gvPopRuns(runs.length), runRows, n)); }).join('')
         : [0, 1, 2].map(() => `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`).join('')) + `</div>`;
     // Contenido del mundo: Blizzard no lo publica, así que se apunta a mano (lo que ves en tu cofre del juego)
     const w = gvWorld(c), opts = cur => `<option value="">${esc(t.gvPickTier)}</option>`
@@ -448,7 +452,7 @@
     const countSel = `<select class="gv-count" data-gv-count>${Array.from({ length: 9 }, (_, i) => `<option value="${i}"${w.count === i ? ' selected' : ''}>${i === 8 ? '8+' : i}</option>`).join('')}</select>`;
     html += `<div class="vault-row">${rowHead(t.gvWorld, t.gvWorldSub)}`
       + [2, 4, 8].map((n, i) => slot(i, n, w.count, w.tiers[i] ? (/^p/.test(w.tiers[i]) ? t.gvPrey[{ pn: 0, ph: 1, px: 2 }[w.tiers[i]]] : t.gvDelve(w.tiers[i])) : t.gvPickHint, gvWorldReward(w.tiers[i]),
-        w.count >= n ? `<select class="gv-tier" data-gv-tier="${i}">${opts(w.tiers[i])}</select>` : '')).join('') + `</div>`;
+        w.count >= n ? `<select class="gv-tier" data-gv-tier="${i}">${opts(w.tiers[i])}</select>` : '', pop(t.gvPopWorld(w.count), w.tiers.slice(0, w.count >= 8 ? 3 : w.count >= 4 ? 2 : w.count >= 2 ? 1 : 0).filter(Boolean).map(k => `${esc(/^p/.test(k) ? t.gvPrey[{ pn: 0, ph: 1, px: 2 }[k]] : t.gvDelve(k))}${ilvlTag(gvWorldReward(k))}`), i + 1))).join('') + `</div>`;
     html += `<div class="gv-world-ctl"><label>${esc(t.gvWorldCount)} ${countSel}</label><span class="meta">${esc(t.gvWorldHint)}</span></div>`;
     return html + `</div><div class="hint">${esc(t.gvHint)}</div></section>`;
   }
