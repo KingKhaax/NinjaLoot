@@ -110,7 +110,7 @@
       const best = new Map(), ex = (j.expansions || []).find(e => /current season/i.test(e.expansion?.name || '')) || (j.expansions || []).at(-1);
       for (const inst of ex?.instances || []) for (const m of inst.modes || []) for (const e of m.progress?.encounters || []) {
         const d = RANK[m.difficulty?.type] || 0;
-        if (e.last_kill_timestamp >= reset && d > (best.get(e.encounter.id)?.diff || 0)) best.set(e.encounter.id, { name: e.encounter.name, diff: d });
+        if (e.last_kill_timestamp >= reset && d > (best.get(e.encounter.id)?.diff || 0)) best.set(e.encounter.id, { id: e.encounter.id, name: e.encounter.name, diff: d });
       }
       out.raid = [...best.values()].sort((a, b) => b.diff - a.diff);
     }).catch(() => {});

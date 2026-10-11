@@ -238,12 +238,23 @@
     if (!g) return [];
     return SLOT_ORDER.filter(s => eq[s] && g[s] && (g[s].id !== eq[s].id || g[s].ilvl !== eq[s].ilvl)).map(s => ({ slot: s, from: eq[s], to: g[s] }));
   }
+  // Ayuda «?»: explica exactamente por qué se avisa (sim antigua, equipo cambiado, mejoras que ya lleva)
+  function staleWhy(sim) {
+    const t = T(), parts = [], max = Number(S().staleDays) || 7, days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
+    if (days != null && days > max) parts.push(`<p>${esc(t.staleWhyOld(Math.floor(days), max, new Date(sim.simDate).toLocaleDateString(S().lang, { day: 'numeric', month: 'long' })))}</p>`);
+    const ch = gearChanges(sim);
+    if (ch.length) parts.push(`<p>${esc(t.staleWhyGear)}</p><ul>${ch.map(({ slot, from, to }) => `<li><b>${esc(capFirst(t.slots[slot] || slot))}:</b> ${esc(itemInfo({ id: from.id }).name)} (${from.ilvl}) → ${esc(itemInfo({ id: to.id }).name)} (${to.ilvl})</li>`).join('')}</ul>`);
+    const own = sim.items.filter(it => owned(sim, it));
+    if (own.length) parts.push(`<p>${esc(t.staleWhyOwned)}</p><ul>${own.map(it => `<li>${esc(itemInfo(it).name)} (${it.ilvl}) <span class="meta">+${nf().format(it.gain)}</span></li>`).join('')}</ul>`);
+    if (!parts.length) return '';
+    return `<span class="why" tabindex="0">?<span class="why-pop" role="tooltip">${parts.join('')}<p class="meta">${esc(t.staleWhyFix)}</p></span></span>`;
+  }
   function stalePanel(sims) {
     const t = T(), rows = sims.map(s => [s, staleInfo(s)]).filter(([, r]) => r.length);
     if (!rows.length) return '';
     const piece = x => { state.shown.add(x.id); const info = itemInfo({ id: x.id }); return { info, html: `<span class="sc-item" data-item="${x.id}" data-ilvl="${x.ilvl}" data-tip-always><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><b style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</b></span>` }; };
     return `<section class="panel card stale-panel"><div class="card-head"><h2>${esc(t.staleTitle)}</h2></div><div class="hint">${esc(t.staleHint)}</div>`
-      + rows.map(([s, r]) => `<div class="stale-row">${specIcon(s) ? `<img src="${specIcon(s)}" alt="">` : ''}<b style="color:${readable(clsColor(s))}">${esc(s.character.name)}</b><span class="reasons">${esc(r.join(' · '))}</span>`
+      + rows.map(([s, r]) => `<div class="stale-row">${specIcon(s) ? `<img src="${specIcon(s)}" alt="">` : ''}<b style="color:${readable(clsColor(s))}">${esc(s.character.name)}</b><span class="reasons">${esc(r.join(' · '))}</span>${staleWhy(s)}`
         + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`
         + (c => c.length ? `<ul class="stale-changes">${c.map(({ slot, from, to }) => { const a = piece(from), b = piece(to);
           return `<li><span class="sc-slot">${esc(t.slots[slot] || slot)}</span>${from.id === to.id ? t.gearUpgraded(a.html, from.ilvl, to.ilvl) : t.gearSwapped(a.html, from.ilvl, b.html, to.ilvl)}</li>`; }).join('')}</ul>` : '')(gearChanges(s))).join('') + '</section>';
@@ -376,7 +387,7 @@
   const vaultKey = c => `${c.region}:${c.realm}:${c.name}`.toLowerCase();
   function refreshVault(c, force = false) {
     const k = vaultKey(c), v = state.vault[k];
-    if (!c.region || !c.realm || vaultPending.has(k) || (!force && v && Date.now() - v.fetched < VAULT_TTL)) return;
+    if (!c.region || !c.realm || vaultPending.has(k) || (!force && v && Date.now() - v.fetched < VAULT_TTL && (!v.reset || v.reset === lastReset(c.region)))) return;
     vaultPending.add(k);
     window.api.fetchVault(c.region, c.realm, c.name).then(r => {
       vaultPending.delete(k);
@@ -384,24 +395,62 @@
       if (state.view === 'personal') { state.animateNext = false; render(); }
     });
   }
+  // Recompensas de la temporada 2 de Midnight (parche 12.1): nivel de objeto de cada rango de cada calidad
+  const GV_TRACKS = { adv: [266, 269, 272, 276, 279, 282], vet: [279, 282, 285, 289, 292, 295], champ: [292, 295, 298, 302, 305, 308], hero: [305, 308, 311, 315, 318, 321], myth: [318, 321, 324, 328, 331, 334] };
+  const gvReward = (track, rank) => ({ track, rank, ilvl: GV_TRACKS[track][rank - 1] });
+  const GV_LAST_MYTHIC = new Set([2883, 2895]); // El Altar en Espiral y Ula'tek: en mítico dan el equivalente a Mito 9 (344)
+  // Banda: el cofre da un paso más que la dificultad (Buscador → Campeón, Normal → Héroe, Heroico → Mito 1/6, Mítico → Mito 6/6)
+  function gvRaidReward(b) {
+    if (b.diff === 4 && GV_LAST_MYTHIC.has(b.id)) return { track: 'myth', rank: 9, ilvl: 344 };
+    return [null, gvReward('champ', 1), gvReward('hero', 1), gvReward('myth', 1), gvReward('myth', 6)][b.diff] || null;
+  }
+  // Míticas+: el nivel de la llave decide la recompensa; de +10 en adelante siempre Mito 1/6
+  const gvKeyReward = lvl => lvl >= 10 ? gvReward('myth', 1) : lvl >= 7 ? gvReward('hero', 4) : lvl >= 6 ? gvReward('hero', 3) : lvl >= 4 ? gvReward('hero', 2) : lvl >= 2 ? gvReward('hero', 1) : null;
+  // Mundo (bajadas y presas): como sale en el cofre del juego (Nivel 7 → 298, Nivel 8 → 305)
+  const GV_WORLD = { 1: ['vet', 1], 2: ['vet', 2], 3: ['vet', 3], 4: ['vet', 4], 5: ['champ', 1], 6: ['champ', 2], 7: ['champ', 3], 8: ['hero', 1], 9: ['hero', 1], 10: ['hero', 1], 11: ['hero', 1], pn: ['vet', 1], ph: ['champ', 1], px: ['hero', 1] };
+  const gvWorldReward = k => GV_WORLD[k] ? gvReward(...GV_WORLD[k]) : null;
+  // Lo que pongas a mano del contenido del mundo se guarda por personaje y se borra solo en el reinicio semanal
+  const gvWorldAll = load('ninjaloot.vaultWorld', {});
+  function gvWorld(c) {
+    const k = vaultKey(c), reset = lastReset(c.region || 'eu'), w = gvWorldAll[k];
+    return w && w.reset === reset ? w : { reset, count: 0, tiers: ['', '', ''] };
+  }
+  function gvWorldSet(c, patch) { gvWorldAll[vaultKey(c)] = { ...gvWorld(c), ...patch }; save('ninjaloot.vaultWorld', gvWorldAll); }
+
   function vaultPanel(p) {
     const t = T(), c = p.character, v = state.vault[vaultKey(c)];
     refreshVault(c);
-    const head = `<div class="card-head"><h2>${ui('vault')}${esc(t.gvTitle)}</h2><span class="meta">${esc(c.name)}${v && v.reset ? ` · ${esc(t.gvSince(new Date(v.reset).toLocaleDateString(S().lang, { weekday: 'long', day: 'numeric', month: 'long' })))}` : ''}</span><span class="spacer"></span>`
+    const head = `<div class="card-head"><h2>${ui('vault')}${esc(t.gvTitle)}</h2><span class="meta">${esc(c.name)} · ${esc(t.gvSince(new Date(lastReset(c.region || 'eu')).toLocaleDateString(S().lang, { weekday: 'long', day: 'numeric', month: 'long' })))}</span><span class="spacer"></span>`
       + `<button class="btn small" data-vault-refresh${vaultPending.has(vaultKey(c)) ? ' disabled' : ''}>${esc(t.gvRefresh)}</button></div>`;
     if (!v) return `<section class="panel card vault">${head}<div class="meta vault-load">${esc(t.gvLoading)}</div></section>`;
     if (!v.ok) return `<section class="panel card vault">${head}<div class="meta vault-load">${esc(t.gvError)}</div></section>`;
-    const row = (title, sub, need, list, label, unavailable) => `<div class="vault-row"><div class="vault-row-t"><b>${esc(title)}</b><span class="meta">${esc(sub)}</span></div>`
-      + need.map((n, i) => {
-        if (unavailable) return `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`;
-        const done = list.length >= n;
-        return `<div class="vault-slot${done ? ' on' : ''}" style="--i:${i}"><span class="vs-n">${done ? '✓' : `${Math.min(list.length, n)}/${n}`}</span><b>${done ? esc(label(list[n - 1])) : esc(t.gvLocked)}</b><span class="meta">${esc(t.gvNeed(n))}</span></div>`;
-      }).join('') + `</div>`;
-    const raid = v.raid || [], runs = v.runs || [];
-    return `<section class="panel card vault">${head}<div class="vault-grid">`
-      + row(t.gvRaid, v.raid ? t.gvBosses(raid.length) : t.gvNA, [2, 4, 6], raid, b => t.gvDiff[b.diff] || '', !v.raid)
-      + row(t.gvMplus, v.runs ? t.gvRuns(runs.length) : t.gvNA, [1, 4, 8], runs, r => `+${r.level}`, !v.runs)
-      + `</div><div class="hint">${esc(t.gvHint)}</div></section>`;
+    const reward = r => r ? `<span class="gv-ilvl">${r.ilvl}</span><span class="gv-trk trk-${r.track}"><i></i>${esc(t.gvTrack[r.track])} ${r.rank}/6</span>` : '';
+    // Una casilla: ✓ y lo que te dará si está desbloqueada; si no, cuánto falta
+    const slot = (i, n, have, src, r, extra = '') => {
+      const done = have >= n;
+      return `<div class="vault-slot${done ? ' on' : ''}${done && r ? ' trkb-' + r.track : ''}" style="--i:${i}"><span class="vs-n">${done ? `✓ ${esc(t.gvNeed(n))}` : `${Math.min(have, n)}/${n} · ${esc(t.gvNeed(n))}`}</span>`
+        + (done ? `${reward(r)}<span class="meta">${esc(src)}</span>` : `<b>${esc(t.gvLocked)}</b>`) + extra + `</div>`;
+    };
+    const rowHead = (title, sub, cls = '') => `<div class="vault-row-t${cls}"><b>${esc(title)}</b><span class="meta">${esc(sub)}</span></div>`;
+    const raid = (v.raid || []).map(b => ({ ...b, r: gvRaidReward(b) })).sort((a, b) => (b.r?.ilvl || 0) - (a.r?.ilvl || 0));
+    const runs = v.runs || [];
+    let html = `<section class="panel card vault">${head}<div class="vault-grid">`;
+    html += `<div class="vault-row">${rowHead(t.gvRaid, v.raid ? t.gvBosses(raid.length) : t.gvNA)}`
+      + (v.raid ? [2, 4, 6].map((n, i) => { const b = raid[n - 1]; return slot(i, n, raid.length, b ? `${t.gvDiff[b.diff]} · ${b.name}` : '', b && b.r); }).join('')
+        : [0, 1, 2].map(() => `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`).join('')) + `</div>`;
+    html += `<div class="vault-row">${rowHead(t.gvMplus, v.runs ? t.gvRuns(runs.length) : t.gvNA)}`
+      + (v.runs ? [1, 4, 8].map((n, i) => { const k = runs[n - 1]; return slot(i, n, runs.length, k ? `+${k.level} · ${k.dungeon}` : '', k && gvKeyReward(k.level)); }).join('')
+        : [0, 1, 2].map(() => `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`).join('')) + `</div>`;
+    // Contenido del mundo: Blizzard no lo publica, así que se apunta a mano (lo que ves en tu cofre del juego)
+    const w = gvWorld(c), opts = cur => `<option value="">${esc(t.gvPickTier)}</option>`
+      + Array.from({ length: 11 }, (_, i) => i + 1).map(n => `<option value="${n}"${String(cur) === String(n) ? ' selected' : ''}>${esc(t.gvDelve(n))}</option>`).join('')
+      + [['pn', t.gvPrey[0]], ['ph', t.gvPrey[1]], ['px', t.gvPrey[2]]].map(([k, l]) => `<option value="${k}"${cur === k ? ' selected' : ''}>${esc(l)}</option>`).join('');
+    const countSel = `<select class="gv-count" data-gv-count>${Array.from({ length: 9 }, (_, i) => `<option value="${i}"${w.count === i ? ' selected' : ''}>${i === 8 ? '8+' : i}</option>`).join('')}</select>`;
+    html += `<div class="vault-row">${rowHead(t.gvWorld, t.gvWorldSub)}`
+      + [2, 4, 8].map((n, i) => slot(i, n, w.count, w.tiers[i] ? (/^p/.test(w.tiers[i]) ? t.gvPrey[{ pn: 0, ph: 1, px: 2 }[w.tiers[i]]] : t.gvDelve(w.tiers[i])) : t.gvPickHint, gvWorldReward(w.tiers[i]),
+        w.count >= n ? `<select class="gv-tier" data-gv-tier="${i}">${opts(w.tiers[i])}</select>` : '')).join('') + `</div>`;
+    html += `<div class="gv-world-ctl"><label>${esc(t.gvWorldCount)} ${countSel}</label><span class="meta">${esc(t.gvWorldHint)}</span></div>`;
+    return html + `</div><div class="hint">${esc(t.gvHint)}</div></section>`;
   }
 
   // ---------- Simulación personal: cada pieza exacta, su DPS y de qué jefe sale ----------
@@ -1312,6 +1361,9 @@
   // La URL de la simulación personal se conserva al cambiar de pestaña y entre sesiones
   document.addEventListener('input', e => { if (e.target.id === 'personalUrl') { state.personalUrl = e.target.value; save('ninjaloot.personalUrl', state.personalUrl); } });
   document.addEventListener('change', e => {
+    const gvc = state.personalList[0]?.character;
+    if (gvc && e.target.matches('[data-gv-count]')) { gvWorldSet(gvc, { count: Number(e.target.value) || 0 }); state.animateNext = false; render(); return; }
+    if (gvc && e.target.matches('[data-gv-tier]')) { const tiers = gvWorld(gvc).tiers.slice(); tiers[Number(e.target.dataset.gvTier)] = e.target.value; gvWorldSet(gvc, { tiers }); state.animateNext = false; render(); return; }
     if (e.target.id === 'coinCount') { S().coins = Math.max(1, Math.min(20, Number(e.target.value) || 5)); persistSettings(); render(); return; }
     if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
     if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
@@ -1331,6 +1383,9 @@
   applyTheme();
   render();
   refreshGear();
+  // Reinicio semanal con la app abierta: se vuelve a pintar (fechas del roster y del cofre, que se pide otra vez)
+  let seenReset = lastReset('eu') + ':' + lastReset('us');
+  setInterval(() => { const r = lastReset('eu') + ':' + lastReset('us'); if (r !== seenReset) { seenReset = r; state.animateNext = false; render(); } }, 60000);
   window.api.appInfo().then(i => { state.info = i; setBadge(null); trackVersion(true); });
   window.api.getBosses().then(r => { if (r && r.ok) { state.bosses = r.data; if (state.view === 'rotations') render(); } });
 })();
