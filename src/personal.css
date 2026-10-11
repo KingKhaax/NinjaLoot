@@ -43,3 +43,15 @@
 .cmp-table .cmp-col { white-space: nowrap; }
 .cmp-table .cmp-cell { white-space: nowrap; font-variant-numeric: tabular-nums; }
 .cmp-table .cmp-best { color: #3fcf6a; font-weight: 700; background: color-mix(in srgb, #3fcf6a 8%, transparent); }
+
+/* Roster de la guild: quién ha subido su sim esta semana */
+.ro-forms { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 14px; margin-top: 12px; }
+.ro-form { display: grid; gap: 8px; padding: 12px 14px; border-radius: var(--radius, 10px); background: var(--bg); border: 1px solid var(--border); }
+.ro-form > b { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.ro-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.ro-row .txt { min-width: 120px; flex: 1; padding: 7px 10px; }
+.ro-table td { vertical-align: middle; }
+.ro-badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+.ro-badge.ok { color: #3fcf6a; background: color-mix(in srgb, #3fcf6a 14%, transparent); }
+.ro-badge.bad { color: #ee5a45; background: color-mix(in srgb, #ee5a45 14%, transparent); }
+.ro-link { min-width: 170px; }

@@ -549,7 +549,7 @@
     $('#btnExportData').textContent = t.exportData; $('#btnExportData').disabled = !state.sims.length;
     $('#btnClear').disabled = !state.sims.length;
     $('#langLabel').textContent = t.language; renderLangMenu();
-    $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers;$('#navPers').textContent = t.navPersonal;
+    $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers; $('#navRoster').textContent = t.navRoster;$('#navPers').textContent = t.navPersonal;
     document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === state.view));
     $('#chartsTools').hidden = state.view !== 'charts';
     $('#btnLang').title = t.language; $('#btnSettings').title = `${t.settings} (Ctrl+,)`;
@@ -565,6 +565,7 @@
     state.shown = new Set();
     if (state.view === 'home') { content.innerHTML = homeView(); return; }
     if (state.view === 'tiers') { content.innerHTML = tiersView(); ensureNames(); return; }
+    if (state.view === 'roster') { content.innerHTML = rosterView(); return; }
     if (state.view === 'personal') {
       content.innerHTML = personalView();
       ensureNames();
@@ -631,13 +632,21 @@
     else if (ok.length === 1) toast(`${T().added}: ${state.sims.find(s => s.id === ids[res.indexOf('ok')])?.character.name || ''}`);
   }
 
-  async function addSim(id, refresh = false, quiet = false) {
+  // opts.minDate: ignora sims anteriores (p. ej. de antes del reinicio semanal) · opts.newestOnly: de cada jugador y dificultad, solo la más nueva
+  async function addSim(id, refresh = false, quiet = false, opts = {}) {
     if (!refresh && state.sims.some(s => s.id === id)) { toast(`${T().duplicate} (${state.sims.find(s => s.id === id).character.name})`); return 'dup'; }
     if (state.loading.has(id)) return 'busy';
     state.loading.add(id); renderChips();
     const r = await window.api.fetchReport(id);
     state.loading.delete(id);
     if (!r.ok) { renderChips(); toast(`${id}: ${errText(r)}`, true); return 'err'; }
+    const when = x => x.simDate || x.fetchedAt || 0;
+    if (opts.minDate && r.report.simDate && r.report.simDate < opts.minDate) { renderChips(); return 'old'; }
+    if (opts.newestOnly) {
+      const same = state.sims.find(x => sameChar(x, r.report) && x.difficulty === r.report.difficulty);
+      if (same && when(same) >= when(r.report)) { renderChips(); return 'older'; }
+      if (same) state.sims = state.sims.filter(x => x !== same);
+    }
     const i = state.sims.findIndex(s => s.id === id);
     if (i >= 0) state.sims[i] = r.report; else state.sims.push(r.report);
     persistSims(); state.animateNext = true; render(); refreshGear();
@@ -775,11 +784,122 @@
   }
   window.api.onDiscordStatus?.(st => { const el = document.getElementById('dcStatus'); if (el) el.innerHTML = dcStatusText(st); });
   // Enlaces nuevos en el canal: se añaden solos a Gráficas (los repetidos se ignoran sin avisar)
-  window.api.onDiscordSims?.(async ids => {
-    for (const id of ids) {
-      if (state.sims.some(s => s.id === id)) continue;
-      if (await addSim(id, false, true) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === id)?.character.name || id}`);
+  window.api.onDiscordSims?.(async list => {
+    const info = await window.api.discordGet();
+    for (const x of list) {
+      const it = typeof x === 'string' ? { id: x } : x;
+      if (it.author) state.dcAuthors[it.author.id] = it.author.name;
+      if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, newestOnly: true }) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`);
+      const sim = state.sims.find(s => s.id === it.id);
+      if (sim && it.author) state.dcLinks[charKey(sim.character.name, sim.character.realm)] = it.author;
     }
+    save('ninjaloot.dcAuthors', state.dcAuthors); save('ninjaloot.dcLinks', state.dcLinks);
+    if (state.view === 'roster') render();
+  });
+
+  // ---------- Roster: quién ha subido su sim esta semana y recordatorio por mensaje privado ----------
+  state.roster = load('ninjaloot.roster', []);       // [{ name, realm, cls }]
+  state.dcLinks = load('ninjaloot.dcLinks', {});     // personaje -> { id, name } del usuario de Discord que pegó su sim
+  state.dcAuthors = load('ninjaloot.dcAuthors', {}); // usuarios de Discord vistos en el canal: id -> nombre
+  const charKey = (name, realm) => `${normName(name)}-${normName(realm || '')}`;
+  const rosterKey = m => charKey(m.name, m.realm);
+  function lastReset(region) {
+    const now = new Date(), [day, hour] = region === 'us' ? [2, 15] : [3, 4];
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour));
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - day + 7) % 7));
+    if (d > now) d.setUTCDate(d.getUTCDate() - 7);
+    return d.getTime();
+  }
+  // Sim más nueva de un miembro del roster entre las cargadas
+  function rosterSim(m) {
+    const k = normName(m.name), r = normName(m.realm);
+    return state.sims.filter(x => normName(x.character.name) === k && (!r || !x.character.realm || normName(x.character.realm) === r))
+      .sort((a, b) => (b.simDate || b.fetchedAt || 0) - (a.simDate || a.fetchedAt || 0))[0] || null;
+  }
+  const linkOf = m => state.dcLinks[rosterKey(m)] || state.dcLinks[charKey(m.name, '')] || null;
+  function saveRoster() { save('ninjaloot.roster', state.roster); }
+
+  function rosterView() {
+    const t = T(), region = S().rosterRegion || 'eu', reset = lastReset(region);
+    const rows = state.roster.map(m => { const sim = rosterSim(m), when = sim ? (sim.simDate || sim.fetchedAt || 0) : 0; return { m, sim, ok: when >= reset, when, link: linkOf(m) }; })
+      .sort((a, b) => a.ok - b.ok || a.m.name.localeCompare(b.m.name));
+    const missing = rows.filter(r => !r.ok), withDc = missing.filter(r => r.link);
+    const authors = Object.entries(state.dcAuthors).sort((a, b) => a[1].localeCompare(b[1]));
+    const dateTxt = new Date(reset).toLocaleString(S().lang, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+    let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.roTitle)}</h2></div><div class="hint">${esc(t.roHint(dateTxt))}</div>`
+      + `<div class="ro-forms"><div class="ro-form"><b>${esc(t.roAddTitle)}</b><div class="ro-row"><input class="txt" id="roName" placeholder="${esc(t.roName)}" spellcheck="false"><input class="txt" id="roRealm" placeholder="${esc(t.roRealm)}" spellcheck="false"><button class="btn" data-ro="add">${esc(t.roAdd)}</button></div></div>`
+      + `<div class="ro-form"><b>${esc(t.roImportTitle)}</b><div class="ro-row"><input class="txt" id="roGuild" placeholder="${esc(t.roGuild)}" spellcheck="false" value="${esc(S().rosterGuild || '')}"><input class="txt" id="roGRealm" placeholder="${esc(t.roRealm)}" spellcheck="false" value="${esc(S().rosterRealm || '')}">`
+      + `<select id="roRegion">${['eu', 'us'].map(r => `<option value="${r}"${r === region ? ' selected' : ''}>${r.toUpperCase()}</option>`).join('')}</select>`
+      + `<select id="roRank"><option value="99">${esc(t.roAllRanks)}</option>${Array.from({ length: 10 }, (_, i) => `<option value="${i}"${Number(S().rosterRank ?? 99) === i ? ' selected' : ''}>${esc(t.roRankUpTo(i))}</option>`).join('')}</select>`
+      + `<button class="btn" data-ro="import">${esc(t.roImport)}</button></div></div></div></section>`;
+    if (!state.roster.length) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;
+    html += `<section class="panel card"><div class="card-head"><h2>${esc(t.roStatus(rows.length - missing.length, rows.length))}</h2><span class="spacer"></span><div class="card-tools">`
+      + `<button class="btn primary" data-ro="dm"${withDc.length ? '' : ' disabled'}>${esc(t.roDm(withDc.length))}</button><button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
+      + (missing.length && missing.length > withDc.length ? `<div class="hint">${esc(t.roNoLink(missing.length - withDc.length))}</div>` : '')
+      + `<div class="ptable-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th>${esc(t.roColDiscord)}</th><th></th></tr></thead><tbody>`
+      + rows.map(({ m, sim, ok, when, link }) => {
+        const col = m.cls ? (CLASS_COLORS[m.cls] || CLASS_COLORS[String(m.cls).toLowerCase().replace(/ /g, '')] || '') : (sim ? clsColor(sim) : '');
+        const k = rosterKey(m);
+        return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></td>`
+          + `<td>${ok ? `<span class="ro-badge ok">✓ ${esc(t.roHasSim)}</span> <span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : `<span class="ro-badge bad">✗ ${esc(t.roMissing)}</span>${sim ? ` <span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : ''}`}</td>`
+          + `<td><select class="ro-link" data-ro-link="${esc(k)}"><option value="">${esc(link ? '' : t.roLinkNone)}</option>${authors.map(([id, n]) => `<option value="${esc(id)}"${link && link.id === id ? ' selected' : ''}>@${esc(n)}</option>`).join('')}${link && !state.dcAuthors[link.id] ? `<option value="${esc(link.id)}" selected>@${esc(link.name)}</option>` : ''}</select></td>`
+          + `<td><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
+      }).join('') + `</tbody></table></div></section>`;
+    return html;
+  }
+
+  document.addEventListener('click', async e => {
+    const el = e.target.closest('[data-ro]');
+    if (!el) return;
+    const t = T(), a = el.dataset.ro;
+    if (a === 'add') {
+      const name = $('#roName').value.trim(), realm = $('#roRealm').value.trim();
+      if (!name) return toast(t.roNeedName, true);
+      if (!state.roster.some(m => rosterKey(m) === charKey(name, realm))) state.roster.push({ name, realm });
+      saveRoster(); render();
+    } else if (a === 'import') {
+      const guild = $('#roGuild').value.trim(), realm = $('#roGRealm').value.trim(), region = $('#roRegion').value, maxRank = Number($('#roRank').value);
+      if (!guild || !realm) return toast(t.roNeedGuild, true);
+      Object.assign(S(), { rosterGuild: guild, rosterRealm: realm, rosterRegion: region, rosterRank: maxRank }); persistSettings();
+      window.api.discordSet?.({ region });
+      el.disabled = true;
+      const slug = realm.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
+      const r = await window.api.rosterGuild(region, slug, guild);
+      el.disabled = false;
+      if (!r.ok) return toast(r.error === 'NOT_FOUND' ? t.roGuildNotFound : `${t.roImportError}: ${r.error}`, true);
+      let added = 0;
+      for (const m of r.members.filter(x => x.rank <= maxRank)) {
+        if (state.roster.some(x => rosterKey(x) === charKey(m.name, m.realm))) continue;
+        state.roster.push({ name: m.name, realm: m.realm, cls: String(m.cls || '').toLowerCase().replace(/ /g, '') }); added++;
+      }
+      saveRoster(); render(); toast(t.roImported(added, r.guild));
+    } else if (a === 'del') {
+      state.roster = state.roster.filter(m => rosterKey(m) !== el.dataset.k); saveRoster(); render();
+    } else if (a === 'clear') {
+      const doIt = () => { state.roster = []; saveRoster(); render(); };
+      S().confirmClear ? modal({ title: t.roClear, body: `<p>${esc(t.roClearConfirm)}</p>`, actions: [{ label: t.cancel }, { label: t.confirm, cls: 'danger', onclick: doIt }] }) : doIt();
+    } else if (a === 'dm') {
+      const reset = lastReset(S().rosterRegion || 'eu'), byUser = new Map();
+      for (const m of state.roster) {
+        const sim = rosterSim(m), link = linkOf(m);
+        if (!link || (sim && (sim.simDate || sim.fetchedAt || 0) >= reset)) continue;
+        if (!byUser.has(link.id)) byUser.set(link.id, { id: link.id, chars: [] });
+        byUser.get(link.id).chars.push(m.name);
+      }
+      if (!byUser.size) return;
+      el.disabled = true;
+      const r = await window.api.discordDm([...byUser.values()]);
+      el.disabled = false;
+      if (r.error) return toast(r.error === 'DM_COOLDOWN' ? t.roDmCooldown(Math.ceil((r.retry || 0) / 60000)) : r.error === 'NO_CHANNEL' ? t.roDmNoChannel : `${t.roDmError}: ${r.error}`, true);
+      toast(t.roDmSent((r.sent || []).length, (r.failed || []).length));
+    }
+  });
+  document.addEventListener('change', e => {
+    const sel = e.target.closest?.('[data-ro-link]');
+    if (!sel) return;
+    if (sel.value) state.dcLinks[sel.dataset.roLink] = { id: sel.value, name: state.dcAuthors[sel.value] || sel.value };
+    else delete state.dcLinks[sel.dataset.roLink];
+    save('ninjaloot.dcLinks', state.dcLinks);
   });
 
   function openSettings(tab = 'general') {

@@ -219,11 +219,19 @@ ipcMain.handle('app:open', (_e, url) => { if (/^https:\/\//.test(url)) shell.ope
 const RELAY = 'https://ninjaloot-relay.vercel.app/api/discord';
 const discordFile = () => path.join(userData(), 'discord.json');
 let dc = null, dcTimer = null, dcStatus = { state: 'off' };
-const dcLoad = () => (dc ??= (() => { const c = readJSON(discordFile(), {}); return { enabled: !!c.enabled, channelId: c.channelId || '', channelName: c.channelName || '', lastId: c.lastId || '' }; })());
+const dcLoad = () => (dc ??= (() => { const c = readJSON(discordFile(), {}); return { enabled: !!c.enabled, channelId: c.channelId || '', channelName: c.channelName || '', lastId: c.lastId || '', region: c.region === 'us' ? 'us' : 'eu' }; })());
+// Último reinicio semanal de WoW: miércoles 04:00 UTC en Europa, martes 15:00 UTC en América
+function weeklyReset(region) {
+  const now = new Date(), [day, hour] = region === 'us' ? [2, 15] : [3, 4];
+  const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour));
+  d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - day + 7) % 7));
+  if (d > now) d.setUTCDate(d.getUTCDate() - 7);
+  return d.getTime();
+}
 const dcSave = () => { try { fs.writeFileSync(discordFile(), JSON.stringify(dc)); } catch {} };
 const dcEmit = status => { dcStatus = status; for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:status', status); };
-async function relay(query) {
-  const res = await net.fetch(`${RELAY}?${query}`, { headers: UA });
+async function relay(query, init) {
+  const res = await net.fetch(`${RELAY}?${query}`, { ...(init || {}), headers: { ...UA, ...((init && init.body) ? { 'content-type': 'application/json' } : {}) } });
   const j = await res.json().catch(() => ({}));
   if (!res.ok) throw Object.assign(new Error(j.error || `HTTP_${res.status}`), { code: j.error || 'NETWORK', retry: j.retry });
   return j;
@@ -234,14 +242,16 @@ async function dcTick() {
   if (!c.enabled || !c.channelId) return dcEmit({ state: 'off' });
   let wait = 6000;
   try {
-    if (!c.lastId) { // al conectar: nombre del canal y último mensaje (lo anterior no se importa)
-      const r = await relay(`channel=${c.channelId}`);
+    if (!c.lastId) { // al conectar: las sims publicadas desde el último reinicio semanal (las de semanas anteriores no)
+      const r = await relay(`op=history&channel=${c.channelId}&since=${weeklyReset(c.region)}`);
       c.channelName = r.channel || c.channelId; c.lastId = r.lastId || '0'; dcSave();
+      if (r.sims && r.sims.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', r.sims);
       dcEmit({ state: 'ok', channel: c.channelName });
     } else {
       const r = await relay(`channel=${c.channelId}&after=${c.lastId}`);
       if (r.lastId && r.lastId !== c.lastId) { c.lastId = r.lastId; dcSave(); }
-      if (r.ids && r.ids.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', r.ids);
+      const list = r.sims || r.ids || [];
+      if (list.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', list);
       dcEmit({ state: 'ok', channel: c.channelName, warn: r.empty ? 'INTENT' : '' });
     }
   } catch (e) {
@@ -251,7 +261,25 @@ async function dcTick() {
   dcTimer = setTimeout(dcTick, wait);
 }
 function dcRestart() { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); }
-ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, status: dcStatus }; });
+ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, channelName: c.channelName, region: c.region, reset: weeklyReset(c.region), status: dcStatus }; });
+// Recordatorio por mensaje privado a quien le falta la sim (el servidor solo escribe a quien haya escrito en el canal)
+ipcMain.handle('discord:dm', async (_e, users) => {
+  const c = dcLoad();
+  if (!c.channelId) return { error: 'NO_CHANNEL' };
+  try { return await relay('op=dm', { method: 'POST', body: JSON.stringify({ channel: c.channelId, users }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
+});
+// Miembros de una guild (Raider.IO) para el roster
+ipcMain.handle('roster:guild', async (_e, region, realm, name) => {
+  if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+  try {
+    const q = new URLSearchParams({ region, realm, name, fields: 'members' });
+    const res = await net.fetch(`https://raider.io/api/v1/guilds/profile?${q}`, { headers: UA });
+    if (res.status === 400 || res.status === 404) return { ok: false, error: 'NOT_FOUND' };
+    if (!res.ok) return { ok: false, error: 'HTTP', detail: res.status };
+    const j = await res.json();
+    return { ok: true, guild: j.name, realm: j.realm, members: (j.members || []).map(m => ({ rank: m.rank, name: m.character && m.character.name, realm: m.character && m.character.realm, cls: m.character && m.character.class, spec: m.character && m.character.active_spec_name })).filter(m => m.name) };
+  } catch (e) { return { ok: false, error: 'NETWORK', detail: String(e.message || e) }; }
+});
 // Enlace para invitar el bot (el id de la aplicación lo da el servidor intermedio)
 ipcMain.handle('discord:invite', async () => {
   try { const r = await relay('op=info'); return r.clientId ? `https://discord.com/oauth2/authorize?client_id=${r.clientId}&scope=bot&permissions=66560` : null; } catch { return null; }
@@ -264,6 +292,7 @@ ipcMain.handle('discord:set', (_e, o = {}) => {
     c.channelId = id;
   }
   if (o.enabled !== undefined) { if (o.enabled && !c.enabled) c.lastId = ''; c.enabled = !!o.enabled; }
+  if (o.region !== undefined) c.region = o.region === 'us' ? 'us' : 'eu';
   dcSave(); dcRestart();
   return { ok: true, channelId: c.channelId };
 });

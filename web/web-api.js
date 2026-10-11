@@ -99,10 +99,18 @@
 
   // --- Discord (bot compartido, mismo servidor intermedio que el programa) ---
   const dcListeners = { sims: [], status: [] };
-  let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '' }), dcTimer = null, dcStatus = { state: 'off' };
+  let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '', region: 'eu' }), dcTimer = null, dcStatus = { state: 'off' };
+  // Último reinicio semanal de WoW: miércoles 04:00 UTC en Europa, martes 15:00 UTC en América
+  function weeklyReset(region) {
+    const now = new Date(), [day, hour] = region === 'us' ? [2, 15] : [3, 4];
+    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), hour));
+    d.setUTCDate(d.getUTCDate() - ((d.getUTCDay() - day + 7) % 7));
+    if (d > now) d.setUTCDate(d.getUTCDate() - 7);
+    return d.getTime();
+  }
   const dcEmit = st => { dcStatus = st; dcListeners.status.forEach(f => f(st)); };
-  async function relay(query) {
-    const r = await fetch(`${RELAY}?${query}`), j = await r.json().catch(() => ({}));
+  async function relay(query, init) {
+    const r = await fetch(`${RELAY}?${query}`, init), j = await r.json().catch(() => ({}));
     if (!r.ok) throw Object.assign(new Error(j.error || 'NETWORK'), { code: j.error || 'NETWORK', retry: j.retry });
     return j;
   }
@@ -111,11 +119,12 @@
     if (!dc.enabled || !dc.channelId) return dcEmit({ state: 'off' });
     let wait = 6000;
     try {
-      if (!dc.lastId) { const r = await relay(`channel=${dc.channelId}`); dc.channelName = r.channel || dc.channelId; dc.lastId = r.lastId || '0'; save('ninjaloot.web.discord', dc); dcEmit({ state: 'ok', channel: dc.channelName }); }
+      if (!dc.lastId) { const r = await relay(`op=history&channel=${dc.channelId}&since=${weeklyReset(dc.region)}`); dc.channelName = r.channel || dc.channelId; dc.lastId = r.lastId || '0'; save('ninjaloot.web.discord', dc); if (r.sims && r.sims.length) dcListeners.sims.forEach(f => f(r.sims)); dcEmit({ state: 'ok', channel: dc.channelName }); }
       else {
         const r = await relay(`channel=${dc.channelId}&after=${dc.lastId}`);
         if (r.lastId && r.lastId !== dc.lastId) { dc.lastId = r.lastId; save('ninjaloot.web.discord', dc); }
-        if (r.ids && r.ids.length) dcListeners.sims.forEach(f => f(r.ids));
+        const list = r.sims || r.ids || [];
+        if (list.length) dcListeners.sims.forEach(f => f(list));
         dcEmit({ state: 'ok', channel: dc.channelName, warn: r.empty ? 'INTENT' : '' });
       }
     } catch (e) { if (e.code === 'RATE') wait = e.retry || 15000; else { dcEmit({ state: 'error', error: e.code }); wait = 20000; } }
@@ -130,10 +139,22 @@
     checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
     installUpdate: async () => ({ ok: false }),
     onUpdateProgress: () => {},
-    discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, status: dcStatus }),
+    discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, channelName: dc.channelName, region: dc.region || 'eu', reset: weeklyReset(dc.region), status: dcStatus }),
+    discordDm: async users => {
+      if (!dc.channelId) return { error: 'NO_CHANNEL' };
+      try { return await relay('op=dm', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ channel: dc.channelId, users }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
+    },
+    rosterGuild: async (region, realm, name) => {
+      if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+      try {
+        const j = await getJSON(`https://raider.io/api/v1/guilds/profile?${new URLSearchParams({ region, realm, name, fields: 'members' })}`);
+        return { ok: true, guild: j.name, realm: j.realm, members: (j.members || []).map(m => ({ rank: m.rank, name: m.character && m.character.name, realm: m.character && m.character.realm, cls: m.character && m.character.class, spec: m.character && m.character.active_spec_name })).filter(m => m.name) };
+      } catch (e) { return e.status === 400 || e.status === 404 ? { ok: false, error: 'NOT_FOUND' } : { ok: false, error: 'NETWORK', detail: String(e.message || e) }; }
+    },
     discordSet: async (o = {}) => {
       if (o.channelId !== undefined) { const id = (String(o.channelId).trim().match(/(\d{15,25})\/?$/) || [])[1] || ''; if (id !== dc.channelId) { dc.lastId = ''; dc.channelName = ''; } dc.channelId = id; }
       if (o.enabled !== undefined) { if (o.enabled && !dc.enabled) dc.lastId = ''; dc.enabled = !!o.enabled; }
+      if (o.region !== undefined) dc.region = o.region === 'us' ? 'us' : 'eu';
       save('ninjaloot.web.discord', dc); dcRestart();
       return { ok: true, channelId: dc.channelId };
     },
