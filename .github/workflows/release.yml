@@ -22,6 +22,15 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - name: Comprobar requisitos de SignPath
+        shell: pwsh
+        run: |
+          if (-not (Test-Path LICENSE)) { throw "Falta el archivo LICENSE (lo exige SignPath)." }
+          $readme = Get-Content README.md -Raw
+          foreach ($s in 'Code signing policy', 'Free code signing provided by', 'Privacy policy') {
+            if (-not $readme.Contains($s)) { throw "Falta '$s' en README.md (lo exige SignPath)." }
+          }
+
       - uses: actions/setup-node@v5
         with:
           node-version: 22
