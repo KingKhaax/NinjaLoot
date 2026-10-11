@@ -622,7 +622,6 @@
 
   // ---------- Rotaciones: tabla jugador x jefe ----------
   // Estados de cada casilla: 'n' = NO rota (verde) · 'r' = SÍ rota (rojo) · 'p' = en duda / pendiente (naranja, por defecto)
-  const NEXT = { p: 'n', n: 'r', r: 'p' };
   const cellState = (bossId, simId) => { const b = state.rot[bossId]; return (b && !Array.isArray(b) && b[simId]) || 'p'; };
   const setCell = (bossId, simId, st) => { const b = state.rot[bossId]; state.rot[bossId] = { ...(b && !Array.isArray(b) ? b : {}), [simId]: st }; };
   // Cobertura de buffs de un jefe: ok = lo aporta alguien que no rota · warn = solo quien rota · bad = nadie
@@ -634,12 +633,16 @@
     });
   }
   const allBosses = () => state.bosses.groups.flatMap(g => g.bosses.map(b => ({ ...b, group: g.name })));
+  // Jefes de la tabla de rotaciones: los de la temporada y, si se marca, una columna para el jefe de la raid nueva de la semana que viene
+  const rotGroups = () => [...state.bosses.groups, ...(S().vaultNew ? [{ id: -1, name: T().newRaidGroup, bosses: [{ id: -1, name: T().newRaidBoss }] }] : [])];
+  const rotBosses = () => rotGroups().flatMap(g => g.bosses.map(b => ({ ...b, group: g.name })));
+  const ST_SYM = { n: '✓', r: '✗', p: '?' };
   const persistRot = () => save('ninjaloot.rotations', state.rot);
   const buffIcon = b => `assets/ui/buff-${b.id}.png`;
 
   function renderRotations() {
     const t = T(), L = S().lang === 'es' ? 0 : 1, content = $('#content');
-    const bosses = allBosses();
+    const bosses = rotBosses();
     if (!bosses.find(b => b.id === state.bossSel)) state.bossSel = bosses[0]?.id;
     const sel = bosses.find(b => b.id === state.bossSel);
     const kindLabel = { buff: t.kindBuff, debuff: t.kindDebuff, util: t.kindUtil };
@@ -647,7 +650,7 @@
 
     // Tabla: filas = personajes, columnas = jefes
     let head1 = '<th class="corner" rowspan="2">' + esc(t.rotPlayer) + '</th>', head2 = '';
-    for (const g of state.bosses.groups) {
+    for (const g of rotGroups()) {
       head1 += `<th class="grp" colspan="${g.bosses.length}">${esc(g.name)}</th>`;
       for (const b of g.bosses) {
         const cov = coverage(b.id), bad = cov.filter(c => c.status === 'bad').length, warn = cov.filter(c => c.status === 'warn').length;
@@ -658,10 +661,13 @@
     let rows = '';
     for (const sim of state.sims) {
       const col = clsColor(sim);
-      rows += `<tr><th class="who"><span class="wl">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<span class="wn" style="color:${readable(col)}">${esc(sim.character.name)}</span></span></th>`;
+      // Cada casilla con sus tres estados a un clic (✓ no rota · ✗ rota · ? pendiente) y, junto al nombre, los mismos botones para toda la fila
+      const seg = (attr, st, title) => `<div class="cellseg">${['n', 'r', 'p'].map(s => `<button class="cs st-${s}${st === s ? ' on' : ''}" ${attr}="${s}" title="${esc(title(s))}">${ST_SYM[s]}</button>`).join('')}</div>`;
+      rows += `<tr><th class="who"><span class="wl">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<span class="wn" style="color:${readable(col)}">${esc(sim.character.name)}</span></span>`
+        + `<div class="rowset" data-row="${esc(sim.id)}">${['n', 'r', 'p'].map(s => `<button class="cs st-${s}" data-row-set="${s}" title="${esc(t.rotRowSet(stLabel[s]))}">${ST_SYM[s]}</button>`).join('')}</div></th>`;
       for (const b of bosses) {
         const st = cellState(b.id, sim.id);
-        rows += `<td class="${b.id === state.bossSel ? 'sel' : ''}"><button class="cell st-${st}" data-cell="${esc(sim.id)}:${b.id}" title="${esc(sim.character.name)} — ${esc(b.name)}: ${esc(stLabel[st])}">${esc(stLabel[st])}</button></td>`;
+        rows += `<td class="${b.id === state.bossSel ? 'sel' : ''}" data-cell="${esc(sim.id)}:${b.id}">${seg('data-cell-set', st, s => `${sim.character.name} — ${b.name}: ${stLabel[s]}`)}</td>`;
       }
       rows += '</tr>';
     }
@@ -683,19 +689,20 @@
     }
     content.innerHTML = `<div class="rot-warning" role="note"><span class="rw-icon">⚠</span><div><b>${esc(t.rotWarnTitle)}</b><p>${esc(t.rotWarnText)}</p></div></div>`
       + `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
-      + `<div class="legend"><span class="lg st-n">${esc(t.stN)}</span><span class="lg st-r">${esc(t.stR)}</span><span class="lg st-p">${esc(t.stP)}</span></div></div>`
+      + `<div class="legend"><span class="lg st-n">✓ ${esc(t.stN)}</span><span class="lg st-r">✗ ${esc(t.stR)}</span><span class="lg st-p">? ${esc(t.stP)}</span></div>`
+      + (state.sims.length ? `<button class="btn small" data-rot-reset>${esc(t.rotResetAll)}</button>` : '') + `</div>`
       + `<div class="hint">${esc(t.rotHint)}</div>${table}</div>${vaultSection(bosses)}${buffs}`;
   }
 
-  // Cofre semanal de raid: jefes que mata cada persona según las rotaciones (2, 4 y 6 jefes desbloquean cada hueco)
+  // Cofre semanal de raid: solo cuentan los jefes marcados como "no rota" (todos empiezan en 0/6); 2, 4 y 6 jefes desbloquean cada hueco
   function vaultSection(bosses) {
-    const t = T(), extra = S().vaultNew ? 1 : 0, max = bosses.length + extra;
+    const t = T(), extra = S().vaultNew ? 1 : 0, max = bosses.length;
     if (!state.sims.length) return '';
     const cards = state.sims.map(sim => {
-      const rot = bosses.filter(b => cellState(b.id, sim.id) === 'r').length, kills = max - rot, col = clsColor(sim);
+      const count = s => bosses.filter(b => cellState(b.id, sim.id) === s).length, kills = count('n'), col = clsColor(sim);
       return `<div class="vault" style="--cc:${col}"><div class="v-head">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<b style="color:${readable(col)}">${esc(sim.character.name)}</b></div>`
         + `<div class="v-count${kills >= 6 ? ' full' : ''}">${kills}/6</div><div class="v-slots">${[2, 4, 6].map(n => `<span class="v-slot${kills >= n ? ' on' : ''}">${Math.min(kills, n)}/${n}</span>`).join('')}</div>`
-        + `<div class="meta">${esc(t.vaultRot(rot))}</div></div>`;
+        + `<div class="meta">${esc(t.vaultCounts(kills, count('r'), count('p')))}</div></div>`;
     }).join('');
     return `<div class="panel card"><div class="card-head"><div><h2>${esc(t.vaultTitle)}</h2><div class="meta">${esc(t.vaultMax(max))}</div></div><span class="spacer"></span>`
       + `<label class="v-new"><input type="checkbox" id="vaultNew" ${extra ? 'checked' : ''}> ${esc(t.vaultNew)}</label></div>`
@@ -811,9 +818,11 @@
     else if (q('data-personal-load')) { loadPersonal($('#personalUrl').value); }
     else if ((el = q('data-tier-cls'))) { state.tierCls = state.tierCls === el.dataset.tierCls ? null : el.dataset.tierCls; render(); }
     else if ((el = q('data-boss'))){ state.bossSel = Number(el.dataset.boss); render(); }
-    else if ((el = q('data-cell'))) { const [sid, bid] = el.dataset.cell.split(':'); setCell(Number(bid), sid, NEXT[cellState(Number(bid), sid)]); persistRot(); render(); }
+    else if ((el = q('data-cell-set'))) { const [sid, bid] = el.closest('[data-cell]').dataset.cell.split(':'); setCell(Number(bid), sid, el.dataset.cellSet); persistRot(); render(); }
+    else if ((el = q('data-row-set'))) { const sid = el.closest('[data-row]').dataset.row; for (const b of rotBosses()) setCell(b.id, sid, el.dataset.rowSet); persistRot(); render(); }
+    else if (q('data-rot-reset')) { const doIt = () => { state.rot = {}; persistRot(); render(); }; S().confirmClear ? modal({ title: T().rotResetAll, body: `<p>${esc(T().rotResetConfirm)}</p>`, actions: [{ label: T().cancel }, { label: T().confirm, cls: 'danger', onclick: doIt }] }) : doIt(); }
     else if ((el = q('data-col-set'))) { for (const s of state.sims) setCell(state.bossSel, s.id, el.dataset.colSet); persistRot(); render(); }
-    else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of allBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
+    else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of rotBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
     else if ((el = q('data-refresh'))) addSim(el.dataset.refresh, true);
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
