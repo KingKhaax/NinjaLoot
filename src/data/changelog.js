@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.1.12', 'Simulación personal con varias simulaciones de una misma persona: pega los enlaces de Raidbots (por ejemplo uno de raid y otro de míticas) y NinjaLoot los junta en una sola lista para comparar. Salen chips con cada sim (fuente, DPS base y antigüedad) que puedes quitar con la ✕, una comparativa con la mejor pieza de cada fuente (★ la que más DPS da), filtro por Raid / Mazmorras y una columna que indica de qué sim viene cada objeto. Si cargas a otro personaje, se empieza una lista nueva. El desplegable de personajes ahora muestra el icono de la especialización.'],
     ['0.1.11', 'Dónde tirar moneda: nueva pregunta «¿Cuántas monedas tienes?» (de 1 a 20) y la lista muestra tantas piezas de jefe como monedas tengas, de la que más DPS te da a la que menos. En Tiers, las ranuras empiezan en mayúscula (Cabeza, Hombros…).'],
     ['0.1.10', 'Gráficas con barras simples: en «Mejor mejora por jugador» sale el icono del objeto encima de cada barra, y en la gráfica de cada jugador el icono del objeto sustituye al nombre larguísimo de debajo; al pasar el ratón por cualquiera de ellos se ve el tooltip del objeto.'],
     ['0.1.9', 'Arreglado el error «No se pudo consultar GitHub»: la búsqueda de actualizaciones ya no usa la API de GitHub (limitada a 60 consultas por hora), sino el archivo de cada versión, y guarda el resultado unos minutos.'],
@@ -15,6 +16,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.1.12', 'Personal sim with several simulations of the same person: paste the Raidbots links (for example one for raid and one for Mythic+) and NinjaLoot merges them into a single list to compare. Chips show each sim (source, base DPS and age) and can be removed with the ✕, a comparison shows the best piece of each source (★ the biggest DPS gain), you can filter by Raid / Dungeons, and a column tells which sim each item comes from. Loading another character starts a new list. The character dropdown now shows the spec icon.'],
     ['0.1.11', 'Where to use a coin: new «How many coins do you have?» question (1 to 20) and the list shows as many boss pieces as coins you have, from the most DPS to the least. In Tiers, slot names start with a capital letter (Head, Shoulders…).'],
     ['0.1.10', 'Simple bar charts: «Best upgrade per player» shows the item icon above each bar, and each player chart shows the item icon instead of the very long name below; hover any of them to see the item tooltip.'],
     ['0.1.9', 'Fixed the "Could not reach GitHub" error: checking for updates no longer uses the GitHub API (limited to 60 requests per hour) but each release’s own file, and caches the result for a few minutes.'],

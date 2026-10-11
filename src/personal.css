@@ -1,0 +1,30 @@
+/* Simulación personal: varias simulaciones de una misma persona, comparativa por fuente y selector con icono de spec.
+   Usa solo las variables del tema (--panel, --panel2, --border, --accent, --muted...), así sigue cualquier estilo. */
+
+/* Selector de personaje con el icono de su especialización */
+.spec-pick { position: relative; min-width: 240px; flex: 1; }
+.spec-pick-btn { display: flex; align-items: center; gap: 9px; width: 100%; cursor: pointer; font: inherit; text-align: left; }
+.spec-pick-btn .caret { margin-left: auto; color: var(--muted); }
+.sp-ic { width: 24px; height: 24px; border-radius: 4px; flex: none; }
+.spec-pick-menu { position: absolute; z-index: 60; left: 0; right: 0; top: calc(100% + 4px); max-height: 320px; overflow: auto; padding: 4px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); box-shadow: 0 12px 30px rgba(0, 0, 0, .45); }
+.spec-pick-menu[hidden] { display: none; }
+.sp-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 6px 10px; border: 0; border-radius: 6px; background: transparent; cursor: pointer; font: inherit; font-weight: 700; text-align: left; }
+.sp-item:hover, .sp-item.on { background: color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* Simulaciones cargadas (una por chip) */
+.pers-chips { align-items: center; margin: 12px 0 0; }
+.pers-chips .chip b { margin-right: 4px; }
+.sim-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 7px; vertical-align: baseline; }
+.ptable td.sc { white-space: nowrap; color: var(--muted); font-size: 13px; }
+
+/* Mejor pieza de cada fuente: raid, mazmorras... */
+.pers-compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; margin: 14px 0 6px; }
+.pc-card { display: grid; gap: 6px; padding: 12px 14px; text-align: left; font: inherit; color: inherit; cursor: pointer; border-radius: 10px; border: 1px solid var(--border); background: var(--panel2); }
+.pc-card:hover, .pc-card.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--panel2)); }
+.pc-card.top { box-shadow: inset 0 0 0 1px color-mix(in srgb, #e8c25a 70%, transparent); }
+.pc-cat { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.pc-card.top .pc-cat { color: #e8c25a; }
+.pc-item { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+.pc-item img { width: 32px; height: 32px; border-radius: 4px; border: 2px solid; flex: none; }
+.pc-gain b { font-size: 20px; color: #3fcf6a; }
+.pc-src { font-size: 12.5px; }

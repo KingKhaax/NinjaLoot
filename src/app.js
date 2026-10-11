@@ -13,9 +13,12 @@
   const state = {
     settings: { ...DEFAULTS, ...load('ninjaloot.settings', {}) },
     sims: [], loading: new Set(), names: { es: {}, en: {}, fr: {}, de: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'home', personal: load('ninjaloot.personal', null), gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    view: 'home', personal: null, personalList: [], gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
+  // Simulación personal: una o varias simulaciones de la misma persona (raid, míticas...) y su versión combinada para compararlas
+  state.personalList = (() => { const l = load('ninjaloot.personalList', null); if (Array.isArray(l)) return l.filter(r => r && r.id && Array.isArray(r.items)); const one = load('ninjaloot.personal', null); return one && Array.isArray(one.items) ? [one] : []; })();
+  state.personal = mergePersonal(state.personalList);
   const S = () => state.settings;
   const T = () => I18N[S().lang] || I18N.es;
   const persistSims = () => save('ninjaloot.sims', S().persist ? state.sims : []);
@@ -211,7 +214,7 @@
       });
     }
   }
-  const gearOf = sim => { const g = S().checkGear !== false && state.gear[sim.id]; return g && g.ok ? g.items : null; };
+  const gearOf = sim => { const g = S().checkGear !== false && state.gear[sim.gearId || sim.id]; return g && g.ok ? g.items : null; };
   // Ya lo lleva: el mismo objeto equipado ahora a su nivel o más (si lo lleva a menos nivel, la mejora sigue valiendo)
   const owned = (sim, it) => { const g = gearOf(sim); return !!g && Object.values(g).some(x => x.id === it.id && x.ilvl >= (it.ilvl || 0)); };
   function staleInfo(sim) {
@@ -366,30 +369,55 @@
 
   // ---------- Simulación personal: cada pieza exacta, su DPS y de qué jefe sale ----------
   function personalView() {
-    const t = T(), p = state.personal;
+    const t = T(), p = state.personal, list = state.personalList, multi = list.length > 1;
+    const simOf = it => list[it.sim || 0] || list[0];
     let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.persTitle)}</h2></div><div class="hint">${esc(t.persHint)}</div>`
-      + `<div class="pers-form"><input id="personalUrl" class="txt" spellcheck="false" placeholder="${esc(t.persUrl)}" value="${esc(state.personalUrl || p?.url || '')}"><button class="btn primary" data-personal-load>${esc(t.persLoad)}</button>`
-      + (state.sims.length ? `<select id="personalPick" class="txt"><option value="">${esc(t.persUse)}</option>${state.sims.map(s => `<option value="${esc(s.id)}"${p && p.id === s.id ? ' selected' : ''}>${esc(s.character.name)} (${esc(specName(s))})</option>`).join('')}</select>` : '')
-      + `</div></section>`;
+      + `<div class="pers-form"><input id="personalUrl" class="txt" spellcheck="false" placeholder="${esc(t.persUrl)}" value="${esc(state.personalUrl || (list.length === 1 ? list[0].url : ''))}"><button class="btn primary" data-personal-load>${esc(t.persLoad)}</button>`
+      + (state.sims.length ? (() => {
+        // Desplegable con el ICONO de la especialización de cada personaje (un <select> nativo no puede mostrar imágenes)
+        const cur = !multi && p ? state.sims.find(s => s.id === p.id) : null, specImg = s => specIcon(s) ? `<img class="sp-ic" src="${specIcon(s)}" alt="">` : '';
+        return `<div class="spec-pick" id="personalPick"><button type="button" class="txt spec-pick-btn" data-pick-toggle>${cur ? `${specImg(cur)}<span style="color:${readable(clsColor(cur))}">${esc(cur.character.name)}</span>` : `<span class="meta">${esc(t.persUse)}</span>`}<span class="caret">▾</span></button>`
+          + `<div class="spec-pick-menu" hidden>${state.sims.map(s => `<button type="button" class="sp-item${cur && cur.id === s.id ? ' on' : ''}" data-pick="${esc(s.id)}" title="${esc(specName(s))}">${specImg(s)}<span style="color:${readable(clsColor(s))}">${esc(s.character.name)}</span></button>`).join('')}</div></div>`;
+      })() : '')
+      + `</div>`
+      + (list.length ? `<div class="chips pers-chips"><span class="meta">${esc(t.persSimsTitle)}:</span>${list.map((r, i) => `<span class="chip" style="border-left-color:${SIM_COLORS[i % SIM_COLORS.length]}"><b>${esc(simLabel(r))}</b><span class="meta">${nf().format(r.baseDps)} DPS${simAge(r) ? ' · ' + esc(simAge(r)) : ''}</span><button class="x" data-pers-remove="${esc(r.id)}" title="${esc(t.remove)}">${xmark}</button></span>`).join('')}</div>` : '')
+      + `</section>`;
     if (!p) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
     const col = clsColor(p), max = p.items[0]?.gain || 1, min = Number(S().minGain) || 0;
-    const rows = p.items.filter(i => i.gain >= min).map((it, i) => {
+    // Fuentes presentes (raid, mazmorras...) y filtro elegido
+    const cats = {}; for (const it of p.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
+    const catKeys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
+    const pcat = catKeys.includes(S().persCat) ? S().persCat : 'all';
+    const shownItems = pcat === 'all' ? p.items : p.items.filter(it => catOfSrc(srcOf(it)) === pcat);
+    const rows = shownItems.filter(i => i.gain >= min).map((it, i) => {
       state.shown.add(it.id);
       const info = itemInfo(it), st = srcText(it), boss = st && st.name, group = st && st.sub;
       return `<tr class="${owned(p, it) ? 'owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
         + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${owned(p, it) ? `<span class="owned-tag">${esc(t.ownedTag)}</span>` : ''}</td>`
         + `<td>${esc(t.slots[it.slot] || it.slot || '')}</td><td>${it.ilvl || ''}</td>`
+        + (multi ? `<td class="sc"><span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>${esc(simLabel(simOf(it)))}</td>` : '')
         + `<td class="bs">${boss ? `<b>${esc(boss)}</b>${group ? `<div class="meta">${esc(group)}</div>` : ''}` : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
         + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
     }).join('');
-    html += stalePanel([p]);
+    html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
     const pm = S().persMode || 'all';
-    html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button><button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div></div>`;
+    html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button><button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div>`
+      + (pm === 'all' && catKeys.length > 1 ? `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-pcat="all" class="${pcat === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${catKeys.map(k => `<button data-pcat="${k}" class="${pcat === k ? 'on' : ''}">${esc(catName(k))}</button>`).join('')}</div></div>` : '') + `</div>`;
     if (pm === 'coin') return html + coinSection(p);
+    // Comparativa: la mejor pieza de cada fuente (raid, mazmorras...) para ver de un vistazo dónde está el mayor salto
+    if (catKeys.length > 1) {
+      const bestOf = k => p.items.find(it => catOfSrc(srcOf(it)) === k && !owned(p, it)) || p.items.find(it => catOfSrc(srcOf(it)) === k);
+      const bests = catKeys.map(k => [k, bestOf(k)]), topGain = Math.max(...bests.map(([, it]) => it.gain));
+      html += `<div class="pers-compare">${bests.map(([k, it]) => { const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
+        return `<button class="pc-card${pcat === k ? ' on' : ''}${it.gain === topGain ? ' top' : ''}" data-pcat="${k}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}">`
+          + `<span class="pc-cat">${it.gain === topGain ? '★ ' : ''}${esc(catName(k))} <span class="meta">${cats[k]} ${esc(t.items)}</span></span>`
+          + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
+          + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
+    }
     html += `<section class="panel card"><div class="card-head">${specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
-      + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}</div></div>`
-      + `<span class="spacer"></span><div class="card-tools"><button class="btn small" data-open="${esc(p.url)}">${ui('open')}${esc(t.openRaidbots)}</button></div></div>`
-      + `<div class="ptable-wrap"><table class="ptable"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.colIlvl)}</th><th>${esc(t.colBoss)}</th><th>${esc(t.colGain)}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${multi ? '' : diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
+      + `<span class="spacer"></span><div class="card-tools">${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
+      + `<div class="ptable-wrap"><table class="ptable"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.colIlvl)}</th>${multi ? `<th>${esc(t.colSim)}</th>` : ''}<th>${esc(t.colBoss)}</th><th>${esc(t.colGain)}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
     return html;
   }
 
@@ -407,12 +435,51 @@
     return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
+  // Combina las simulaciones de una misma persona en una sola lista de objetos, de más a menos DPS (cada uno recuerda de qué sim viene)
+  function mergePersonal(list) {
+    if (!list.length) return null;
+    const best = new Map();
+    list.forEach((r, si) => r.items.forEach(it => {
+      const s = it.source || {}, key = `${it.id}:${it.ilvl}:${s.instance ?? ''}:${s.encounter ?? ''}`, prev = best.get(key);
+      if (!prev || it.gain > prev.gain) best.set(key, { ...it, sim: si });
+    }));
+    return { ...list[0], items: [...best.values()].sort((a, b) => b.gain - a.gain), sims: list };
+  }
+  const normName = s => String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  const sameChar = (a, b) => normName(a.character.name) === normName(b.character.name) && (!a.character.realm || !b.character.realm || normName(a.character.realm) === normName(b.character.realm));
+  function setPersonalList(list) {
+    state.personalList = list; state.personal = mergePersonal(list);
+    save('ninjaloot.personalList', list); refreshGear();
+  }
+  // Fuente principal de una simulación (Raid, Mazmorras...) y su etiqueta, p. ej. «Raid MM»
+  function simCategory(r) {
+    const count = {}; for (const it of r.items) { const c = catOfSrc(srcOf(it)); count[c] = (count[c] || 0) + 1; }
+    const top = Object.entries(count).sort((a, b) => b[1] - a[1]), tot = r.items.length || 1;
+    return top.length > 1 && top[0][1] / tot < 0.75 ? 'mixed' : (top[0] || ['other'])[0];
+  }
+  const catName = k => k === 'mixed' ? T().persMixed : (T()['cat' + k[0].toUpperCase() + k.slice(1)] || k);
+  const simLabel = r => [catName(simCategory(r)), r.difficulty ? DIFF_TAG[r.difficulty] : ''].filter(Boolean).join(' ');
+  const SIM_COLORS = ['#b04df5', '#3fcf6a', '#f0a030', '#3fc7eb', '#ee5a45', '#e8d44d'];
+  const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; return d == null ? '' : d < 1 ? T().simToday : T().simDays(d); };
+
+  // Carga una o varias simulaciones: si son de la misma persona se añaden a las que ya hay; si es otra persona, se empieza una lista nueva
   async function loadPersonal(text) {
-    const ids = extractIds(text);
-    if (!ids.length) { toast(T().noUrls, true); return; }
-    const r = await window.api.fetchReport(ids[0]);
-    if (!r.ok) { toast(`${ids[0]}: ${errText(r)}`, true); return; }
-    state.personal = r.report; save('ninjaloot.personal', state.personal); refreshGear();
+    const t = T(), ids = extractIds(text);
+    if (!ids.length) { toast(t.noUrls, true); return; }
+    const results = await Promise.all(ids.map(id => window.api.fetchReport(id).then(r => ({ id, r }))));
+    const ok = [];
+    for (const { id, r } of results) { if (r.ok) ok.push(r.report); else toast(`${id}: ${errText(r)}`, true); }
+    if (!ok.length) return;
+    let list = state.personalList.slice(), added = 0;
+    if (list.length && !sameChar(list[0], ok[0])) { list = []; toast(t.persNewChar(ok[0].character.name)); }
+    for (const rep of ok) {
+      if (list.length && !sameChar(list[0], rep)) { toast(t.persOtherChar(rep.character.name), true); continue; }
+      const i = list.findIndex(x => x.id === rep.id);
+      if (i >= 0) list[i] = rep; else list.push(rep);
+      added++;
+    }
+    setPersonalList(list);
+    if (added) toast(t.persAdded(added, list.length));
     state.animateNext = true; render();
   }
 
@@ -892,7 +959,12 @@
   document.addEventListener('click', e => {
     const q = a => e.target.closest(`[${a}]`);
     let el;
+    if (!e.target.closest('.spec-pick')) document.querySelectorAll('.spec-pick-menu').forEach(m => { m.hidden = true; });
     if ((el = q('data-remove'))) removeSim(el.dataset.remove);
+    else if (q('data-pick-toggle')) { const m = e.target.closest('.spec-pick').querySelector('.spec-pick-menu'); m.hidden = !m.hidden; }
+    else if ((el = q('data-pick'))) { const s = state.sims.find(x => x.id === el.dataset.pick); if (s) { setPersonalList([s]); state.personalUrl = s.url; save('ninjaloot.personalUrl', s.url); state.animateNext = true; render(); } }
+    else if ((el = q('data-pers-remove'))) { setPersonalList(state.personalList.filter(r => r.id !== el.dataset.persRemove)); state.animateNext = false; render(); }
+    else if ((el = q('data-pcat'))) { S().persCat = el.dataset.pcat; persistSettings(); render(); }
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
@@ -929,9 +1001,6 @@
     if (e.target.id === 'coinCount') { S().coins = Math.max(1, Math.min(20, Number(e.target.value) || 5)); persistSettings(); render(); return; }
     if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
     if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
-    if (e.target.id !== 'personalPick') return;
-    const s = state.sims.find(x => x.id === e.target.value);
-    if (s) { state.personal = s; save('ninjaloot.personal', s); state.personalUrl = s.url; save('ninjaloot.personalUrl', s.url); state.animateNext = true; render(); }
   });
   // Arrastrar enlaces o texto sobre la ventana
   let dragDepth = 0;
