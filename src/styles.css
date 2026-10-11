@@ -445,3 +445,8 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 /* Dónde tirar moneda: ¿cuántas monedas tienes? */
 .coin-count { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--muted); }
 .coin-count select { min-width: 64px; }
+
+/* Inicio: «Hecho por Drakko ♥» (como en WipeTime) */
+.made-by { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 40px 0 8px; color: var(--muted); font-size: 14px; }
+.made-by b { color: var(--text); letter-spacing: .3px; }
+.made-by .heart { color: #ff4f7b; }
