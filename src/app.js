@@ -380,7 +380,7 @@
           + `<div class="spec-pick-menu" hidden>${state.sims.map(s => `<button type="button" class="sp-item${cur && cur.id === s.id ? ' on' : ''}" data-pick="${esc(s.id)}" title="${esc(specName(s))}">${specImg(s)}<span style="color:${readable(clsColor(s))}">${esc(s.character.name)}</span></button>`).join('')}</div></div>`;
       })() : '')
       + `</div>`
-      + (list.length ? `<div class="chips pers-chips"><span class="meta">${esc(t.persSimsTitle)}:</span>${list.map((r, i) => `<span class="chip" style="border-left-color:${SIM_COLORS[i % SIM_COLORS.length]}"><b>${esc(simLabel(r))}</b><span class="meta">${nf().format(r.baseDps)} DPS${simAge(r) ? ' · ' + esc(simAge(r)) : ''}</span><button class="x" data-pers-remove="${esc(r.id)}" title="${esc(t.remove)}">${xmark}</button></span>`).join('')}</div>` : '')
+      + slotsHTML(list)
       + `</section>`;
     if (!p) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
     const col = clsColor(p), max = p.items[0]?.gain || 1, min = Number(S().minGain) || 0;
@@ -394,7 +394,7 @@
       const info = itemInfo(it), st = srcText(it), boss = st && st.name, group = st && st.sub;
       return `<tr class="${owned(p, it) ? 'owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
         + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${owned(p, it) ? `<span class="owned-tag">${esc(t.ownedTag)}</span>` : ''}</td>`
-        + `<td>${esc(t.slots[it.slot] || it.slot || '')}</td><td>${it.ilvl || ''}</td>`
+        + `<td>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</td><td>${it.ilvl || ''}</td>`
         + (multi ? `<td class="sc"><span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>${esc(simLabel(simOf(it)))}</td>` : '')
         + `<td class="bs">${boss ? `<b>${esc(boss)}</b>${group ? `<div class="meta">${esc(group)}</div>` : ''}` : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
         + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
@@ -453,6 +453,7 @@
   }
   // Fuente principal de una simulación (Raid, Mazmorras...) y su etiqueta, p. ej. «Raid MM»
   function simCategory(r) {
+    if (r.slot) return r.slot; // cargada en un hueco concreto (Raid, Míticas+, Delves): se respeta
     const count = {}; for (const it of r.items) { const c = catOfSrc(srcOf(it)); count[c] = (count[c] || 0) + 1; }
     const top = Object.entries(count).sort((a, b) => b[1] - a[1]), tot = r.items.length || 1;
     return top.length > 1 && top[0][1] / tot < 0.75 ? 'mixed' : (top[0] || ['other'])[0];
@@ -462,13 +463,31 @@
   const SIM_COLORS = ['#b04df5', '#3fcf6a', '#f0a030', '#3fc7eb', '#ee5a45', '#e8d44d'];
   const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; return d == null ? '' : d < 1 ? T().simToday : T().simDays(d); };
 
+  // Huecos fijos para cargar una simulación de cada tipo (raid, míticas+, delves); las sims de otro tipo o mixtas salen como hueco extra
+  const SLOT_KEYS = ['raid', 'dungeon', 'delve'];
+  function slotsHTML(list) {
+    const t = T(), used = new Set();
+    const card = (k, r, i) => `<div class="pslot${r ? ' full' : ''}"${r ? ` style="--sc:${SIM_COLORS[i % SIM_COLORS.length]}"` : ''}><div class="pslot-head">${esc(t.slotNames[k] || catName(k))}</div>`
+      + (r ? `<div class="pslot-sim"><div><b>${esc(simLabel(r))}</b><div class="meta">${nf().format(r.baseDps)} DPS${simAge(r) ? ' · ' + esc(simAge(r)) : ''}</div></div><button class="btn small" data-open="${esc(r.url)}">${ui('open')}Raidbots</button><button class="btn small danger" data-pers-remove="${esc(r.id)}" title="${esc(t.remove)}">${xmark}</button></div>`
+        : `<div class="pslot-form"><input class="txt slot-input" data-slot="${k}" spellcheck="false" placeholder="${esc(t.slotPlaceholder(t.slotNames[k] || catName(k)))}"><button class="btn small" data-slot-load="${k}">${esc(t.persLoad)}</button></div>`)
+      + `</div>`;
+    let html = '';
+    for (const k of SLOT_KEYS) {
+      const i = list.findIndex((r, j) => !used.has(j) && simCategory(r) === k);
+      if (i >= 0) used.add(i);
+      html += card(k, i >= 0 ? list[i] : null, i);
+    }
+    list.forEach((r, i) => { if (!used.has(i)) html += card(simCategory(r), r, i); });
+    return `<div class="pslots">${html}</div>`;
+  }
+
   // Carga una o varias simulaciones: si son de la misma persona se añaden a las que ya hay; si es otra persona, se empieza una lista nueva
-  async function loadPersonal(text) {
+  async function loadPersonal(text, slot) {
     const t = T(), ids = extractIds(text);
     if (!ids.length) { toast(t.noUrls, true); return; }
     const results = await Promise.all(ids.map(id => window.api.fetchReport(id).then(r => ({ id, r }))));
     const ok = [];
-    for (const { id, r } of results) { if (r.ok) ok.push(r.report); else toast(`${id}: ${errText(r)}`, true); }
+    for (const { id, r } of results) { if (r.ok) ok.push(slot ? { ...r.report, slot } : r.report); else toast(`${id}: ${errText(r)}`, true); }
     if (!ok.length) return;
     let list = state.personalList.slice(), added = 0;
     if (list.length && !sameChar(list[0], ok[0])) { list = []; toast(t.persNewChar(ok[0].character.name)); }
@@ -972,6 +991,7 @@
     else if ((el = q('data-cat'))) { S().srcCat = el.dataset.cat; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
     else if (q('data-personal-load')) { loadPersonal($('#personalUrl').value); }
+    else if ((el = q('data-slot-load'))) { const i = document.querySelector(`.slot-input[data-slot="${el.dataset.slotLoad}"]`); if (i) loadPersonal(i.value, el.dataset.slotLoad); }
     else if ((el = q('data-tier-cls'))) { state.tierCls = state.tierCls === el.dataset.tierCls ? null : el.dataset.tierCls; render(); }
     else if ((el = q('data-boss'))){ state.bossSel = Number(el.dataset.boss); render(); }
     else if ((el = q('data-cell-set'))) { const [sid, bid] = el.closest('[data-cell]').dataset.cell.split(':'); setCell(Number(bid), sid, el.dataset.cellSet); persistRot(); render(); }
@@ -990,7 +1010,7 @@
   });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { langMenu().hidden = true; closeTopModal(); }
-    else if (e.key === 'Enter' && e.target.id === 'personalUrl') { e.preventDefault(); loadPersonal(e.target.value); }
+    else if (e.key === 'Enter' && (e.target.id === 'personalUrl' || e.target.classList?.contains('slot-input'))) { e.preventDefault(); loadPersonal(e.target.value, e.target.dataset.slot); }
     else if (e.ctrlKey && e.key === ',') { e.preventDefault(); if (!$('.modal-back')) openSettings(); }
     else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.bar[role="button"]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
     else if (e.ctrlKey && e.key.toLowerCase() === 'v' && state.view === 'charts' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) $('#btnPaste').click();
