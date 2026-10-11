@@ -67,8 +67,8 @@ const Chart = (() => {
       const cx = left + slot * i + slot / 2, x = cx - barW / 2;
       const h = Math.max(2, plotH - (yOf(e.value) - top)), y = top + plotH - h;
       const base = e.color || '#b04df5', gid = `${uid}${i}`;
-      defs += `<linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${shade(base, 0.35)}"/><stop offset="0.45" stop-color="${base}"/><stop offset="1" stop-color="${shade(base, -0.35)}"/></linearGradient>`;
-      defs += `<linearGradient id="${gid}v" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.28"/><stop offset="0.55" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.22"/></linearGradient>`;
+      defs += `<linearGradient id="${gid}" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="${shade(base, 0.08)}"/><stop offset="1" stop-color="${shade(base, -0.12)}"/></linearGradient>`;
+      defs += `<linearGradient id="${gid}v" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity="0.10"/><stop offset="0.4" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.10"/></linearGradient>`;
       const delay = animate ? ` style="animation-delay:${Math.min(i, 20) * 45}ms"` : '';
       // Con tipIcon ('top'/'bottom') el tooltip del objeto va en ese icono y la barra muestra solo su mejora exacta (e.tip)
       const itemAttrs = e.itemId ? ` data-item="${e.itemId}" data-ilvl="${e.ilvl || 0}" data-gain="${esc(e.gain || '')}" data-tip-always` : '';
@@ -77,7 +77,6 @@ const Chart = (() => {
         + (onBar || e.tip ? '' : `<title>${esc(e.title || e.label)}</title>`)
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid})"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
-        + `<rect x="${x + 4}" y="${y + 2}" width="${Math.max(3, barW * 0.14)}" height="${Math.max(0, h - 4)}" rx="2" fill="#fff" opacity="0.22"/>`
         + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
       const ty = y - 8;
       bars += '</g>';

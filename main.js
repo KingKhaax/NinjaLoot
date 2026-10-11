@@ -13,7 +13,7 @@ const UA = { 'User-Agent': `NinjaLoot/${APP_VERSION}` };
 function createWindow() {
   const win = new BrowserWindow({
     width: 1280, height: 820, minWidth: 820, minHeight: 560,
-    title: 'NinjaLoot', backgroundColor: '#130c1f', autoHideMenuBar: true,
+    title: 'NinjaLoot', backgroundColor: '#0f0f11', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build/icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
   });
