@@ -47,6 +47,18 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
+      - name: Decidir si se firma
+        id: sign
+        shell: pwsh
+        run: |
+          $ready = -not [string]::IsNullOrEmpty($env:SP_TOKEN) -and -not [string]::IsNullOrEmpty($env:SP_ORG)
+          $on = '${{ inputs.sign }}' -eq 'true' -and $ready
+          if ('${{ inputs.sign }}' -eq 'true' -and -not $ready) { "::warning::SignPath aún no está configurado (falta SIGNPATH_API_TOKEN o SIGNPATH_ORGANIZATION_ID): se compila SIN firmar." }
+          "on=$($on.ToString().ToLower())" >> $env:GITHUB_OUTPUT
+        env:
+          SP_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+          SP_ORG: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+
       - run: npm ci
 
       # 1) Empaquetar la app (sin instalador) y firmar NinjaLoot.exe
@@ -54,7 +66,7 @@ jobs:
         run: npx electron-builder --win dir --publish never
 
       - name: Subir NinjaLoot.exe sin firmar
-        if: inputs.sign
+        if: steps.sign.outputs.on == 'true'
         id: upload-app
         uses: actions/upload-artifact@v7
         with:
@@ -62,7 +74,7 @@ jobs:
           path: dist/win-unpacked/NinjaLoot.exe
 
       - name: Firmar NinjaLoot.exe (SignPath)
-        if: inputs.sign
+        if: steps.sign.outputs.on == 'true'
         uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -78,7 +90,7 @@ jobs:
             version: ${{ toJSON(steps.ver.outputs.version) }}
 
       - name: Sustituir por el NinjaLoot.exe firmado
-        if: inputs.sign
+        if: steps.sign.outputs.on == 'true'
         shell: pwsh
         run: Copy-Item signed-app/NinjaLoot.exe dist/win-unpacked/NinjaLoot.exe -Force
 
@@ -87,7 +99,7 @@ jobs:
         run: npx electron-builder --win nsis portable --prepackaged dist/win-unpacked --publish never
 
       - name: Subir instaladores sin firmar
-        if: inputs.sign
+        if: steps.sign.outputs.on == 'true'
         id: upload-installers
         uses: actions/upload-artifact@v7
         with:
@@ -97,7 +109,7 @@ jobs:
             dist/NinjaLoot v${{ steps.ver.outputs.version }}.exe
 
       - name: Firmar instalador y portable (SignPath)
-        if: inputs.sign
+        if: steps.sign.outputs.on == 'true'
         uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -116,7 +128,7 @@ jobs:
         shell: pwsh
         run: |
           $v = '${{ steps.ver.outputs.version }}'
-          $src = if ('${{ inputs.sign }}' -eq 'true') { 'signed-installers' } else { 'dist' }
+          $src = if ('${{ steps.sign.outputs.on }}' -eq 'true') { 'signed-installers' } else { 'dist' }
           New-Item -ItemType Directory -Force out | Out-Null
           Copy-Item "$src/NinjaLoot v$v Setup.exe", "$src/NinjaLoot v$v.exe" out/
           Get-ChildItem out/*.exe | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content out/SHA256SUMS.txt -Encoding utf8
