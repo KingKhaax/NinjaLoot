@@ -1,10 +1,13 @@
-# Compila NinjaLoot en GitHub, firma los .exe con SignPath y crea un borrador de release.
-# Se lanza a mano: pestaña Actions -> "Release" -> Run workflow.
-# La versión sale de package.json (sube "version" antes de lanzarlo).
+# Compila NinjaLoot en GitHub, lo firma con SignPath (si está configurado) y publica la release.
+# Se lanza solo al subir a main un cambio de "version" en package.json (o a mano: Actions -> "Release" -> Run workflow).
+# Después archiva la versión anterior (deja solo su .blockmap para las actualizaciones rápidas) y borra las más antiguas.
 
 name: Release
 
 on:
+  push:
+    branches: [main]
+    paths: [package.json]
   workflow_dispatch:
     inputs:
       sign:
@@ -16,8 +19,32 @@ permissions:
   contents: write
   actions: read
 
+concurrency: release
+
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      release: ${{ steps.v.outputs.release }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: v
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          v=$(jq -r .version package.json)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+          if gh release view "v$v" >/dev/null 2>&1; then
+            echo "::notice::La release v$v ya existe: no se publica nada (sube la versión en package.json)."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
   release:
+    needs: check
+    if: needs.check.outputs.release == 'true'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v5
@@ -36,24 +63,19 @@ jobs:
           node-version: 22
           cache: npm
 
-      - name: Leer versión de package.json
+      - name: Versión
         id: ver
         shell: pwsh
-        run: |
-          $v = (Get-Content package.json -Raw | ConvertFrom-Json).version
-          if (gh release view "v$v" 2>$null) { throw "Ya existe la release v$v. Sube la versión en package.json." }
-          "version=$v" >> $env:GITHUB_OUTPUT
-          $global:LASTEXITCODE = 0
-        env:
-          GH_TOKEN: ${{ github.token }}
+        run: "'version=${{ needs.check.outputs.version }}' >> $env:GITHUB_OUTPUT"
 
       - name: Decidir si se firma
         id: sign
         shell: pwsh
         run: |
           $ready = -not [string]::IsNullOrEmpty($env:SP_TOKEN) -and -not [string]::IsNullOrEmpty($env:SP_ORG)
-          $on = '${{ inputs.sign }}' -eq 'true' -and $ready
-          if ('${{ inputs.sign }}' -eq 'true' -and -not $ready) { "::warning::SignPath aún no está configurado (falta SIGNPATH_API_TOKEN o SIGNPATH_ORGANIZATION_ID): se compila SIN firmar." }
+          $want = '${{ github.event_name }}' -eq 'push' -or '${{ inputs.sign }}' -eq 'true'
+          $on = $want -and $ready
+          if ($want -and -not $ready) { "::warning::SignPath aún no está configurado (falta SIGNPATH_API_TOKEN o SIGNPATH_ORGANIZATION_ID): se compila SIN firmar." }
           "on=$($on.ToString().ToLower())" >> $env:GITHUB_OUTPUT
         env:
           SP_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
@@ -140,12 +162,38 @@ jobs:
           Get-ChildItem out/*.exe | ForEach-Object { "$((Get-FileHash $_ -Algorithm SHA256).Hash.ToLower())  $($_.Name)" } | Set-Content out/SHA256SUMS.txt -Encoding utf8
           Get-Content out/SHA256SUMS.txt
 
-      # 3) Borrador de release: revísalo en GitHub y pulsa "Publish release"
-      - name: Crear borrador de release
+      # 3) Publicar la release (las notas son el mensaje del commit que subió la versión)
+      - name: Publicar release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
           target_commitish: ${{ github.sha }}
-          name: v${{ steps.ver.outputs.version }}
-          draft: true
+          name: NinjaLoot v${{ steps.ver.outputs.version }}
+          body: ${{ github.event.head_commit.message }}
+          draft: false
+          make_latest: true
           files: out/*
+
+      # 4) La versión anterior se queda solo con su .blockmap (lo necesita la actualización rápida desde ella);
+      #    las más antiguas se borran del todo, con su tag.
+      - name: Archivar la versión anterior y borrar las antiguas
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $new = 'v${{ steps.ver.outputs.version }}'
+          $rels = @(gh release list --limit 100 --json tagName,isDraft,createdAt | ConvertFrom-Json |
+            Where-Object { -not $_.isDraft -and $_.tagName -ne $new } | Sort-Object createdAt -Descending)
+          foreach ($r in $rels) {
+            $tag = $r.tagName
+            $assets = @(gh release view $tag --json assets --jq '.assets[].name')
+            $isPrev = $r -eq $rels[0]
+            if ($isPrev -and ($assets -like '*.blockmap')) {
+              foreach ($a in $assets) { if ($a -notlike '*.blockmap') { gh release delete-asset $tag $a -y } }
+              gh release edit $tag --prerelease --title "$tag (archivada)" --notes "Versión anterior archivada. Solo guarda el .blockmap para que la actualización a $new descargue únicamente lo que ha cambiado."
+              "Archivada $tag"
+            } else {
+              gh release delete $tag --cleanup-tag -y
+              "Borrada $tag"
+            }
+          }
