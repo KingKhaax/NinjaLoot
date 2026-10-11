@@ -21,7 +21,6 @@ const csp = "default-src 'self'; img-src 'self' data: https://wow.zamimg.com; st
   + "connect-src 'self' https://www.raidbots.com https://nether.wowhead.com https://wow.zamimg.com https://raider.io https://ninjaloot-relay.vercel.app https://wipetime-proxy.vercel.app";
 html = html.replace(/<meta http-equiv="Content-Security-Policy" content="[^"]*">/, `<meta http-equiv="Content-Security-Policy" content="${csp}">`);
 if (!html.includes('web-api.js')) html = html.replace('<script src="i18n.js"></script>', '<script src="web-libs.js"></script>\n<script src="web-api.js"></script>\n<script src="i18n.js"></script>');
-html = html.replace('<title>NinjaLoot</title>', '<title>NinjaLoot — Web</title>');
 fs.writeFileSync(path.join(out, 'index.html'), html);
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 console.log(`_site listo (v${pkg.version})`);
