@@ -7,13 +7,13 @@
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
     settings: { ...DEFAULTS, ...load('ninjaloot.settings', {}) },
     sims: [], loading: new Set(), names: { es: {}, en: {}, fr: {}, de: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'home', personal: load('ninjaloot.personal', null), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    view: 'home', personal: load('ninjaloot.personal', null), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
   const S = () => state.settings;
@@ -160,10 +160,23 @@
   const activeSims = () => { const e = effectiveDiff(); return state.sims.filter(s => !e || !s.difficulty || s.difficulty === e); };
   const diffBadge = d => d ? `<span class="dbadge d-${d}" title="${esc(T().diffNames[d])}">${DIFF_TAG[d]}</span>` : '';
   const xmark = '<svg class="xmark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
-  const srcOf = it => it.source || (ITEMS[it.id]?.[6]?.[0] ? { instance: ITEMS[it.id][6][0][0], encounter: ITEMS[it.id][6][0][1] } : null);
+  // Simulaciones guardadas con el parser antiguo: el encuentro quedó en "difficulty" (formato actual de Raidbots)
+  const fixSrc = s => s.encounter == null && Math.abs(s.difficulty) > 20 ? { ...s, encounter: s.difficulty, difficulty: null } : s;
+  const srcOf = it => (it.source && fixSrc(it.source)) || (ITEMS[it.id]?.[6]?.[0] ? { instance: ITEMS[it.id][6][0][0], encounter: ITEMS[it.id][6][0][1] } : null);
   const catOfType = ty => /raid/.test(ty) ? 'raid' : /mplus|dungeon/.test(ty) ? 'dungeon' : /delve/.test(ty) ? 'delve' : /prey/.test(ty) ? 'prey' : /catalyst/.test(ty) ? 'catalyst' : /pvp/.test(ty) ? 'pvp' : /profession/.test(ty) ? 'craft' : /bonus/.test(ty) ? 'bonus' : 'other';
   const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
   const bossLabel = enc => (state.bosses.names || {})[enc] || '';
+  const instName = id => ((state.bosses.inst || {})[id] || {}).n || '';
+  // Fuente de un objeto: en mazmorras el nombre de la mítica; en raid el jefe, con (Tier) si sale de su ficha o (Catalizador) si se convierte
+  function srcText(it) {
+    const t = T(), s = srcOf(it), enc = s && s.encounter != null ? s.encounter : 0;
+    if (!s) return null;
+    if (catOfSrc(s) === 'dungeon') { const name = s.instance > 0 ? instName(s.instance) : instName(enc) || bossLabel(enc); return name ? { name, sub: t.catDungeon } : null; }
+    const boss = bossLabel(enc);
+    if (!boss) return null;
+    const tag = it.tier === 'token' ? ' (Tier)' : it.tier === 'catalyst' ? ` (${t.catCatalyst})` : '';
+    return { name: boss + tag, sub: (allBosses().find(b => b.id === enc) || {}).group || '' };
+  }
 
   const act0 = () => activeSims();
   function toolbarHtml() {
@@ -210,10 +223,17 @@
         };
       });
       const name = bossLabel(enc) || (enc ? `#${enc}` : t.bossOtherSources);
+      // Tabla bajo la gráfica: cada objeto con todos los jugadores a los que les sube, de más a menos
+      const table = `<div class="ptable-wrap"><table class="ptable boss-table"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colIlvl)}</th><th>${esc(t.colPlayers)}</th></tr></thead><tbody>`
+        + rows.slice(0, lim).map((r, i) => { const info = itemInfo(r);
+          return `<tr data-item="${r.id}" data-ilvl="${r.best.ilvl}" data-gain="${esc(r.gains.slice(0, 6).map(x => `${x.sim.character.name}: +${nf().format(x.gain)} DPS (${x.pct.toFixed(2)}%)`).join('\n'))}"><td class="rk">${i + 1}</td>`
+            + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td><td>${r.best.ilvl || ''}</td>`
+            + `<td class="bt-players">${r.gains.map(x => `<span class="bt-p" style="border-color:${clsColor(x.sim)}">${specIcon(x.sim) ? `<img src="${specIcon(x.sim)}" alt="">` : ''}<b style="color:${readable(clsColor(x.sim))}">${esc(x.sim.character.name)}</b> ${esc(valueText({ gain: x.gain, pct: x.pct }, x.sim))}</span>`).join('')}</td></tr>`; }).join('')
+        + '</tbody></table></div>';
       html += `<section class="panel card" id="boss-${enc}"><div class="card-head"><div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
         + (n !== 0 && rows.length > n ? `<button class="btn small" data-toggle="${key}">${esc(state.expanded.has(key) ? t.showLess : t.showAll)}</button>` : '')
         + `<button class="btn small" data-export="boss-${enc}">${ui('export')}${esc(t.exportPng)}</button></div></div>`
-        + `<div class="chart-wrap" data-chart="boss-${enc}">${Chart.build(entries, { ...chartOpts, slot: 116, height: 260, bottom: 150, labelSize: 12.5, maxLines: 3 })}</div></section>`;
+        + `<div class="chart-wrap" data-chart="boss-${enc}">${Chart.build(entries, { ...chartOpts, slot: 116, height: 260, bottom: 150, labelSize: 12.5, maxLines: 3 })}</div>${table}</section>`;
     }
     return html;
   }
@@ -271,15 +291,14 @@
   function personalView() {
     const t = T(), p = state.personal;
     let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.persTitle)}</h2></div><div class="hint">${esc(t.persHint)}</div>`
-      + `<div class="pers-form"><input id="personalUrl" class="txt" spellcheck="false" placeholder="${esc(t.persUrl)}"><button class="btn primary" data-personal-load>${esc(t.persLoad)}</button>`
+      + `<div class="pers-form"><input id="personalUrl" class="txt" spellcheck="false" placeholder="${esc(t.persUrl)}" value="${esc(state.personalUrl || p?.url || '')}"><button class="btn primary" data-personal-load>${esc(t.persLoad)}</button>`
       + (state.sims.length ? `<select id="personalPick" class="txt"><option value="">${esc(t.persUse)}</option>${state.sims.map(s => `<option value="${esc(s.id)}"${p && p.id === s.id ? ' selected' : ''}>${esc(s.character.name)} (${esc(specName(s))})</option>`).join('')}</select>` : '')
       + `</div></section>`;
     if (!p) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
     const col = clsColor(p), max = p.items[0]?.gain || 1, min = Number(S().minGain) || 0;
     const rows = p.items.filter(i => i.gain >= min).map((it, i) => {
       state.shown.add(it.id);
-      const info = itemInfo(it), src = srcOf(it), enc = src && src.encounter != null ? src.encounter : 0, boss = bossLabel(enc);
-      const group = (allBosses().find(b => b.id === enc) || {}).group;
+      const info = itemInfo(it), st = srcText(it), boss = st && st.name, group = st && st.sub;
       return `<tr data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
         + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td>`
         + `<td>${esc(t.slots[it.slot] || it.slot || '')}</td><td>${it.ilvl || ''}</td>`
@@ -296,16 +315,15 @@
     return html;
   }
 
-  // Dónde tirar moneda: los 10 jefes de la raid de la temporada cuya mejor pieza más DPS te da
+  // Dónde tirar moneda: las 5 piezas de jefe que más DPS te dan y de qué jefe sale cada una
   function coinSection(p) {
-    const t = T(), order = new Set(allBosses().map(b => b.id)), byBoss = new Map();
-    for (const it of p.items) { const s = srcOf(it); if (!s || !order.has(s.encounter)) continue; if (!byBoss.has(s.encounter)) byBoss.set(s.encounter, []); byBoss.get(s.encounter).push(it); }
-    const rows = [...byBoss.entries()].map(([enc, list]) => ({ enc, list: list.sort((x, y) => y.gain - x.gain) })).sort((x, y) => y.list[0].gain - x.list[0].gain).slice(0, 10);
+    const t = T();
+    const rows = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it)).sort((x, y) => y.it.gain - x.it.gain).slice(0, 5);
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
-    rows.forEach(({ enc, list }, i) => {
-      const group = (allBosses().find(b => b.id === enc) || {}).group;
-      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><b>${esc(bossLabel(enc))}</b><div class="meta">${esc(group || '')}</div></div><div class="coin-items">`
-        + list.slice(0, 3).map(it => { const info = itemInfo(it); state.shown.add(it.id); return `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div>`; }).join('') + '</div></div>';
+    rows.forEach(({ it }, i) => {
+      const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
+      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><b>${esc(st.name)}</b><div class="meta">${esc(st.sub)}</div></div><div class="coin-items">`
+        + `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
     });
     return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2></div><div class="hint">${esc(t.coinHint)}</div>${body}</section>`;
   }
@@ -328,7 +346,7 @@
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
     $('#btnClear').disabled = !state.sims.length;
     $('#langLabel').textContent = t.language; renderLangMenu();
-    $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navPers').textContent = t.navPersonal;
+    $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers;$('#navPers').textContent = t.navPersonal;
     document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === state.view));
     $('#chartsTools').hidden = state.view !== 'charts';
     $('#btnLang').title = t.language; $('#btnSettings').title = `${t.settings} (Ctrl+,)`;
@@ -343,10 +361,9 @@
     }
     state.shown = new Set();
     if (state.view === 'home') { content.innerHTML = homeView(); return; }
+    if (state.view === 'tiers') { content.innerHTML = tiersView(); ensureNames(); return; }
     if (state.view === 'personal') {
-      const keep = $('#personalUrl')?.value || '';
       content.innerHTML = personalView();
-      if (keep && $('#personalUrl')) $('#personalUrl').value = keep;
       ensureNames();
       return;
     }
@@ -662,9 +679,48 @@
           + `<div class="bs">${status === 'bad' ? `<span class="tag bad">${esc(t.rotMissingTag)}</span><div class="bw">${esc(t.rotProvidedBy)}: ${b.from.map(c => esc(t.classes[c])).join(', ')}</div>`
             : `<span class="tag ${status}">${esc(status === 'ok' ? t.rotCovered : t.rotOnlyRotating)}</span><div class="bw">${who.map(w => esc(w.s.character.name)).join(', ')}</div>`}</div></div>`).join('')}</div></div>`;
     }
-    content.innerHTML = `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
+    content.innerHTML = `<div class="rot-warning" role="note"><span class="rw-icon">⚠</span><div><b>${esc(t.rotWarnTitle)}</b><p>${esc(t.rotWarnText)}</p></div></div>`
+      + `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
       + `<div class="legend"><span class="lg st-n">${esc(t.stN)}</span><span class="lg st-r">${esc(t.stR)}</span><span class="lg st-p">${esc(t.stP)}</span></div></div>`
-      + `<div class="hint">${esc(t.rotHint)}</div>${table}</div>${buffs}`;
+      + `<div class="hint">${esc(t.rotHint)}</div>${table}</div>${vaultSection(bosses)}${buffs}`;
+  }
+
+  // Cofre semanal de raid: jefes que mata cada persona según las rotaciones (2, 4 y 6 jefes desbloquean cada hueco)
+  function vaultSection(bosses) {
+    const t = T(), extra = S().vaultNew ? 1 : 0, max = bosses.length + extra;
+    if (!state.sims.length) return '';
+    const cards = state.sims.map(sim => {
+      const rot = bosses.filter(b => cellState(b.id, sim.id) === 'r').length, kills = max - rot, col = clsColor(sim);
+      return `<div class="vault" style="--cc:${col}"><div class="v-head">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<b style="color:${readable(col)}">${esc(sim.character.name)}</b></div>`
+        + `<div class="v-count${kills >= 6 ? ' full' : ''}">${kills}/6</div><div class="v-slots">${[2, 4, 6].map(n => `<span class="v-slot${kills >= n ? ' on' : ''}">${Math.min(kills, n)}/${n}</span>`).join('')}</div>`
+        + `<div class="meta">${esc(t.vaultRot(rot))}</div></div>`;
+    }).join('');
+    return `<div class="panel card"><div class="card-head"><div><h2>${esc(t.vaultTitle)}</h2><div class="meta">${esc(t.vaultMax(max))}</div></div><span class="spacer"></span>`
+      + `<label class="v-new"><input type="checkbox" id="vaultNew" ${extra ? 'checked' : ''}> ${esc(t.vaultNew)}</label></div>`
+      + `<div class="hint">${esc(t.vaultHint)}</div><div class="vaults">${cards}</div></div>`;
+  }
+
+  // ---------- Tiers: bonus de 2/4 piezas por especialización y piezas de tier de cada clase (ficha de raid) ----------
+  const specLabel = (cls, key) => { const d = SPECS[cls][key], l = S().lang; return l === 'es' ? d[1] : (SPEC_L10N[l]?.[cls]?.[key] || d[0]); };
+  function tiersView() {
+    const t = T(), l = S().lang, sel = state.tierCls;
+    const classes = Object.keys(TIERS.classes).sort((a, b) => t.classes[a].localeCompare(t.classes[b], l));
+    let html = `<section class="panel card"><div class="card-head"><div><h2>${esc(t.tiersTitle)}</h2><div class="meta">${esc(state.bosses.season || TIERS.season)}</div></div></div><div class="hint">${esc(t.tiersHint)}</div>`
+      + `<div class="tier-classes">${classes.map(c => `<button class="tier-cls${c === sel ? ' on' : ''}" data-tier-cls="${c}" style="--cc:${CLASS_COLORS[c]}"><img src="assets/classes/${c}.png" alt=""><span style="color:${readable(CLASS_COLORS[c])}">${esc(t.classes[c])}</span></button>`).join('')}</div></section>`;
+    const d = TIERS.classes[sel];
+    if (!d) return html;
+    const col = CLASS_COLORS[sel];
+    html += `<section class="panel card tier-detail" style="--cc:${col}"><div class="card-head"><img class="cls-icon" src="assets/classes/${sel}.png" alt="" style="border-color:${col}"><div><h2 style="color:${readable(col)}">${esc(t.classes[sel])}</h2><div class="meta">${esc(d.name[l] || d.name.en)}</div></div></div>`
+      + `<h3>${esc(t.tierBonus)}</h3><div class="tier-specs">`
+      + Object.keys(SPECS[sel]).filter(k => d.bonus[k]).map(k => { const b = d.bonus[k][l] || d.bonus[k].en;
+        return `<div class="tier-spec"><div class="ts-head"><img src="assets/specs/${sel}-${k}.png" alt="" style="border-color:${col}"><b>${esc(specLabel(sel, k))}</b></div>`
+          + `<div class="ts-bonus"><span class="ts-pc">${esc(t.tier2)}</span><p>${esc(b[0] || '')}</p></div><div class="ts-bonus"><span class="ts-pc">${esc(t.tier4)}</span><p>${esc(b[1] || '')}</p></div></div>`; }).join('')
+      + `</div><h3>${esc(t.tierPieces)}</h3><div class="ptable-wrap"><table class="ptable"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.statsLabel)}</th><th>${esc(t.colBoss)}</th></tr></thead><tbody>`
+      + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
+        return `<tr data-item="${it.id}" data-ilvl=""><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
+          + `<td>${esc(t.slots[it.slot] || it.slot)}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td><b>${esc(bossLabel(it.boss) || '')}</b></td></tr>`; }).join('')
+      + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div></section>`;
+    return html;
   }
 
   // ---------- Actualizaciones ----------
@@ -751,7 +807,8 @@
     else if ((el = q('data-cat'))) { S().srcCat = el.dataset.cat; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
     else if (q('data-personal-load')) { loadPersonal($('#personalUrl').value); }
-    else if ((el = q('data-boss'))) { state.bossSel = Number(el.dataset.boss); render(); }
+    else if ((el = q('data-tier-cls'))) { state.tierCls = state.tierCls === el.dataset.tierCls ? null : el.dataset.tierCls; render(); }
+    else if ((el = q('data-boss'))){ state.bossSel = Number(el.dataset.boss); render(); }
     else if ((el = q('data-cell'))) { const [sid, bid] = el.dataset.cell.split(':'); setCell(Number(bid), sid, NEXT[cellState(Number(bid), sid)]); persistRot(); render(); }
     else if ((el = q('data-col-set'))) { for (const s of state.sims) setCell(state.bossSel, s.id, el.dataset.colSet); persistRot(); render(); }
     else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of allBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
@@ -769,10 +826,13 @@
     else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches?.('.bar[role="button"]')) { e.preventDefault(); e.target.dispatchEvent(new MouseEvent('click', { bubbles: true })); }
     else if (e.ctrlKey && e.key.toLowerCase() === 'v' && state.view === 'charts' && !/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) $('#btnPaste').click();
   });
+  // La URL de la simulación personal se conserva al cambiar de pestaña y entre sesiones
+  document.addEventListener('input', e => { if (e.target.id === 'personalUrl') { state.personalUrl = e.target.value; save('ninjaloot.personalUrl', state.personalUrl); } });
   document.addEventListener('change', e => {
+    if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
     if (e.target.id !== 'personalPick') return;
     const s = state.sims.find(x => x.id === e.target.value);
-    if (s) { state.personal = s; save('ninjaloot.personal', s); state.animateNext = true; render(); }
+    if (s) { state.personal = s; save('ninjaloot.personal', s); state.personalUrl = s.url; save('ninjaloot.personalUrl', s.url); state.animateNext = true; render(); }
   });
   // Arrastrar enlaces o texto sobre la ventana
   let dragDepth = 0;

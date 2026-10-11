@@ -54,10 +54,21 @@ function detectSpec(player, cls) {
   return s;
 }
 
-// Nombres de profileset de Droptimizer: instancia/dificultad/encuentro/objeto/ilvl/ranura/nombre
+// Dificultad escrita en el nombre del profileset (formato actual) -> id numérico de dificultad
+const DIFF_ID_BY_NAME = { mythic: 16, heroic: 15, normal: 14, lfr: 17, finder: 17 };
+
+// Nombres de profileset de Droptimizer:
+//  - actual:  instancia/encuentro/raid-dificultad/objeto/ilvl/bonus/ranura/...  (p. ej. 1320/2894/raid-mythic/270164/334/0/trinket2////)
+//  - antiguo: instancia/dificultad/encuentro/objeto/ilvl/ranura/nombre
 function parseProfilesetName(name) {
   const parts = String(name).split('/');
-  const nums = parts.map(p => /^\d+$/.test(p.trim()) ? Number(p) : NaN);
+  const nums = parts.map(p => /^-?\d+$/.test(p.trim()) ? Number(p) : NaN);
+  if (parts.length >= 7 && Number.isFinite(nums[0]) && Number.isFinite(nums[1]) && /^[a-z]/i.test(parts[2]) && nums[3] > 1000) {
+    const diff = /^raid/i.test(parts[2]) && (String(parts[2]).toLowerCase().match(/mythic|heroic|normal|lfr|finder/) || [])[0];
+    // Un id al final indica la pieza de origen que se convierte en tier en el catalizador
+    const from = nums.slice(7).find(n => n > 1000);
+    return { id: nums[3], ilvl: nums[4] > 0 ? nums[4] : 0, slot: /^\d*$/.test(parts[6]) ? '' : parts[6], name: '', source: { instance: nums[0], difficulty: DIFF_ID_BY_NAME[diff] || null, encounter: nums[1] }, catalystFrom: from || null };
+  }
   let idx = -1;
   if (parts.length >= 6 && Number.isFinite(nums[3]) && nums[3] > 1000) idx = 3;
   else for (let i = 0; i < nums.length; i++) if (Number.isFinite(nums[i]) && nums[i] > 1000 && nums[i] < 10000000) { idx = i; break; }
@@ -90,6 +101,14 @@ function parseReport(json, id) {
   if (!base || !Array.isArray(results) || !results.length) throw new Error('NOT_DROPTIMIZER');
 
   const cls = detectClass(player, raw);
+  // Piezas de tier: "fromToken" = sale de la ficha del jefe (clic derecho); "catalyst" = se convierte en el catalizador
+  const tierOf = new Map();
+  const lib = json.simbot && json.simbot.meta && json.simbot.meta.itemLibrary;
+  for (const e of Array.isArray(lib) ? lib : []) {
+    const k = `${e.id}:${e.encounterId}`;
+    if (e.fromToken) tierOf.set(k, 'token');
+    else if (Array.isArray(e.tags) && e.tags.includes('catalyst') && !tierOf.has(k)) tierOf.set(k, 'catalyst');
+  }
   const best = new Map(); // un objeto/ilvl cuenta una sola vez (anillos y trinkets se prueban en dos ranuras)
   for (const r of results) {
     const p = parseProfilesetName(r.name);
@@ -98,7 +117,8 @@ function parseReport(json, id) {
     if (gain <= 0) continue;
     const key = `${p.id}:${p.ilvl}`;
     const prev = best.get(key);
-    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source });
+    const tier = (p.catalystFrom && 'catalyst') || (p.source && tierOf.get(`${p.id}:${p.source.encounter}`)) || null;
+    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier });
   }
   if (!best.size) {
     const any = results.some(r => parseProfilesetName(r.name));
