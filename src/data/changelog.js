@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.2.1', 'Simulación personal: el tercer hueco pasa de «Delves» a «Otro contenido» y acepta cualquier sim que no sea de raid ni de míticas (delves, profesiones, PvP…).'],
     ['0.2.0', 'NinjaLoot también en la web: kingkhaax.github.io/NinjaLoot, sin instalar nada (además del instalable y el portable). Bot de Discord compartido: ya no hay que crear un bot ni tocar tokens, basta con invitar el bot NinjaLoot y pegar el enlace del canal. Exportar datos a CSV o JSON eligiendo qué exportar: todo, un jefe, un jugador o una pieza. El tooltip de las barras ya no repite el nombre del objeto. Páginas de Condiciones del Servicio y Política de Privacidad.'],
     ['0.1.16', 'Exportar datos a CSV (Excel, Google Sheets) o JSON con todas las mejoras de todas las sims. Nueva vista «Comparar sims» en Simulación personal: una fila por objeto y una columna por sim (1 objetivo 5 min, 5 objetivos 1 min, raid, míticas…), con la mejor resaltada; cada sim muestra su tipo de pelea. «Dónde tirar moneda» ahora es un plan para varias semanas que no gasta dos monedas en la misma ranura. Los enlaces pegados sin espacio se separan solos.'],
     ['0.1.15', 'Sims automáticas desde Discord (Ajustes → Discord): conecta el bot NinjaLoot de tu guild a un canal y, mientras el programa está abierto, cada enlace de Raidbots que se pegue ahí se añade solo a Gráficas. El token del bot se guarda cifrado en tu PC. Incluye los pasos para crear el bot.'],
@@ -21,6 +22,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.2.1', 'Personal simulation: the third slot changes from «Delves» to «Other content» and accepts any sim that is not raid or Mythic+ (delves, professions, PvP…).'],
     ['0.2.0', 'NinjaLoot is now also on the web: kingkhaax.github.io/NinjaLoot, no install needed (besides the installer and the portable version). Shared Discord bot: no need to create a bot or handle tokens, just invite the NinjaLoot bot and paste the channel link. Export data to CSV or JSON choosing what to export: everything, one boss, one player or one item. Bar tooltips no longer repeat the item name. Terms of Service and Privacy Policy pages.'],
     ['0.1.16', 'Export data to CSV (Excel, Google Sheets) or JSON with every upgrade from all sims. New «Compare sims» view in Personal simulation: one row per item and one column per sim (1 target 5 min, 5 targets 1 min, raid, Mythic+…), with the best one highlighted; each sim shows its fight type. «Where to use a coin» is now a plan over several weeks that never spends two coins on the same slot. Links pasted without a space are split automatically.'],
     ['0.1.15', 'Automatic sims from Discord (Settings → Discord): connect your guild’s NinjaLoot bot to a channel and, while the program is open, every Raidbots link posted there is added to Charts by itself. The bot token is stored encrypted on your PC. Includes the steps to create the bot.'],

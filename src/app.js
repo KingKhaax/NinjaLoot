@@ -499,16 +499,16 @@
   const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; return d == null ? '' : d < 1 ? T().simToday : T().simDays(d); };
 
   // Huecos fijos para cargar una simulación de cada tipo (raid, míticas+, delves); las sims de otro tipo o mixtas salen como hueco extra
-  const SLOT_KEYS = ['raid', 'dungeon', 'delve'];
+  const SLOT_KEYS = ['raid', 'dungeon', 'other']; // «Otro contenido»: cualquier sim que no sea de raid ni de míticas (delves, profesiones, PvP...)
   function slotsHTML(list) {
     const t = T(), used = new Set();
     const card = (k, r, i) => `<div class="pslot${r ? ' full' : ''}"${r ? ` style="--sc:${SIM_COLORS[i % SIM_COLORS.length]}"` : ''}><div class="pslot-head">${esc(t.slotNames[k] || catName(k))}</div>`
       + (r ? `<div class="pslot-sim"><div><b>${esc(simLabel(r))}</b><div class="meta">${nf().format(r.baseDps)} DPS${simAge(r) ? ' · ' + esc(simAge(r)) : ''}</div></div><button class="btn small" data-open="${esc(r.url)}">${ui('open')}Raidbots</button><button class="btn small danger" data-pers-remove="${esc(r.id)}" title="${esc(t.remove)}">${xmark}</button></div>`
-        : `<div class="pslot-form"><input class="txt slot-input" data-slot="${k}" spellcheck="false" placeholder="${esc(t.slotPlaceholder(t.slotNames[k] || catName(k)))}"><button class="btn small" data-slot-load="${k}">${esc(t.persLoad)}</button></div>`)
+        : `<div class="pslot-form"><input class="txt slot-input" data-slot="${k}" spellcheck="false" placeholder="${esc(t.slotPlaceholder(k === 'other' ? (t.slotNames[k] || '').toLowerCase() : t.slotNames[k] || catName(k)))}"><button class="btn small" data-slot-load="${k}">${esc(t.persLoad)}</button></div>`)
       + `</div>`;
     let html = '';
     for (const k of SLOT_KEYS) {
-      const i = list.findIndex((r, j) => !used.has(j) && simCategory(r) === k);
+      const i = list.findIndex((r, j) => !used.has(j) && (k === 'other' ? !['raid', 'dungeon'].includes(simCategory(r)) : simCategory(r) === k));
       if (i >= 0) used.add(i);
       html += card(k, i >= 0 ? list[i] : null, i);
     }
