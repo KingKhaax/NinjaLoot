@@ -178,6 +178,8 @@
     const t = T(), s = srcOf(it), enc = s && s.encounter != null ? s.encounter : 0;
     if (!s) return null;
     if (catOfSrc(s) === 'dungeon') { const name = s.instance > 0 ? instName(s.instance) : instName(enc) || bossLabel(enc); return name ? { name, sub: t.catDungeon } : null; }
+    // Bajadas y presas: el botín sale en cualquiera de ellas, así que se nombra el tipo de contenido
+    if (['delve', 'prey', 'bonus'].includes(catOfSrc(s))) return { name: bossLabel(enc) || catName(catOfSrc(s)), sub: t.coinAnyOf(catName(catOfSrc(s))) };
     const boss = bossLabel(enc);
     if (!boss) return null;
     const tag = it.tier === 'token' ? ' (Tier)' : it.tier === 'catalyst' ? ` (${t.catCatalyst})` : '';
@@ -368,6 +370,40 @@
       + `<footer class="made-by">${esc(t.madeBy)} <b>Drakko</b><svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 2.8 4.5 6.3 4.5c2 0 3.6 1.1 4.4 2.6l1.3 2.2 1.3-2.2c.8-1.5 2.4-2.6 4.4-2.6 3.5 0 5.4 3.7 3.9 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></footer>`;
   }
 
+  // ---------- Cofre semanal del personaje de la simulación (banda: 2/4/6 jefes, míticas+: 1/4/8 llaves) ----------
+  const VAULT_TTL = 10 * 60 * 1000, vaultPending = new Set();
+  state.vault = {};
+  const vaultKey = c => `${c.region}:${c.realm}:${c.name}`.toLowerCase();
+  function refreshVault(c, force = false) {
+    const k = vaultKey(c), v = state.vault[k];
+    if (!c.region || !c.realm || vaultPending.has(k) || (!force && v && Date.now() - v.fetched < VAULT_TTL)) return;
+    vaultPending.add(k);
+    window.api.fetchVault(c.region, c.realm, c.name).then(r => {
+      vaultPending.delete(k);
+      state.vault[k] = r && r.ok ? r : { ok: false, fetched: Date.now() };
+      if (state.view === 'personal') { state.animateNext = false; render(); }
+    });
+  }
+  function vaultPanel(p) {
+    const t = T(), c = p.character, v = state.vault[vaultKey(c)];
+    refreshVault(c);
+    const head = `<div class="card-head"><h2>${ui('vault')}${esc(t.gvTitle)}</h2><span class="meta">${esc(c.name)}${v && v.reset ? ` · ${esc(t.gvSince(new Date(v.reset).toLocaleDateString(S().lang, { weekday: 'long', day: 'numeric', month: 'long' })))}` : ''}</span><span class="spacer"></span>`
+      + `<button class="btn small" data-vault-refresh${vaultPending.has(vaultKey(c)) ? ' disabled' : ''}>${esc(t.gvRefresh)}</button></div>`;
+    if (!v) return `<section class="panel card vault">${head}<div class="meta vault-load">${esc(t.gvLoading)}</div></section>`;
+    if (!v.ok) return `<section class="panel card vault">${head}<div class="meta vault-load">${esc(t.gvError)}</div></section>`;
+    const row = (title, sub, need, list, label, unavailable) => `<div class="vault-row"><div class="vault-row-t"><b>${esc(title)}</b><span class="meta">${esc(sub)}</span></div>`
+      + need.map((n, i) => {
+        if (unavailable) return `<div class="vault-slot na"><span class="meta">${esc(t.gvNA)}</span></div>`;
+        const done = list.length >= n;
+        return `<div class="vault-slot${done ? ' on' : ''}" style="--i:${i}"><span class="vs-n">${done ? '✓' : `${Math.min(list.length, n)}/${n}`}</span><b>${done ? esc(label(list[n - 1])) : esc(t.gvLocked)}</b><span class="meta">${esc(t.gvNeed(n))}</span></div>`;
+      }).join('') + `</div>`;
+    const raid = v.raid || [], runs = v.runs || [];
+    return `<section class="panel card vault">${head}<div class="vault-grid">`
+      + row(t.gvRaid, v.raid ? t.gvBosses(raid.length) : t.gvNA, [2, 4, 6], raid, b => t.gvDiff[b.diff] || '', !v.raid)
+      + row(t.gvMplus, v.runs ? t.gvRuns(runs.length) : t.gvNA, [1, 4, 8], runs, r => `+${r.level}`, !v.runs)
+      + `</div><div class="hint">${esc(t.gvHint)}</div></section>`;
+  }
+
   // ---------- Simulación personal: cada pieza exacta, su DPS y de qué jefe sale ----------
   function personalView() {
     const t = T(), p = state.personal, list = state.personalList, multi = list.length > 1;
@@ -401,6 +437,7 @@
         + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
     }).join('');
     html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
+    html += vaultPanel(list[0]);
     const pm = S().persMode === 'cmp' && !multi ? 'all' : (S().persMode || 'all');
     html += `<div class="charts-bar"><div class="seg"><button data-pmode="all" class="${pm === 'all' ? 'on' : ''}">${esc(t.pAll)}</button>${multi ? `<button data-pmode="cmp" class="${pm === 'cmp' ? 'on' : ''}">${esc(t.pCompare)}</button>` : ''}<button data-pmode="coin" class="${pm === 'coin' ? 'on' : ''}">${esc(t.pCoin)}</button></div>`
       + (pm === 'all' && catKeys.length > 1 ? `<div class="diffbar"><span class="meta">${esc(t.srcLabel)}:</span><div class="seg"><button data-pcat="all" class="${pcat === 'all' ? 'on' : ''}">${esc(t.catAll)}</button>${catKeys.map(k => `<button data-pcat="${k}" class="${pcat === k ? 'on' : ''}">${esc(catName(k))}</button>`).join('')}</div></div>` : '') + `</div>`;
@@ -447,9 +484,11 @@
   }
 
   // Dónde tirar moneda: plan para varias semanas, una moneda por ranura (anillos y abalorios, hasta 2), de más a menos DPS
+  // Contenido donde se puede tirar moneda (bonus roll): banda, cofre de míticas+, bajadas y presas
+  const COIN_CATS = ['raid', 'dungeon', 'delve', 'prey', 'bonus'];
   function coinSection(p) {
     const t = T(), coins = Math.max(1, Math.min(20, Number(S().coins) || 5));
-    const cands = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && r.s.encounter > 0 && catOfSrc(r.s) === 'raid' && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain);
+    const cands = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && COIN_CATS.includes(catOfSrc(r.s)) && (catOfSrc(r.s) !== 'raid' || r.s.encounter > 0) && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain);
     // Si ya te llevas un casco con la moneda 1, otro casco no aporta: se salta a la mejor pieza de otra ranura
     const group = sl => /^finger/.test(sl) ? 'finger' : /^trinket/.test(sl) ? 'trinket' : sl || '?', cap = g => g === 'finger' || g === 'trinket' ? 2 : 1;
     const used = {}, ids = new Set(), rows = [];
@@ -463,7 +502,7 @@
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     rows.forEach(({ it }, i) => {
       const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
-      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><b>${esc(st.name)}</b><div class="meta">${esc(st.sub)}</div></div><div class="coin-items">`
+      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><span class="coin-cat cat-${catOfSrc(srcOf(it))}">${esc(catName(catOfSrc(srcOf(it))))}</span><b>${esc(st.name)}</b>${st.sub && st.sub !== catName(catOfSrc(srcOf(it))) ? `<div class="meta">${esc(st.sub)}</div>` : ""}</div><div class="coin-items">`
         + `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
     });
     return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
@@ -1236,6 +1275,7 @@
     if ((el = q('data-remove'))) removeSim(el.dataset.remove);
     else if (q('data-pick-toggle')) { const m = e.target.closest('.spec-pick').querySelector('.spec-pick-menu'); m.hidden = !m.hidden; }
     else if ((el = q('data-pick'))) { const s = state.sims.find(x => x.id === el.dataset.pick); if (s) { setPersonalList([s]); state.personalUrl = s.url; save('ninjaloot.personalUrl', s.url); state.animateNext = true; render(); } }
+    else if (q('data-vault-refresh')) { const c = state.personalList[0]?.character; if (c) { refreshVault(c, true); render(); } }
     else if ((el = q('data-pers-remove'))) { setPersonalList(state.personalList.filter(r => r.id !== el.dataset.persRemove)); state.animateNext = false; render(); }
     else if ((el = q('data-pcat'))) { S().persCat = el.dataset.pcat; persistSettings(); render(); }
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }

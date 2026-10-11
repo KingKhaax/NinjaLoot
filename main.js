@@ -113,6 +113,38 @@ ipcMain.handle('gear:fetch', async (_e, region, realm, name) => {
   } catch (e) { return { ok: false, error: 'NETWORK', detail: String(e.message || e) }; }
 });
 
+// --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda muertos desde el reinicio (API de Blizzard vía el servidor de WipeTime) ---
+const BNET_PROXY = 'https://wipetime-proxy.vercel.app/bnet';
+const DIFF_RANK = { LFR: 1, NORMAL: 2, HEROIC: 3, MYTHIC: 4 };
+const realmSlug = r => String(r).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
+ipcMain.handle('vault:fetch', async (_e, region, realm, name) => {
+  if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
+  const reset = weeklyReset(region), out = { ok: true, reset, runs: null, raid: null, fetched: Date.now() };
+  const rio = (async () => {
+    const q = new URLSearchParams({ region, realm, name, fields: 'mythic_plus_weekly_highest_level_runs' });
+    const res = await net.fetch(`https://raider.io/api/v1/characters/profile?${q}`, { headers: UA });
+    if (!res.ok) return;
+    const j = await res.json();
+    out.runs = (j.mythic_plus_weekly_highest_level_runs || []).filter(r => Date.parse(r.completed_at) >= reset).map(r => ({ level: r.mythic_level, dungeon: r.dungeon })).sort((a, b) => b.level - a.level);
+  })().catch(() => {});
+  const bnet = (async () => {
+    const path = `/profile/wow/character/${realmSlug(realm)}/${encodeURIComponent(name.toLowerCase())}/encounters/raids?namespace=profile-${region}&locale=en_US`;
+    const res = await net.fetch(`${BNET_PROXY}?region=${region}&path=${encodeURIComponent(path)}`);
+    if (!res.ok) return;
+    const j = await res.json(), best = new Map();
+    // "Current Season" agrupa las bandas de la temporada actual; cada jefe cuenta una vez con la dificultad más alta de esta semana
+    const ex = (j.expansions || []).find(e => /current season/i.test(e.expansion?.name || '')) || (j.expansions || []).at(-1);
+    for (const inst of ex?.instances || []) for (const m of inst.modes || []) for (const e of m.progress?.encounters || []) {
+      const d = DIFF_RANK[m.difficulty?.type] || 0;
+      if (e.last_kill_timestamp >= reset && d > (best.get(e.encounter.id)?.diff || 0)) best.set(e.encounter.id, { name: e.encounter.name, diff: d });
+    }
+    out.raid = [...best.values()].sort((a, b) => b.diff - a.diff);
+  })().catch(() => {});
+  await Promise.all([rio, bnet]);
+  if (!out.runs && !out.raid) return { ok: false, error: 'NOT_FOUND' };
+  return out;
+});
+
 ipcMain.handle('bosses:get', async () => {
   const cacheFile = path.join(userData(), 'bosses-cache.json');
   try {

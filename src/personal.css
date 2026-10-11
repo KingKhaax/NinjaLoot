@@ -55,3 +55,30 @@
 .ro-badge.ok { color: #3fcf6a; background: color-mix(in srgb, #3fcf6a 14%, transparent); }
 .ro-badge.bad { color: #ee5a45; background: color-mix(in srgb, #ee5a45 14%, transparent); }
 .ro-link { min-width: 170px; }
+
+/* Cofre semanal: tres casillas por fila (banda 2/4/6 jefes, míticas+ 1/4/8 llaves) */
+.vault .card-head h2 { display: flex; align-items: center; gap: 8px; }
+.vault .card-head h2 .uiicon { width: 22px; height: 22px; border-radius: 5px; }
+.vault-load { padding: 8px 0; }
+.vault-grid { display: grid; gap: 10px; margin-top: 10px; }
+.vault-row { display: grid; grid-template-columns: 150px repeat(3, 1fr); gap: 10px; align-items: stretch; }
+.vault-row-t { display: flex; flex-direction: column; justify-content: center; }
+.vault-slot { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; min-height: 74px; padding: 8px; border: 1px dashed var(--border); border-radius: var(--radius); background: var(--panel2); text-align: center; overflow: hidden; }
+.vault-slot b { font-size: 15px; color: var(--muted); }
+.vault-slot .vs-n { font-size: 11px; font-weight: 700; color: var(--muted); }
+.vault-slot.on { border: 1px solid color-mix(in srgb, #f0b232 55%, var(--border)); background: linear-gradient(160deg, color-mix(in srgb, #f0b232 14%, var(--panel2)), var(--panel2)); }
+.vault-slot.on b { color: #f5c451; }
+.vault-slot.on .vs-n { color: #f0b232; }
+/* Brillo dorado que recorre las casillas desbloqueadas, una tras otra */
+.vault-slot.on::after { content: ''; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 35%, rgba(255, 214, 120, .18) 50%, transparent 65%); transform: translateX(-100%); animation: vault-shine 4.5s ease-in-out infinite; animation-delay: calc(var(--i) * .35s); pointer-events: none; }
+@keyframes vault-shine { 0%, 55% { transform: translateX(-100%); } 85%, 100% { transform: translateX(100%); } }
+.vault-slot.na { opacity: .6; }
+@media (max-width: 760px) { .vault-row { grid-template-columns: repeat(3, 1fr); } .vault-row-t { grid-column: 1 / -1; } }
+@media (prefers-reduced-motion: reduce) { .vault-slot.on::after { animation: none; } }
+
+/* Tipo de contenido de cada pieza del plan de monedas */
+.coin-cat { display: inline-block; margin-bottom: 2px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; background: var(--accent-soft); color: var(--accent); }
+.coin-cat.cat-dungeon { background: color-mix(in srgb, #3fc7eb 16%, transparent); color: #5fd0ef; }
+.coin-cat.cat-delve { background: color-mix(in srgb, #f0a030 16%, transparent); color: #f2ae4b; }
+.coin-cat.cat-prey { background: color-mix(in srgb, #3fcf6a 16%, transparent); color: #55d67c; }
+.coin-boss .coin-cat + b { display: block; }
