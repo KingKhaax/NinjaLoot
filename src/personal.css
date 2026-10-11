@@ -82,3 +82,60 @@
 .coin-cat.cat-delve { background: color-mix(in srgb, #f0a030 16%, transparent); color: #f2ae4b; }
 .coin-cat.cat-prey { background: color-mix(in srgb, #3fcf6a 16%, transparent); color: #55d67c; }
 .coin-boss .coin-cat + b { display: block; }
+
+/* Cofre semanal: nivel de objeto y calidad (colores como en el juego) */
+.vault-slot { min-height: 96px; }
+.vault-slot .gv-ilvl { font-size: 24px; font-weight: 700; line-height: 1.1; color: var(--text); font-variant-numeric: tabular-nums; }
+.gv-trk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--trk); }
+.gv-trk i { width: 10px; height: 10px; transform: rotate(45deg); border-radius: 2px; background: linear-gradient(135deg, color-mix(in srgb, var(--trk) 55%, #fff), var(--trk)); box-shadow: 0 0 6px color-mix(in srgb, var(--trk) 60%, transparent); }
+.trk-adv { --trk: #c9d1dc; } .trk-vet { --trk: #f2bf3a; } .trk-champ { --trk: #3fd7c4; } .trk-hero { --trk: #ff8a3d; } .trk-myth { --trk: #c46bff; }
+.vault-slot.on[class*="trkb-"] { border-color: color-mix(in srgb, var(--trk) 55%, var(--border)); background: linear-gradient(160deg, color-mix(in srgb, var(--trk) 15%, var(--panel2)), var(--panel2)); }
+.trkb-adv { --trk: #c9d1dc; } .trkb-vet { --trk: #f2bf3a; } .trkb-champ { --trk: #3fd7c4; } .trkb-hero { --trk: #ff8a3d; } .trkb-myth { --trk: #c46bff; }
+.vault-slot.on .vs-n { color: var(--trk, #f0b232); }
+.vault-slot .meta { font-size: 11.5px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vault-slot .gv-tier { margin-top: 4px; max-width: 100%; font-size: 12px; padding: 3px 6px; border-radius: 6px; background: var(--panel); border: 1px solid var(--border); }
+.gv-world-ctl { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; padding-left: 160px; }
+.gv-world-ctl label { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.gv-world-ctl select { padding: 4px 8px; border-radius: 6px; background: var(--panel2); border: 1px solid var(--border); }
+@media (max-width: 760px) { .gv-world-ctl { padding-left: 0; } }
+
+/* Botón «?» de las sims que conviene repetir: al pasar el ratón explica el motivo exacto */
+.why { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 8px; border-radius: 50%; border: 1px solid color-mix(in srgb, #f0a030 60%, var(--border)); color: #f0a030; font-size: 12px; font-weight: 700; cursor: help; flex: none; }
+.why:hover, .why:focus { background: color-mix(in srgb, #f0a030 18%, transparent); outline: none; }
+.why-pop { display: none; position: absolute; z-index: 50; top: calc(100% + 8px); left: -12px; width: min(460px, 80vw); padding: 12px 14px; border-radius: var(--radius); background: var(--panel); border: 1px solid color-mix(in srgb, #f0a030 45%, var(--border)); box-shadow: 0 14px 40px rgba(0, 0, 0, .45); color: var(--text); font-size: 13px; font-weight: 400; line-height: 1.5; text-align: left; cursor: default; }
+.why:hover .why-pop, .why:focus .why-pop { display: block; }
+.why-pop p { margin: 0 0 6px; } .why-pop p:last-child { margin: 6px 0 0; }
+.why-pop ul { margin: 0 0 8px; padding-left: 18px; } .why-pop li { margin: 2px 0; }
+.stale-panel { overflow: visible; }
+
+/* Inicio: aurora morada que se mueve, borde de luz que gira, logo que flota y tarjetas que aparecen escalonadas */
+@property --nl-a { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.home-hero { position: relative; isolation: isolate; overflow: hidden; }
+.home-hero::before {
+  content: ''; position: absolute; inset: -40%; z-index: -1; pointer-events: none; opacity: .55;
+  background: radial-gradient(closest-side at 30% 40%, rgba(139, 92, 246, .35), transparent), radial-gradient(closest-side at 70% 60%, rgba(192, 80, 255, .22), transparent), radial-gradient(closest-side at 55% 25%, rgba(80, 120, 255, .16), transparent);
+  animation: nl-aurora 14s ease-in-out infinite alternate;
+}
+.home-hero::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none;
+  background: conic-gradient(from var(--nl-a), transparent 0 55%, #6d3df0 68%, #b892ff 75%, #e4d6ff 77%, #8b5cf6 84%, transparent 95%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: nl-spin 8s linear infinite;
+}
+.home-hero > img { filter: drop-shadow(0 0 18px rgba(139, 92, 246, .45)); animation: nl-float 5s ease-in-out infinite; }
+.home-hero h2 { background: linear-gradient(90deg, var(--text) 0%, var(--text) 40%, #c4a8ff 50%, var(--text) 60%, var(--text) 100%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: nl-title 7s ease-in-out infinite; }
+.feat { position: relative; overflow: hidden; opacity: 0; animation: nl-in .55s ease-out forwards; transition: border-color .2s, transform .2s, box-shadow .2s; }
+.feat:nth-child(1) { animation-delay: .05s; } .feat:nth-child(2) { animation-delay: .12s; } .feat:nth-child(3) { animation-delay: .19s; }
+.feat:nth-child(4) { animation-delay: .26s; } .feat:nth-child(5) { animation-delay: .33s; } .feat:nth-child(6) { animation-delay: .4s; }
+.feat:hover { transform: translateY(-3px); border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); box-shadow: 0 10px 28px color-mix(in srgb, var(--accent) 22%, transparent); }
+.feat::after { content: ''; position: absolute; inset: 0; pointer-events: none; transform: translateX(-120%); background: linear-gradient(105deg, transparent 35%, rgba(196, 168, 255, .14) 50%, transparent 65%); }
+.feat:hover::after { transition: transform .8s ease; transform: translateX(120%); }
+.feat:hover img { transform: scale(1.08) rotate(-3deg); }
+.feat img { transition: transform .25s; }
+@keyframes nl-spin { to { --nl-a: 360deg; } }
+@keyframes nl-aurora { 0% { transform: translate(-4%, -3%) rotate(0deg); } 100% { transform: translate(4%, 3%) rotate(12deg); } }
+@keyframes nl-float { 0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 14px rgba(139, 92, 246, .35)); } 50% { transform: translateY(-6px); filter: drop-shadow(0 0 26px rgba(170, 120, 255, .6)); } }
+@keyframes nl-title { 0%, 35% { background-position: 100% 0; } 65%, 100% { background-position: 0 0; } }
+@keyframes nl-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .home-hero::before, .home-hero::after, .home-hero > img, .home-hero h2, .feat { animation: none; opacity: 1; } }
+body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .home-hero > img, body.no-anim .home-hero h2, body.no-anim .feat, body.no-anim .vault-slot.on::after { animation: none; opacity: 1; }
