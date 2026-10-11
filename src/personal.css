@@ -139,3 +139,18 @@
 @keyframes nl-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .home-hero::before, .home-hero::after, .home-hero > img, .home-hero h2, .feat { animation: none; opacity: 1; } }
 body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .home-hero > img, body.no-anim .home-hero h2, body.no-anim .feat, body.no-anim .vault-slot.on::after { animation: none; opacity: 1; }
+
+/* Al pasar el ratón por una casilla del cofre: el contenido hecho esta semana y lo que cuenta para ella */
+.vault-slot { overflow: visible; cursor: help; }
+.vault-slot.on::after { border-radius: inherit; }
+.vault-slot.on { overflow: hidden; }
+.vault-slot:hover { overflow: visible; z-index: 30; }
+.gv-pop { display: none; position: absolute; z-index: 40; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); width: max(100%, 320px); max-width: 90vw; padding: 10px 12px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--border); box-shadow: 0 14px 40px rgba(0, 0, 0, .5); text-align: left; font-size: 12.5px; line-height: 1.45; cursor: default; }
+.vault-slot:hover .gv-pop { display: block; }
+.vault-slot:hover::after { display: none; }
+.gv-pop > b { display: block; margin-bottom: 4px; color: var(--text); font-size: 12.5px; }
+.gv-pop ol { margin: 0 0 6px; padding-left: 20px; max-height: 260px; overflow-y: auto; }
+.gv-pop li { margin: 2px 0; color: var(--muted); }
+.gv-pop li.cnt { color: var(--text); font-weight: 600; }
+.gv-pop .gv-trk { font-size: 11.5px; margin-left: 4px; }
+.gv-pop .meta { white-space: normal; font-size: 11.5px; }
