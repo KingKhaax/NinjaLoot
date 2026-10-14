@@ -59,6 +59,17 @@ const BOSSES_SNAPSHOT = {
      "order": 0
     }
    ]
+  },
+  {
+   "id": 1324,
+   "name": "The Unbinding of Kith'ix",
+   "bosses": [
+    {
+     "id": 2896,
+     "name": "Kith'ix",
+     "order": 1
+    }
+   ]
   }
  ],
  "names": {
@@ -139,6 +150,7 @@ const BOSSES_SNAPSHOT = {
   "2888": "Nek'zali the Soulcoiler",
   "2894": "The Lost Explorers",
   "2895": "Ula'tek",
+  "2896": "Kith'ix",
   "-43": "Alchemy",
   "-33": "Blacksmithing",
   "-34": "Enchanting",
@@ -237,6 +249,10 @@ const BOSSES_SNAPSHOT = {
   "1322": {
    "n": "Altar of Fangs",
    "t": "dungeon"
+  },
+  "1324": {
+   "n": "The Unbinding of Kith'ix",
+   "t": "raid"
   },
   "-32": {
    "n": "Normal Dungeons",
