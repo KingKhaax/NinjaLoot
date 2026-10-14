@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba. Francés y alemán usan el inglés.
 const CHANGELOG = {
   es: [
+    ['0.3.0', 'Identificador interno de la aplicación cambiado a com.kingkhaax.ninjaloot (sin datos personales); el instalador conserva su identidad anterior, así que las actualizaciones siguen funcionando.'],
     ['0.2.9', 'Nuevo jefe de banda: Kith’ix (The Unbinding of Kith’ix). Ahora son 10 jefes de banda en lugar de 9 y las piezas simuladas que caen de él salen en las gráficas por jefe, en la simulación personal y en «Dónde tirar moneda». Tabla de objetos actualizada con las 45 piezas nuevas.'],
     ['0.2.8', 'Cofre semanal: al pasar el ratón por una casilla ves todo el contenido que has hecho esta semana (jefes con su dificultad, llaves con su mazmorra o actividades del mundo), con su nivel de objeto, y resaltado lo que cuenta para esa casilla.'],
     ['0.2.7', 'La pestaña de la versión web se llama ahora solo «NinjaLoot».'],
@@ -30,6 +31,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.3.0', 'Internal application identifier changed to com.kingkhaax.ninjaloot (no personal data); the installer keeps its previous identity, so updates keep working.'],
     ['0.2.9', 'New raid boss: Kith’ix (The Unbinding of Kith’ix). There are now 10 raid bosses instead of 9, and the simulated pieces that drop from it show up in the per-boss charts, the personal simulation and «Where to spend coins». Item table updated with the 45 new pieces.'],
     ['0.2.8', 'Great Vault: hovering a slot shows all the content you did this week (bosses with difficulty, keys with dungeon or world activities), with item level, highlighting what counts for that slot.'],
     ['0.2.7', 'The web version tab is now called just «NinjaLoot».'],

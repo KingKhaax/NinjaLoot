@@ -2,6 +2,10 @@
 
 Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raidbots.
 
+[![Última versión](https://img.shields.io/github/v/release/KingKhaax/NinjaLoot?label=versi%C3%B3n)](https://github.com/KingKhaax/NinjaLoot/releases/latest)
+[![Descargas](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/total?label=descargas)](https://github.com/KingKhaax/NinjaLoot/releases)
+[![Licencia: MIT](https://img.shields.io/github/license/KingKhaax/NinjaLoot?label=licencia)](LICENSE)
+
 - Pega una o varias URLs de Raidbots (`https://www.raidbots.com/simbot/report/...`), o arrástralas a la ventana.
 - Gráfica general: la mejor mejora de cada jugador, ordenada de mayor a menor, con color e icono de clase.
 - Una gráfica por jugador con todos sus objetos (iconos y nombres localizados).
@@ -16,19 +20,31 @@ Usa NinjaLoot directamente en el navegador, sin instalar nada:
 
 **[https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.io/NinjaLoot/)**
 
+## Requisitos
+
+- Windows 10 u 11 (64 bits) para el instalable y el portable.
+- O cualquier navegador moderno para la [versión web](https://kingkhaax.github.io/NinjaLoot/).
+- Una o varias simulaciones **Droptimizer** de [Raidbots](https://www.raidbots.com).
+
 ## Descarga
 
 Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
 - **Web, sin instalar nada:** [kingkhaax.github.io/NinjaLoot](https://kingkhaax.github.io/NinjaLoot/) (siempre la última versión; tus datos se quedan en tu navegador).
-- **Instalable:** `NinjaLoot vX.Y.Z Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest) (se actualiza solo y se desinstala desde *Configuración → Aplicaciones* de Windows).
-- **Portable:** `NinjaLoot vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
+- **Instalable:** `NinjaLoot.vX.Y.Z.Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest) (se actualiza solo y se desinstala desde *Configuración → Aplicaciones* de Windows).
+- **Portable:** `NinjaLoot.vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
 
 `SHA256SUMS.txt` lleva los hashes para comprobar los archivos.
 
 Los ejecutables están firmados digitalmente (ver [Code signing policy](#code-signing-policy)).
 
+## Novedades
+
+El historial de versiones está en el propio programa (Ajustes → Versión) y en [Releases](https://github.com/KingKhaax/NinjaLoot/releases) (solo se conserva la última).
+
 ## Desarrollo
+
+Requiere [Node.js](https://nodejs.org/) 20 o superior.
 
 ```
 npm install
@@ -41,6 +57,25 @@ Los iconos (`src/assets`) y `src/data/items.js` se generan con `node tools/build
 a partir de la release de https://github.com/AcidWeb/Clean-Icons-Mechagnome-Edition (solo objetos de Dragonflight en adelante; el resto se carga de Wowhead/zamimg).
 
 Las releases oficiales se compilan y firman en GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)).
+
+## Servidor del bot de Discord (opcional)
+
+El bot compartido de NinjaLoot se ejecuta como una función de Vercel en [`server/`](server/) y lee los enlaces de Raidbots que se pegan en un canal. Para desplegar el tuyo:
+
+```
+cd server
+npx vercel login
+npx vercel link --yes --project ninjaloot-relay
+npx vercel env add DISCORD_BOT_TOKEN production --sensitive   # token de tu bot
+npx vercel env add DISCORD_CLIENT_ID production                # ID de aplicación (para generar la invitación)
+npx vercel deploy --prod --yes
+```
+
+- `DISCORD_BOT_TOKEN`: token del bot. Solo vive en Vercel, nunca viaja en la aplicación.
+- `DISCORD_CLIENT_ID`: ID de la aplicación de Discord (opcional; sin él la app no puede mostrar el enlace de invitación).
+- Rutas: `GET /api/discord?op=info`, `?op=history`, `?channel=ID&after=MSG_ID` y `POST ?op=dm`; el detalle está en los comentarios de [`server/api/discord.js`](server/api/discord.js).
+
+> Las secciones *Code signing policy* y *Privacy policy* están en inglés a propósito (requisito de la firma de código y de las políticas de privacidad).
 
 ## Code signing policy
 
