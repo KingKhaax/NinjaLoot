@@ -1,6 +1,6 @@
 # Compila NinjaLoot en GitHub, lo firma con SignPath (si está configurado) y publica la release.
 # Se lanza solo al subir a main un cambio de "version" en package.json (o a mano: Actions -> "Release" -> Run workflow).
-# Después archiva la versión anterior (deja solo su .blockmap para las actualizaciones rápidas) y borra las más antiguas.
+# Después borra las versiones anteriores (release y tag): solo queda la última.
 
 name: Release
 
@@ -174,26 +174,16 @@ jobs:
           make_latest: true
           files: out/*
 
-      # 4) La versión anterior se queda solo con su .blockmap (lo necesita la actualización rápida desde ella);
-      #    las más antiguas se borran del todo, con su tag.
-      - name: Archivar la versión anterior y borrar las antiguas
+      # 4) Solo queda la release actual: las anteriores se borran del todo, con su tag.
+      - name: Borrar las versiones anteriores
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           $new = 'v${{ steps.ver.outputs.version }}'
-          $rels = @(gh release list --limit 100 --json tagName,isDraft,createdAt | ConvertFrom-Json |
-            Where-Object { -not $_.isDraft -and $_.tagName -ne $new } | Sort-Object createdAt -Descending)
+          $rels = @(gh release list --limit 100 --json tagName,isDraft | ConvertFrom-Json |
+            Where-Object { $_.tagName -ne $new })
           foreach ($r in $rels) {
-            $tag = $r.tagName
-            $assets = @(gh release view $tag --json assets --jq '.assets[].name')
-            $isPrev = $r -eq $rels[0]
-            if ($isPrev -and ($assets -like '*.blockmap')) {
-              foreach ($a in $assets) { if ($a -notlike '*.blockmap') { gh release delete-asset $tag $a -y } }
-              gh release edit $tag --prerelease --title "$tag (archivada)" --notes "Versión anterior archivada. Solo guarda el .blockmap para que la actualización a $new descargue únicamente lo que ha cambiado."
-              "Archivada $tag"
-            } else {
-              gh release delete $tag --cleanup-tag -y
-              "Borrada $tag"
-            }
+            gh release delete $r.tagName --cleanup-tag -y
+            "Borrada $($r.tagName)"
           }

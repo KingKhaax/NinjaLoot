@@ -10,6 +10,12 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 - Tooltip de objeto al pasar el ratón (estadísticas y nivel de objeto) y aviso **Cuidado** cuando una mejora se debe a una pieza equipada de nivel muy bajo.
 - Quitar una simulación (✕) o borrarlas todas.
 
+## Web
+
+Usa NinjaLoot directamente en el navegador, sin instalar nada:
+
+**[https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.io/NinjaLoot/)**
+
 ## Descarga
 
 Tres formas de usar NinjaLoot, las tres con las mismas funciones:
