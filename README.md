@@ -3,8 +3,7 @@
 Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raidbots.
 
 [![Última versión](https://img.shields.io/github/v/release/KingKhaax/NinjaLoot?label=versi%C3%B3n)](https://github.com/KingKhaax/NinjaLoot/releases/latest)
-[![Descargas de la última versión](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/latest/total?label=descargas%20%C3%BAltima%20versi%C3%B3n&cacheSeconds=300)](https://github.com/KingKhaax/NinjaLoot/releases/latest)
-[![Descargas totales](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/total?label=descargas%20totales&cacheSeconds=300)](https://github.com/KingKhaax/NinjaLoot/releases)
+[![Descargas](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/total?label=descargas&cacheSeconds=300)](https://github.com/KingKhaax/NinjaLoot/releases)
 [![Licencia: MIT](https://img.shields.io/github/license/KingKhaax/NinjaLoot?label=licencia)](LICENSE)
 
 - Pega una o varias URLs de Raidbots (`https://www.raidbots.com/simbot/report/...`), o arrástralas a la ventana.
