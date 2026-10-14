@@ -1,8 +1,8 @@
 {
   "name": "ninjaloot",
   "productName": "NinjaLoot",
-  "version": "0.2.9",
-  "description": "NinjaLoot: graficas de mejoras de objetos a partir de simulaciones de Raidbots",
+  "version": "0.3.0",
+  "description": "NinjaLoot: gráficas de mejoras de objetos a partir de simulaciones de Raidbots",
   "main": "main.js",
   "author": "sr.kitkat",
   "license": "MIT",
@@ -17,7 +17,7 @@
     "pngjs": "^7.0.0"
   },
   "build": {
-    "appId": "com.rafael.ninjaloot",
+    "appId": "com.kingkhaax.ninjaloot",
     "productName": "NinjaLoot",
     "files": [
       "main.js",
@@ -41,6 +41,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
+      "guid": "af6f40ab-cd79-500d-85bf-ccd9a5b211a4",
       "artifactName": "NinjaLoot v${version} Setup.${ext}"
     },
     "portable": {

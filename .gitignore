@@ -4,3 +4,6 @@ dist/
 
 server/.vercel
 _site/
+*.log
+.env
+.env.*
