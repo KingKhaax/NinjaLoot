@@ -1206,6 +1206,7 @@
   const specLabel = (cls, key) => { const d = SPECS[cls][key], l = S().lang; return l === 'es' ? d[1] : (SPEC_L10N[l]?.[cls]?.[key] || d[0]); };
   function tiersView() {
     const t = T(), l = S().lang, sel = state.tierCls;
+    if (!state.tierOpen) state.tierOpen = new Set();
     const classes = Object.keys(TIERS.classes).sort((a, b) => t.classes[a].localeCompare(t.classes[b], l));
     let html = `<section class="panel card"><div class="card-head"><div><h2>${esc(t.tiersTitle)}</h2><div class="meta">${esc(state.bosses.season || TIERS.season)}</div></div></div><div class="hint">${esc(t.tiersHint)}</div>`
       + `<div class="tier-classes">${classes.map(c => `<button class="tier-cls${c === sel ? ' on' : ''}" data-tier-cls="${c}" style="--cc:${CLASS_COLORS[c]}"><img src="assets/classes/${c}.png" alt=""><span style="color:${readable(CLASS_COLORS[c])}">${esc(t.classes[c])}</span></button>`).join('')}</div></section>`;
@@ -1215,8 +1216,10 @@
     html += `<section class="panel card tier-detail" style="--cc:${col}"><div class="card-head"><img class="cls-icon" src="assets/classes/${sel}.png" alt="" style="border-color:${col}"><div><h2 style="color:${readable(col)}">${esc(t.classes[sel])}</h2><div class="meta">${esc(d.name[l] || d.name.en)}</div></div></div>`
       + `<h3>${esc(t.tierBonus)}</h3><div class="tier-specs">`
       + Object.keys(SPECS[sel]).filter(k => d.bonus[k]).map(k => { const b = d.bonus[k][l] || d.bonus[k].en;
-        return `<div class="tier-spec"><div class="ts-head"><img src="assets/specs/${sel}-${k}.png" alt="" style="border-color:${col}"><b>${esc(specLabel(sel, k))}</b></div>`
-          + `<div class="ts-bonus"><span class="ts-pc">${esc(t.tier2)}</span><p>${esc(b[0] || '')}</p></div><div class="ts-bonus"><span class="ts-pc">${esc(t.tier4)}</span><p>${esc(b[1] || '')}</p></div></div>`; }).join('')
+        // cada especialización es un desplegable cerrado: el texto de 2 y 4 piezas solo sale al pulsarla
+        const key = `${sel}:${k}`, open = state.tierOpen.has(key);
+        return `<div class="tier-spec${open ? ' open' : ''}"><button type="button" class="ts-head" data-ts-toggle="${key}" aria-expanded="${open}"><img src="assets/specs/${sel}-${k}.png" alt="" style="border-color:${col}"><b>${esc(specLabel(sel, k))}</b><small class="ts-sub">${esc(t.tier2)} · ${esc(t.tier4)}</small><span class="ts-chev" aria-hidden="true"></span></button>`
+          + `<div class="ts-body"${open ? '' : ' hidden'}><div class="ts-bonus"><span class="ts-pc">${esc(t.tier2)}</span><p>${esc(b[0] || '')}</p></div><div class="ts-bonus"><span class="ts-pc">${esc(t.tier4)}</span><p>${esc(b[1] || '')}</p></div></div></div>`; }).join('')
       + `</div><h3>${esc(t.tierPieces)}</h3><div class="ptable-wrap"><table class="ptable"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.statsLabel)}</th><th>${esc(t.colBoss)}</th></tr></thead><tbody>`
       + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
         return `<tr data-item="${it.id}" data-ilvl=""><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
@@ -1340,6 +1343,14 @@
     else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
     else if (q('data-personal-load')) { loadPersonal($('#personalUrl').value); }
     else if ((el = q('data-slot-load'))) { const i = document.querySelector(`.slot-input[data-slot="${el.dataset.slotLoad}"]`); if (i) loadPersonal(i.value, el.dataset.slotLoad); }
+    else if ((el = q('data-ts-toggle'))) {
+      const card = el.closest('.tier-spec'), open = !card.classList.contains('open');
+      card.classList.toggle('open', open);
+      el.setAttribute('aria-expanded', String(open));
+      card.querySelector('.ts-body').hidden = !open;
+      if (!state.tierOpen) state.tierOpen = new Set();
+      if (open) state.tierOpen.add(el.dataset.tsToggle); else state.tierOpen.delete(el.dataset.tsToggle);
+    }
     else if ((el = q('data-tier-cls'))) { state.tierCls = state.tierCls === el.dataset.tierCls ? null : el.dataset.tierCls; render(); }
     else if ((el = q('data-boss'))){ state.bossSel = Number(el.dataset.boss); render(); }
     else if ((el = q('data-cell-set'))) { const [sid, bid] = el.closest('[data-cell]').dataset.cell.split(':'); setCell(Number(bid), sid, el.dataset.cellSet); persistRot(); render(); }
