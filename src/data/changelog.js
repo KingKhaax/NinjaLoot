@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.3.2', 'Los botones de color brillan, se elevan y se iluminan al pasar el ratón por encima. Reescrito el paso 3 de «Cómo se usa» para que «Rotaciones» y «Cuidado» se entiendan como secciones.'],
     ['0.3.1', 'Quitados el francés y el alemán: la aplicación queda en español e inglés. Si tenías uno de esos idiomas elegido, vuelve al español.'],
     ['0.3.0', 'Identificador interno de la aplicación cambiado a com.kingkhaax.ninjaloot (sin datos personales); el instalador conserva su identidad anterior, así que las actualizaciones siguen funcionando.'],
     ['0.2.9', 'Nuevo jefe de banda: Kith’ix (The Unbinding of Kith’ix). Ahora son 10 jefes de banda en lugar de 9 y las piezas simuladas que caen de él salen en las gráficas por jefe, en la simulación personal y en «Dónde tirar moneda». Tabla de objetos actualizada con las 45 piezas nuevas.'],
@@ -32,6 +33,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.3.2', 'Coloured buttons now shine, lift and glow when you hover them. Step 3 of «How to use» was reworded so “Rotations” and “Careful” read as sections.'],
     ['0.3.1', 'French and German removed: the app is now Spanish and English only. If you had one of those languages selected, it goes back to Spanish.'],
     ['0.3.0', 'Internal application identifier changed to com.kingkhaax.ninjaloot (no personal data); the installer keeps its previous identity, so updates keep working.'],
     ['0.2.9', 'New raid boss: Kith’ix (The Unbinding of Kith’ix). There are now 10 raid bosses instead of 9, and the simulated pieces that drop from it show up in the per-boss charts, the personal simulation and «Where to spend coins». Item table updated with the 45 new pieces.'],

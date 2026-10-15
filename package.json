@@ -1,7 +1,7 @@
 {
   "name": "ninjaloot",
   "productName": "NinjaLoot",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "NinjaLoot: gráficas de mejoras de objetos a partir de simulaciones de Raidbots",
   "main": "main.js",
   "author": "sr.kitkat",
