@@ -341,9 +341,19 @@ body.compact .cell { min-height: 30px; }
 .tier-cls:hover, .tier-cls.on { background: color-mix(in srgb, var(--cc) 10%, var(--panel2)); }
 .tier-cls.on { box-shadow: 0 0 0 1px var(--cc); }
 .tier-detail h3 { margin: 20px 0 10px; font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
-.tier-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+.tier-specs { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; align-items: start; }
 .tier-spec { padding: 14px 16px; border-radius: var(--radius); background: var(--panel2); border: 1px solid var(--border); border-top: 2px solid var(--cc); }
-.ts-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 16px; }
+.tier-spec { padding: 0; overflow: hidden; transition: border-color .2s, box-shadow .2s; }
+.tier-spec:hover, .tier-spec.open { border-color: color-mix(in srgb, var(--cc) 55%, var(--border)); }
+.tier-spec.open { box-shadow: 0 8px 24px color-mix(in srgb, var(--cc) 14%, transparent); }
+.ts-head { display: flex; align-items: center; gap: 10px; width: 100%; margin: 0; padding: 12px 16px; border: 0; background: transparent; color: inherit; font: inherit; font-size: 16px; text-align: left; cursor: pointer; }
+.ts-head:hover { background: color-mix(in srgb, var(--cc) 9%, transparent); }
+.ts-head:focus-visible { outline: 2px solid var(--cc); outline-offset: -2px; }
+.ts-sub { margin-left: auto; color: var(--muted); font-size: 12px; font-weight: 500; }
+.ts-chev { flex: none; width: 9px; height: 9px; margin: 0 2px 3px 4px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; }
+.tier-spec.open .ts-chev { transform: rotate(225deg); margin-bottom: -3px; border-color: var(--cc); }
+.ts-body { padding: 2px 16px 14px; }
+.ts-body[hidden] { display: none; }
 .ts-head img { width: 34px; height: 34px; border-radius: 5px; border: 2px solid; }
 .ts-bonus { display: grid; grid-template-columns: 74px 1fr; gap: 8px; align-items: start; margin-top: 6px; }
 .ts-bonus p { margin: 0; font-size: 13.5px; line-height: 1.45; }

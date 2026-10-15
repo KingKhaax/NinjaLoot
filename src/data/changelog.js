@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.4.5', 'Tiers: cada especialización es ahora un desplegable cerrado; el texto de los bonus de 2 y 4 piezas solo aparece al pulsarla, para que no se vea todo el texto de golpe.'],
     ['0.4.4', 'En la barra superior, Tiers y Gráficas intercambian su sitio: ahora el orden es Inicio, Tiers, Simulación personal, Gráficas, Rotaciones y Roster.'],
     ['0.4.3', 'El círculo del reloj del servidor gira una vuelta cada 24 horas (ya no por segundos).'],
     ['0.4.2', 'El reloj del servidor vuelve a estar justo a la derecha del nombre y el icono de NinjaLoot (en la 0.4.1 se había descolocado).'],
@@ -38,6 +39,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.4.5', 'Tiers: each specialization is now a collapsed section; the 2-piece and 4-piece bonus text only appears when you click it, so you no longer see all the text at once.'],
     ['0.4.4', 'In the top bar, Tiers and Charts swap places: the order is now Home, Tiers, Personal simulation, Charts, Rotations and Roster.'],
     ['0.4.3', 'The server clock circle now makes one turn every 24 hours (no longer per second).'],
     ['0.4.2', 'The server clock is back right next to the NinjaLoot icon and name (it had been displaced in 0.4.1).'],
