@@ -158,7 +158,7 @@ const ServerClock = (() => {
     root.className = 'sc';
     root.setAttribute('role', 'timer');
     root.innerHTML = '<span class="sc-dial"></span><span class="sc-time"><b class="sc-h">--</b><em>:</em><b class="sc-m">--</b><em>:</em><b class="sc-s">--</b></span><span class="sc-reg">EU</span>';
-    el.before(root); // el reloj va a la izquierda del todo, antes del logo
+    if (cfg.placeBefore) el.before(root); else el.after(root);
     root.addEventListener('mouseenter', showTip);
     root.addEventListener('mouseleave', hideTip);
     tick();
@@ -180,13 +180,8 @@ const ServerClock = (() => {
 
   function init(options) {
     cfg = { ...cfg, ...options };
-    if (options.before) mount(options.before);
+    if (options.after || options.before) { cfg.placeBefore = !options.after; mount(options.after || options.before); }
   }
 
   return { init, selectHTML, REGIONS };
 })();
-
-// WipeTime: este script se carga después de app.js, así que arranca aquí (S y WCSettings ya existen)
-try {
-  ServerClock.init({ before: document.getElementById('brandHome'), lang: () => (typeof S !== 'undefined' && S.lang) || 'es', region: () => WCSettings.get('serverRegion') || 'eu', setRegion: (v) => WCSettings.set('serverRegion', v) });
-} catch (e) { console.error('reloj del servidor', e); }

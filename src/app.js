@@ -1310,7 +1310,7 @@
   $('#btnPaste').onclick = async () => { try { const v = await navigator.clipboard.readText(); if (v) addFromText(v); } catch { $('#urlInput').focus(); } };
   $('#btnClear').onclick = clearAll;
   $('#btnSettings').onclick = () => openSettings();
-  ServerClock.init({ before: document.querySelector('.topbar .brand'), lang: () => S().lang, region: () => S().serverRegion || 'eu', setRegion: v => { S().serverRegion = v; persistSettings(); } });
+  ServerClock.init({ after: document.querySelector('.topbar .brand > div'), lang: () => S().lang, region: () => S().serverRegion || 'eu', setRegion: v => { S().serverRegion = v; persistSettings(); } });
   $('#verBadge').onclick = () => openSettings('update');
   // Menú de idiomas: el idioma activo aparece iluminado
   const langMenu = () => $('#langMenu');
