@@ -1,11 +1,11 @@
-# Publica la versión web de NinjaLoot en GitHub Pages (https://kingkhaax.github.io/NinjaLoot/)
-# con cada cambio en main, junto con las páginas de Condiciones del Servicio y Política de Privacidad.
+# Publica la versión web de NinjaLoot en GitHub Pages (https://kingkhaax.github.io/NinjaLoot/), junto con las páginas de
+# Condiciones del Servicio y Política de Privacidad.
+# La lanza el workflow «Release» justo después de publicar la release (misma versión que el instalador y el portable), o a mano desde Actions.
+
 name: Web
 
 on:
-  push:
-    branches: [main]
-    paths: ['src/**', 'web/**', 'tools/build-web.mjs', 'package.json', '.github/workflows/pages.yml']
+  workflow_call:
   workflow_dispatch:
 
 permissions:
