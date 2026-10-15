@@ -111,7 +111,7 @@ const ServerClock = (() => {
   const hideTip = () => { if (tip) tip.hidden = true; };
 
   const CSS = `
-.sc { --sc-sec: 0; position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 5px 12px 5px 6px; margin: 0 8px; border-radius: 12px; cursor: default; user-select: none; -webkit-user-select: none;
+.sc { --sc-sec: 0; position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 5px 12px 5px 6px; margin: 0 10px 0 0; border-radius: 12px; cursor: default; user-select: none; -webkit-user-select: none;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent, #4da3ff) 14%, var(--panel, #15181e)), var(--panel, #15181e));
   border: 1px solid color-mix(in srgb, var(--accent, #4da3ff) 38%, var(--line, #2a2f3a)); box-shadow: 0 0 0 0 transparent, inset 0 1px 0 rgba(255, 255, 255, .06);
   transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease, border-color .25s ease; overflow: hidden; flex: none; }
@@ -158,7 +158,7 @@ const ServerClock = (() => {
     root.className = 'sc';
     root.setAttribute('role', 'timer');
     root.innerHTML = '<span class="sc-dial"></span><span class="sc-time"><b class="sc-h">--</b><em>:</em><b class="sc-m">--</b><em>:</em><b class="sc-s">--</b></span><span class="sc-reg">EU</span>';
-    el.after(root);
+    el.before(root); // el reloj va a la izquierda del todo, antes del logo
     root.addEventListener('mouseenter', showTip);
     root.addEventListener('mouseleave', hideTip);
     tick();
@@ -180,8 +180,13 @@ const ServerClock = (() => {
 
   function init(options) {
     cfg = { ...cfg, ...options };
-    if (options.after) mount(options.after);
+    if (options.before) mount(options.before);
   }
 
   return { init, selectHTML, REGIONS };
 })();
+
+// WipeTime: este script se carga después de app.js, así que arranca aquí (S y WCSettings ya existen)
+try {
+  ServerClock.init({ before: document.getElementById('brandHome'), lang: () => (typeof S !== 'undefined' && S.lang) || 'es', region: () => WCSettings.get('serverRegion') || 'eu', setRegion: (v) => WCSettings.set('serverRegion', v) });
+} catch (e) { console.error('reloj del servidor', e); }
