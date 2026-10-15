@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.4.3', 'El círculo del reloj del servidor gira una vuelta cada 24 horas (ya no por segundos).'],
     ['0.4.2', 'El reloj del servidor vuelve a estar justo a la derecha del nombre y el icono de NinjaLoot (en la 0.4.1 se había descolocado).'],
     ['0.4.1', 'El reloj del servidor pasa al extremo izquierdo de la barra superior, antes del logo.'],
     ['0.4.0', 'Reloj del servidor arriba a la izquierda (Europa por defecto; América, Latinoamérica, Oceanía, Corea y Taiwán en Ajustes → General) con cuenta atrás al reinicio semanal al pasar el ratón. Quitado el texto bajo el nombre de la aplicación; las tarjetas del inicio ya no se pueden seleccionar; el paso 3 de «Cómo se usa» menciona «Dónde tirar moneda»; y «Dificultades e idiomas» ya no dice francés ni alemán.'],
@@ -36,6 +37,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.4.3', 'The server clock circle now makes one turn every 24 hours (no longer per second).'],
     ['0.4.2', 'The server clock is back right next to the NinjaLoot icon and name (it had been displaced in 0.4.1).'],
     ['0.4.1', 'The server clock moves to the far left of the top bar, before the logo.'],
     ['0.4.0', 'Server clock at the top left (Europe by default; Americas, Latin America, Oceania, Korea and Taiwan in Settings → General) with a countdown to the weekly reset on hover. Removed the text under the app name; the home cards can no longer be selected; step 3 of «How to use» mentions “Where to use a coin”; and “Difficulties and languages” no longer lists French and German.'],

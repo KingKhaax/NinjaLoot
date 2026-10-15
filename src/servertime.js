@@ -91,7 +91,8 @@ const ServerClock = (() => {
     void sec.offsetWidth; // reinicia la animación del segundo
     sec.classList.add('tick');
     q('.sc-reg').textContent = r.code;
-    root.style.setProperty('--sc-sec', String(Number(s)));
+    // el círculo da una vuelta cada 24 horas (15° por hora, avanzando con los minutos y segundos), no cada minuto
+    root.style.setProperty('--sc-hr', String((Number(h) + Number(m) / 60 + Number(s) / 3600) * 15));
     root.setAttribute('aria-label', `${es() ? 'Hora del servidor' : 'Server time'} ${r.code}: ${h}:${m}:${s}`);
     if (tip && !tip.hidden) tip.innerHTML = tipHTML(r, now);
   }
@@ -111,7 +112,7 @@ const ServerClock = (() => {
   const hideTip = () => { if (tip) tip.hidden = true; };
 
   const CSS = `
-.sc { --sc-sec: 0; position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 5px 12px 5px 6px; margin: 0 10px 0 0; border-radius: 12px; cursor: default; user-select: none; -webkit-user-select: none;
+.sc { --sc-hr: 0; position: relative; display: inline-flex; align-items: center; gap: 9px; padding: 5px 12px 5px 6px; margin: 0 10px 0 0; border-radius: 12px; cursor: default; user-select: none; -webkit-user-select: none;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent, #4da3ff) 14%, var(--panel, #15181e)), var(--panel, #15181e));
   border: 1px solid color-mix(in srgb, var(--accent, #4da3ff) 38%, var(--line, #2a2f3a)); box-shadow: 0 0 0 0 transparent, inset 0 1px 0 rgba(255, 255, 255, .06);
   transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease, border-color .25s ease; overflow: hidden; flex: none; }
@@ -119,10 +120,10 @@ const ServerClock = (() => {
 .sc:hover { transform: translateY(-1px); border-color: var(--accent, #4da3ff); box-shadow: 0 6px 22px color-mix(in srgb, var(--accent, #4da3ff) 38%, transparent), inset 0 1px 0 rgba(255, 255, 255, .1); }
 .sc:hover::before { animation-duration: 1.6s; }
 .sc-dial { position: relative; width: 28px; height: 28px; border-radius: 50%; flex: none;
-  background: conic-gradient(var(--accent, #4da3ff) calc(var(--sc-sec) * 6deg), color-mix(in srgb, var(--accent, #4da3ff) 14%, transparent) 0);
+  background: conic-gradient(var(--accent, #4da3ff) calc(var(--sc-hr) * 1deg), color-mix(in srgb, var(--accent, #4da3ff) 14%, transparent) 0);
   box-shadow: 0 0 12px color-mix(in srgb, var(--accent, #4da3ff) 40%, transparent); }
 .sc-dial::before { content: ''; position: absolute; inset: 3px; border-radius: 50%; background: var(--panel, #15181e); }
-.sc-dial::after { content: ''; position: absolute; left: 50%; top: 50%; width: 2px; height: 9px; margin: -9px 0 0 -1px; border-radius: 2px; background: var(--accent, #4da3ff); transform-origin: 50% 100%; transform: rotate(calc(var(--sc-sec) * 6deg)); transition: transform .25s cubic-bezier(.3, 1.6, .5, 1); }
+.sc-dial::after { content: ''; position: absolute; left: 50%; top: 50%; width: 2px; height: 9px; margin: -9px 0 0 -1px; border-radius: 2px; background: var(--accent, #4da3ff); transform-origin: 50% 100%; transform: rotate(calc(var(--sc-hr) * 1deg)); transition: transform .6s ease; }
 .sc-time { display: inline-flex; align-items: baseline; gap: 1px; font-variant-numeric: tabular-nums; font-weight: 800; font-size: 17px; letter-spacing: .5px; color: var(--strong, var(--text, #fff)); text-shadow: 0 0 14px color-mix(in srgb, var(--accent, #4da3ff) 45%, transparent); }
 .sc-time b { display: inline-block; min-width: 1.15em; text-align: center; font-weight: 800; }
 .sc-time em { font-style: normal; color: var(--accent, #4da3ff); animation: scBlink 1s steps(2, jump-none) infinite; }
