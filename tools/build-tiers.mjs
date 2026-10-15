@@ -17,7 +17,7 @@ const SLOT_BY_INV = { 1: 'head', 3: 'shoulder', 5: 'chest', 20: 'chest', 7: 'leg
 // Jefe que suelta la ficha de cada ranura (todas las clases comparten ranura por jefe); Ula'tek suelta una ficha válida para cualquier ranura
 const TOKEN_BOSS = { head: 2887, shoulder: 2894, chest: 2882, hands: 2874, legs: 2871 };
 const ANY_BOSS = 2895;
-const LOCALES = { en: 0, fr: 2, de: 3, es: 6 };
+const LOCALES = { en: 0, es: 6 };
 
 // El catalizador de la temporada activa: los sets de tier son los objetos con esa fuente
 const season = seasons.find(s => s.active) || seasons[0];
@@ -36,7 +36,7 @@ for (const it of items) {
 
 const norm = s => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
 // Wowhead deja sin traducir "([50% of Attack Power])" y marca entre corchetes algunos nombres de hechizo
-const POWER = { es: ['del poder de ataque', 'del poder con hechizos'], fr: ['de la puissance d’attaque', 'de la puissance des sorts'], de: ['der Angriffskraft', 'der Zaubermacht'], en: ['of Attack Power', 'of Spell Power'] };
+const POWER = { es: ['del poder de ataque', 'del poder con hechizos'], en: ['of Attack Power', 'of Spell Power'] };
 const clean = (html, lang) => html.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
   .replace(/\(?\[?([\d.]+)% of (Attack|Spell) Power\]?\)?/g, (_m, n, kind) => `(${Math.round(Number(n) * 10) / 10}% ${POWER[lang][kind === 'Attack' ? 0 : 1]})`)
   .replace(/\[([^\]]+)\]/g, '$1').replace(/\s+/g, ' ').trim();

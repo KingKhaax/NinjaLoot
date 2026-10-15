@@ -11,8 +11,8 @@
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
-    settings: { ...DEFAULTS, ...load('ninjaloot.settings', {}) },
-    sims: [], loading: new Set(), names: { es: {}, en: {}, fr: {}, de: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
+    settings: (() => { const st = { ...DEFAULTS, ...load('ninjaloot.settings', {}) }; if (!['es', 'en'].includes(st.lang)) st.lang = 'es'; return st; })(),
+    sims: [], loading: new Set(), names: { es: {}, en: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
     view: 'home', personal: null, personalList: [], gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
@@ -121,7 +121,7 @@
   const buffEffect = b => BUFF_L10N[S().lang]?.[b.id]?.[1] || b.effect[S().lang === 'es' ? 0 : 1];
   const specIcon = sim => { const d = specData(sim); return d ? `assets/specs/${sim.character.cls}-${specKey(sim)}.png` : (sim.character.cls ? `assets/classes/${sim.character.cls}.png` : null); };
   const clsColor = sim => CLASS_COLORS[sim.character.cls] || '#c8a45a';
-  const nf = () => new Intl.NumberFormat({ es: 'es-ES', en: 'en-US', fr: 'fr-FR', de: 'de-DE' }[S().lang] || 'en-US');
+  const nf = () => new Intl.NumberFormat({ es: 'es-ES', en: 'en-US' }[S().lang] || 'en-US');
 
   function valueOf(it, sim) { return S().unit === 'pct' ? it.pct : it.gain; }
   function valueText(it, sim) {

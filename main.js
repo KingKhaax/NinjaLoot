@@ -38,7 +38,7 @@ ipcMain.handle('report:fetch', async (_e, id) => {
 });
 
 // --- Nombres de objetos localizados (Wowhead) con caché en disco ---
-const WH_LOCALE = { en: 0, fr: 2, de: 3, es: 6 };
+const WH_LOCALE = { en: 0, es: 6 };
 let itemCache = null;
 let itemCacheDirty = false;
 const itemCacheFile = () => path.join(userData(), 'item-cache.json');
