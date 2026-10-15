@@ -167,3 +167,6 @@ body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .h
 
 /* Tarjetas informativas del inicio: no se seleccionan y el cursor no cambia a «I» */
 .feat, .feat * { user-select: none; -webkit-user-select: none; cursor: default; }
+
+/* Reloj del servidor: pegado a la derecha del nombre, dentro del bloque de la marca */
+.brand .sc { margin: 0 0 0 10px; }
