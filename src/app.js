@@ -635,7 +635,6 @@
     const t = T();
     if (tipEl) { tipEl.hidden = true; tipEl.dataset.cur = ''; tipKey = null; } // el contenido se redibuja: fuera tooltips colgados
     document.documentElement.lang = S().lang;
-    $('#appSub').textContent = t.appSub;
     $('#urlInput').placeholder = t.urlPlaceholder;
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
     $('#btnExportData').textContent = t.exportData; $('#btnExportData').disabled = !state.sims.length;
@@ -1002,7 +1001,8 @@
       const check = (key, label) => `<div class="row"><label for="s-${key}">${esc(label)}</label><input type="checkbox" id="s-${key}" data-key="${key}" ${s[key] ? 'checked' : ''}></div>`;
       const cur = k => hex((s.colors || {})[k]) || hex(getComputedStyle(document.documentElement).getPropertyValue(`--${k}`).trim()) || '#000000';
       const views = {
-        general: () => `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
+        general: () => `<div class="row"><label>${S().lang === 'en' ? 'Server time' : 'Hora del servidor'}</label>${ServerClock.selectHTML()}</div>`
+          + `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.minGain)}</label><input type="number" min="0" step="50" style="width:110px" data-key="minGain" value="${Number(s.minGain) || 0}"></div>`
           + check('checkGear', t.checkGear) + `<div class="row"><label>${esc(t.staleDays)}</label><input type="number" min="1" max="60" style="width:90px" data-key="staleDays" value="${Number(s.staleDays) || 7}"></div>` + check('showValues', t.showValues) + check('showCaution', t.showCaution) + check('tooltips', t.tooltips) + check('chartTall', t.chartTall) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>` + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
@@ -1310,6 +1310,7 @@
   $('#btnPaste').onclick = async () => { try { const v = await navigator.clipboard.readText(); if (v) addFromText(v); } catch { $('#urlInput').focus(); } };
   $('#btnClear').onclick = clearAll;
   $('#btnSettings').onclick = () => openSettings();
+  ServerClock.init({ after: document.querySelector('.topbar .brand'), lang: () => S().lang, region: () => S().serverRegion || 'eu', setRegion: v => { S().serverRegion = v; persistSettings(); } });
   $('#verBadge').onclick = () => openSettings('update');
   // Menú de idiomas: el idioma activo aparece iluminado
   const langMenu = () => $('#langMenu');

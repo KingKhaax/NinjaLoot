@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.4.0', 'Reloj del servidor arriba a la izquierda (Europa por defecto; América, Latinoamérica, Oceanía, Corea y Taiwán en Ajustes → General) con cuenta atrás al reinicio semanal al pasar el ratón. Quitado el texto bajo el nombre de la aplicación; las tarjetas del inicio ya no se pueden seleccionar; el paso 3 de «Cómo se usa» menciona «Dónde tirar moneda»; y «Dificultades e idiomas» ya no dice francés ni alemán.'],
     ['0.3.2', 'Los botones de color brillan, se elevan y se iluminan al pasar el ratón por encima. Reescrito el paso 3 de «Cómo se usa» para que «Rotaciones» y «Cuidado» se entiendan como secciones.'],
     ['0.3.1', 'Quitados el francés y el alemán: la aplicación queda en español e inglés. Si tenías uno de esos idiomas elegido, vuelve al español.'],
     ['0.3.0', 'Identificador interno de la aplicación cambiado a com.kingkhaax.ninjaloot (sin datos personales); el instalador conserva su identidad anterior, así que las actualizaciones siguen funcionando.'],
@@ -33,6 +34,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.4.0', 'Server clock at the top left (Europe by default; Americas, Latin America, Oceania, Korea and Taiwan in Settings → General) with a countdown to the weekly reset on hover. Removed the text under the app name; the home cards can no longer be selected; step 3 of «How to use» mentions “Where to use a coin”; and “Difficulties and languages” no longer lists French and German.'],
     ['0.3.2', 'Coloured buttons now shine, lift and glow when you hover them. Step 3 of «How to use» was reworded so “Rotations” and “Careful” read as sections.'],
     ['0.3.1', 'French and German removed: the app is now Spanish and English only. If you had one of those languages selected, it goes back to Spanish.'],
     ['0.3.0', 'Internal application identifier changed to com.kingkhaax.ninjaloot (no personal data); the installer keeps its previous identity, so updates keep working.'],
