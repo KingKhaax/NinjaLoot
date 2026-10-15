@@ -154,3 +154,13 @@ body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .h
 .gv-pop li.cnt { color: var(--text); font-weight: 600; }
 .gv-pop .gv-trk { font-size: 11.5px; margin-left: 4px; }
 .gv-pop .meta { white-space: normal; font-size: 11.5px; }
+
+/* Botones llamativos: brillo que barre, elevación y resplandor al pasar el ratón */
+.btn.primary, .btn.grad, .btn.danger { --fx-glow: var(--accent); position: relative; overflow: hidden; isolation: isolate; transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .25s ease, filter .2s ease, background .2s ease; }
+.btn.danger { --fx-glow: var(--danger); }
+.btn.primary::after, .btn.grad::after, .btn.danger::after { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 45%; z-index: -1; pointer-events: none; background: linear-gradient(105deg, transparent, rgba(255, 255, 255, .4), transparent); transform: skewX(-18deg) translateX(-120%); }
+.btn.primary:not(:disabled):hover, .btn.grad:not(:disabled):hover, .btn.danger:not(:disabled):hover { transform: translateY(-2px); box-shadow: 0 8px 24px color-mix(in srgb, var(--fx-glow) 50%, transparent), 0 0 0 1px color-mix(in srgb, var(--fx-glow) 60%, transparent), inset 0 1px 0 rgba(255, 255, 255, .3); filter: brightness(1.1) saturate(1.08); }
+.btn.primary:not(:disabled):hover::after, .btn.grad:not(:disabled):hover::after, .btn.danger:not(:disabled):hover::after { animation: fxShine .75s ease; }
+.btn.primary:not(:disabled):active, .btn.grad:not(:disabled):active, .btn.danger:not(:disabled):active { transform: translateY(0) scale(.97); transition-duration: .08s; }
+@keyframes fxShine { from { transform: skewX(-18deg) translateX(-120%); } to { transform: skewX(-18deg) translateX(420%); } }
+@media (prefers-reduced-motion: reduce) { .btn::after { animation: none !important; } }
