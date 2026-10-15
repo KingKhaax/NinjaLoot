@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.4.4', 'En la barra superior, Tiers y Gráficas intercambian su sitio: ahora el orden es Inicio, Tiers, Simulación personal, Gráficas, Rotaciones y Roster.'],
     ['0.4.3', 'El círculo del reloj del servidor gira una vuelta cada 24 horas (ya no por segundos).'],
     ['0.4.2', 'El reloj del servidor vuelve a estar justo a la derecha del nombre y el icono de NinjaLoot (en la 0.4.1 se había descolocado).'],
     ['0.4.1', 'El reloj del servidor pasa al extremo izquierdo de la barra superior, antes del logo.'],
@@ -37,6 +38,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.4.4', 'In the top bar, Tiers and Charts swap places: the order is now Home, Tiers, Personal simulation, Charts, Rotations and Roster.'],
     ['0.4.3', 'The server clock circle now makes one turn every 24 hours (no longer per second).'],
     ['0.4.2', 'The server clock is back right next to the NinjaLoot icon and name (it had been displaced in 0.4.1).'],
     ['0.4.1', 'The server clock moves to the far left of the top bar, before the logo.'],
