@@ -460,3 +460,18 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 .made-by { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 40px 0 8px; color: var(--muted); font-size: 14px; }
 .made-by b { color: var(--text); letter-spacing: .3px; }
 .made-by .heart { color: #ff4f7b; }
+
+/* ---------- Filtros de rol y clase, sesiones y compartir ---------- */
+.seg button svg { vertical-align: -2px; margin-right: 5px; }
+.seg button.role-tank.on svg { color: #5aa0ff; } .seg button.role-healer.on svg { color: #5fe08a; } .seg button.role-dps.on svg { color: #ff7a5a; }
+.cls-seg button { padding: 4px 8px; display: inline-flex; align-items: center; gap: 4px; }
+.cls-seg button img { border-radius: 5px; opacity: .8; transition: opacity .15s, transform .15s; }
+.cls-seg button:hover img, .cls-seg button.on img { opacity: 1; transform: scale(1.08); }
+.cls-seg button.on { box-shadow: inset 0 -2px 0 var(--cc, var(--accent)); }
+.sess-save { display: flex; gap: 10px; margin: 6px 0 14px; } .sess-save input { flex: 1; min-width: 0; }
+.sess-list { display: grid; gap: 8px; max-height: 50vh; overflow-y: auto; }
+.sess-row { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-2, var(--panel)); }
+.sess-info { display: grid; gap: 2px; flex: 1; min-width: 0; } .sess-info b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sess-chars { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; } .sess-chars i { font-style: normal; font-weight: 600; }
+.sess-actions { display: flex; gap: 6px; }
+.share-link { width: 100%; resize: none; font-size: 12.5px; word-break: break-all; }

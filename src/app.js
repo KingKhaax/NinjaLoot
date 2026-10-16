@@ -161,7 +161,15 @@
   const DIFF_TAG = { lfr: 'LFR', nm: 'NM', hc: 'HC', mm: 'MM' };
   const presentDiffs = () => [...new Set(state.sims.map(s => s.difficulty).filter(Boolean))].sort((a, b) => DIFF_RANK[a] - DIFF_RANK[b]);
   function effectiveDiff() { const p = presentDiffs(); if (p.length < 2) return null; return p.includes(S().diff) ? S().diff : p[p.length - 1]; }
-  const activeSims = () => { const e = effectiveDiff(); return state.sims.filter(s => !e || !s.difficulty || s.difficulty === e); };
+  const TANK_SPECS = new Set(['blood', 'vengeance', 'guardian', 'brewmaster', 'protection']), HEAL_SPECS = new Set(['restoration', 'preservation', 'mistweaver', 'holy', 'discipline']);
+  const roleOf = s => { const k = String(s.character.spec || '').toLowerCase().replace(/[^a-z]/g, ''); return TANK_SPECS.has(k) ? 'tank' : HEAL_SPECS.has(k) ? 'healer' : 'dps'; };
+  const diffSims = () => { const e = effectiveDiff(); return state.sims.filter(s => !e || !s.difficulty || s.difficulty === e); };
+  const presentRoles = () => ['tank', 'healer', 'dps'].filter(r => diffSims().some(s => roleOf(s) === r));
+  const presentClasses = () => [...new Set(diffSims().map(s => s.character.cls).filter(Boolean))];
+  const effRole = () => S().roleFilter && S().roleFilter !== 'all' && presentRoles().includes(S().roleFilter) ? S().roleFilter : 'all';
+  const effClass = () => S().classFilter && S().classFilter !== 'all' && presentClasses().includes(S().classFilter) ? S().classFilter : 'all';
+  const passesRC = s => (effRole() === 'all' || roleOf(s) === effRole()) && (effClass() === 'all' || s.character.cls === effClass());
+  const activeSims = () => diffSims().filter(passesRC);
   const diffBadge = d => d ? `<span class="dbadge d-${d}" title="${esc(T().diffNames[d])}">${DIFF_TAG[d]}</span>` : '';
   const xmark = '<svg class="xmark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
   // Simulaciones guardadas con el parser antiguo: el encuentro quedó en "difficulty" (formato actual de Raidbots)
@@ -263,6 +271,11 @@
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
     let h = `<div class="charts-bar"><div class="seg"><button data-mode="boss" class="${mode === 'boss' ? 'on' : ''}">${esc(t.modeBoss)}</button><button data-mode="player" class="${mode === 'player' ? 'on' : ''}">${esc(t.modePlayer)}</button></div>`;
     if (p.length) h += `<div class="diffbar"><span class="meta">${esc(t.diffLabel)}:</span>` + (p.length > 1 ? `<div class="seg">${p.map(d => `<button data-diff="${d}" class="${d === eff ? 'on' : ''}" title="${esc(t.diffNames[d])}">${DIFF_TAG[d]}</button>`).join('')}</div>` : diffBadge(p[0])) + '</div>';
+    const ROLE_SVG = { tank: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>', healer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg>', dps: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M14.5 3 21 3.2l-.2 6.5-9 9-2.3-.5-.5-2.3 9-9zM5 15l4 4-2 2-2.5-.5L3 17z"/></svg>' };
+    const roles = presentRoles();
+    if (roles.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.roleLabel)}:</span><div class="seg"><button data-role="all" class="${effRole() === 'all' ? 'on' : ''}">${esc(t.roleAll)}</button>${roles.map(r => `<button data-role="${r}" class="role-${r}${effRole() === r ? ' on' : ''}">${ROLE_SVG[r]}${esc(t['role' + capFirst(r === 'dps' ? 'Dps' : r)])}</button>`).join('')}</div></div>`;
+    const clss = presentClasses();
+    if (clss.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.clsLabel)}:</span><div class="seg cls-seg"><button data-clsf="all" class="${effClass() === 'all' ? 'on' : ''}">${esc(t.clsAll)}</button>${clss.map(c => `<button data-clsf="${c}" class="${effClass() === c ? 'on' : ''}" title="${esc(t.classes[c])}" style="--cc:${CLASS_COLORS[c]}"><img src="assets/classes/${c}.png" alt="" width="22" height="22"></button>`).join('')}</div></div>`;
     if (mode === 'boss') {
       const cats = {};
       for (const s of act0()) for (const it of s.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
@@ -638,6 +651,7 @@
     $('#urlInput').placeholder = t.urlPlaceholder;
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
     $('#btnExportData').textContent = t.exportData; $('#btnExportData').disabled = !state.sims.length;
+    $('#btnSessions').textContent = t.sessions; $('#btnShare').textContent = t.share; $('#btnShare').disabled = !state.sims.length;
     $('#btnClear').disabled = !state.sims.length;
     $('#langLabel').textContent = t.language; renderLangMenu();
     $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers; $('#navRoster').textContent = t.navRoster;$('#navPers').textContent = t.navPersonal;
@@ -670,7 +684,7 @@
     state.animateNext = false;
     const act = activeSims(), pct = S().unit === 'pct';
     const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
-    let html = toolbarHtml() + stalePanel(act);
+    let html = toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
     html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
       + `<div class="seg"><button data-barstyle="simple" class="${detailed() ? '' : 'on'}">${esc(t.barSimple)}</button><button data-barstyle="detailed" class="${detailed() ? 'on' : ''}">${esc(t.barDetailed)}</button></div></div>`;
     html += S().chartMode === 'player' ? playerCharts(act, chartOpts) : bossCharts(act, chartOpts);
@@ -686,7 +700,7 @@
     let h = '';
     for (const id of state.loading) h += `<span class="chip loading"><span class="spinner"></span>${esc(id)} — ${esc(T().loading)}</span>`;
     for (const sim of state.sims) {
-      const col = clsColor(sim), dim = eff && sim.difficulty && sim.difficulty !== eff;
+      const col = clsColor(sim), dim = (eff && sim.difficulty && sim.difficulty !== eff) || !passesRC(sim);
       h += `<span class="chip${dim ? ' dim' : ''}" style="border-left-color:${col}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}`
         + `<span style="color:${readable(col)};font-weight:700">${esc(sim.character.name)}</span>${diffBadge(sim.difficulty)}${(r => r.length ? `<span class="stale-mark" title="${esc(r.join(' · '))}">⚠</span>` : '')(staleInfo(sim))}`
         + `<button class="x" data-remove="${esc(sim.id)}" title="${esc(T().remove)}">${xmark}</button></span>`;
@@ -705,6 +719,8 @@
   const errText = r => `${T()['err' + r.error] || r.error}${r.detail ? ` (${r.detail})` : ''}`;
 
   function extractIds(text) {
+    const hs = /#sims=([A-Za-z0-9,]+)/.exec(String(text || ''));
+    if (hs) return [...new Set(hs[1].split(',').filter(x => /^[A-Za-z0-9]{16,32}$/.test(x)))];
     // Enlaces pegados sin espacio («…abcdhttps://…»): se separan antes de leerlos
     text = String(text || '').replace(/(?!^)(https?:\/\/)/gi, ' $1');
     const ids = [], re = /raidbots\.com\/simbot\/report\/([A-Za-z0-9]+)/gi;
@@ -756,6 +772,61 @@
     if (!S().confirmClear) return doIt();
     modal({ title: T().confirmClearTitle, body: `<p>${esc(T().confirmClearText)}</p>`, actions: [{ label: T().cancel }, { label: T().confirm, cls: 'danger', onclick: doIt }] });
   }
+
+  // ---------- Sesiones guardadas ----------
+  // Se guardan los enlaces (ids) de cada simulación con un nombre y una fecha; al abrir una sesión se piden de nuevo a Raidbots.
+  const sessions = () => load('ninjaloot.sessions', []).filter(x => x && Array.isArray(x.ids));
+  const saveSessions = l => save('ninjaloot.sessions', l);
+  const WEB_BASE = 'https://kingkhaax.github.io/NinjaLoot/';
+  const sessDate = ms => new Date(ms).toLocaleDateString(S().lang, { day: 'numeric', month: 'long', year: 'numeric' });
+  async function openIds(ids, replace) {
+    if (replace) { state.sims = []; state.expanded.clear(); persistSims(); render(); }
+    toast(T().sessOpening(ids.length));
+    await Promise.all(ids.map(id => addSim(id, false, true)));
+    state.view = 'charts'; state.animateNext = true; render();
+  }
+  function sessionsModal() {
+    const t = T(), list = sessions().sort((a, b) => b.at - a.at);
+    const row = s => `<div class="sess-row"><div class="sess-info"><b>${esc(s.name)}</b><span class="meta">${esc(sessDate(s.at))} · ${esc(t.sessPlayers(s.ids.length))}</span>${s.players ? `<span class="sess-chars">${s.players.slice(0, 12).map(p => `<i style="color:${CLASS_COLORS[p.cls] || '#c8a45a'}">${esc(p.name)}</i>`).join('')}</span>` : ''}</div>`
+      + `<div class="sess-actions"><button class="btn small primary" data-sess-open="${esc(s.key)}">${esc(t.sessOpen)}</button><button class="btn small" data-sess-add="${esc(s.key)}">${esc(t.sessAdd)}</button><button class="btn small danger" data-sess-del="${esc(s.key)}" title="${esc(t.sessDelete)}">${xmark}</button></div></div>`;
+    const m = modal({ title: t.sessTitle, body: `<p class="hint">${esc(t.sessHint)}</p>`
+      + `<div class="sess-save"><input id="sessName" class="txt" type="text" maxlength="60" placeholder="${esc(t.sessNamePh)}" value="${esc(t.sessDefaultName(new Date().toLocaleDateString(S().lang, { day: 'numeric', month: 'long' })))}"><button class="btn primary" data-sess-save>${esc(t.sessSave)}</button></div>`
+      + `<div class="sess-list">${list.length ? list.map(row).join('') : `<div class="hint">${esc(t.sessEmpty)}</div>`}</div>` });
+    m.el.addEventListener('click', e => {
+      const b = e.target.closest('button'); if (!b) return;
+      const key = b.dataset.sessOpen || b.dataset.sessAdd || b.dataset.sessDel;
+      if (b.hasAttribute('data-sess-save')) {
+        if (!state.sims.length) return toast(t.sessNeedSims, true);
+        const name = ($('#sessName', m.el).value || '').trim() || t.sessDefaultName(sessDate(Date.now()));
+        const l = sessions(); l.push({ key: 's' + Date.now().toString(36), name, at: Date.now(), ids: state.sims.map(s => s.id), players: state.sims.map(s => ({ name: s.character.name, cls: s.character.cls })) });
+        saveSessions(l); toast(t.sessSaved); m.close(); sessionsModal();
+      } else if (b.dataset.sessOpen || b.dataset.sessAdd) {
+        const s = sessions().find(x => x.key === key); if (!s) return;
+        m.close(); openIds(s.ids.filter(id => b.dataset.sessOpen || !state.sims.some(x => x.id === id)), !!b.dataset.sessOpen);
+      } else if (b.dataset.sessDel) { saveSessions(sessions().filter(x => x.key !== key)); toast(t.sessDeleted); m.close(); sessionsModal(); }
+    });
+  }
+  // Enlace para compartir: abre NinjaLoot web con los mismos informes de Raidbots (nada se guarda en ningún servidor)
+  const shareLink = () => `${WEB_BASE}#sims=${state.sims.map(s => s.id).join(',')}`;
+  function shareModal() {
+    const t = T();
+    if (!state.sims.length) return toast(t.shareNone, true);
+    const link = shareLink();
+    const m = modal({ title: t.shareTitle, body: `<p class="hint">${esc(t.shareText)}</p><textarea class="txt share-link" rows="3" readonly>${esc(link)}</textarea>`, actions: [{ label: t.shareClose }, { label: t.shareCopy, cls: 'primary', onclick: () => { navigator.clipboard.writeText(link).then(() => toast(t.shareCopied)).catch(() => {}); } }] });
+    const ta = $('.share-link', m.el); ta.focus(); ta.select();
+  }
+  $('#btnSessions').onclick = sessionsModal;
+  $('#btnShare').onclick = shareModal;
+  // Al abrir la web con un enlace de NinjaLoot (#sims=id1,id2…) se cargan sus simulaciones
+  (function loadFromHash() {
+    const m = /[#&]sims=([A-Za-z0-9,]+)/.exec(location.hash || '');
+    if (!m) return;
+    const ids = [...new Set(m[1].split(',').filter(x => /^[A-Za-z0-9]{16,32}$/.test(x)))];
+    try { history.replaceState(null, '', location.pathname + location.search); } catch { /* sin historial */ }
+    if (!ids.length) return;
+    state.view = 'charts';
+    setTimeout(async () => { await Promise.all(ids.map(id => addSim(id, false, true))); toast(T().shareLoaded(state.sims.length)); }, 300);
+  })();
 
   // ---------- Exportar a PNG ----------
   // Exportar todas las mejoras de todas las sims a CSV (Excel / Google Sheets) o JSON
@@ -1338,6 +1409,8 @@
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-role'))) { S().roleFilter = el.dataset.role; persistSettings(); state.animateNext = true; render(); }
+    else if ((el = q('data-clsf'))) { S().classFilter = el.dataset.clsf; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-diff'))) { S().diff = el.dataset.diff; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-cat'))) { S().srcCat = el.dataset.cat; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-pmode'))) { S().persMode = el.dataset.pmode; persistSettings(); render(); }
