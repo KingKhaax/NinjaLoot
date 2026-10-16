@@ -129,7 +129,8 @@ const Chart = (() => {
     const { step, top: yMax } = niceScale(Math.max(...entries.map(e => e.value), 0), 5);
     const yOf = v => top + plotH - (v / yMax) * plotH;
     const barW = Math.min(30, slot * 0.72);
-    let grid = '', bars = '';
+    let grid = '', bars = '', defs = '';
+    const uid = 'm' + Math.random().toString(36).slice(2, 7);
     for (let v = 0; v <= yMax + step / 2; v += step) {
       const y = yOf(v);
       grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="1"/>`
@@ -142,13 +143,20 @@ const Chart = (() => {
       const icon = (href, ix, iy, border) => `<g class="ic"${itemAttrs}${e.owned ? ' opacity="0.45"' : ''}><image href="${esc(href)}" x="${ix}" y="${iy}" width="${is}" height="${is}" preserveAspectRatio="xMidYMid slice"/>`
         + `<rect x="${ix - 0.5}" y="${iy - 0.5}" width="${is + 1}" height="${is + 1}" rx="3" fill="none" stroke="${border || '#a335ee'}" stroke-width="1.5"/></g>`;
       bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}"${delay}${e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}>${e.tip ? '' : `<title>${esc(`${e.label}: ${e.valueText || e.value}`)}</title>`}`
-        + `<rect x="${cx - barW / 2}" y="${top + plotH - h}" width="${barW}" height="${h}" rx="2" fill="${e.color || '#b04df5'}" stroke="#000" stroke-opacity="0.85" stroke-width="1"/></g>`;
+        + (() => {
+          const base = e.color || '#b04df5', gid = `${uid}${i}`, bx = cx - barW / 2, by = top + plotH - h;
+          defs += `<linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${shade(base, 0.2)}"/><stop offset="1" stop-color="${shade(base, -0.2)}"/></linearGradient>`
+            + `<linearGradient id="${gid}s" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient>`;
+          return `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="url(#${gid})" style="filter:drop-shadow(0 0 5px ${base}55)"/>`
+            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="url(#${gid}s)"/>`
+            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/></g>`;
+        })();
       if (e.icon && e.tipIcon === 'top') bars += icon(e.icon, cx - is / 2, top + plotH - h - is - 5, e.iconBorder);
       if (iconLabels) bars += icon(e.bottomIcon, cx - is / 2, top + plotH + 8, e.labelColor);
       else bars += `<text transform="translate(${cx + 4} ${top + plotH + 10}) rotate(-45)" text-anchor="end" font-size="13.5" font-weight="700" fill="${e.labelColor || colors.text}"${e.owned ? ' text-decoration="line-through" opacity="0.55"' : ''} font-family="${FONT}"`
         + `${e.itemId && !e.tipIcon ? ` class="lbl-item"${itemAttrs}` : ''}>${esc(short(e.label))}</text>`;
     });
-    return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMinYMin meet" font-family="${FONT}">${grid}${bars}</svg>`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" class="chart-svg mini" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" preserveAspectRatio="xMinYMin meet" font-family="${FONT}"><defs>${defs}</defs>${grid}${bars}</svg>`;
   }
 
   return { build, mini, fmtNum };

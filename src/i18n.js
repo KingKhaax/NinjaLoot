@@ -1,6 +1,7 @@
 'use strict';
 const I18N = {
   es: {
+    starItem: 'Objeto estrella', captureMode: 'Modo captura', captureTitle: 'Modo captura', captureHint: 'Una imagen limpia y compacta de la gráfica general, lista para pegar en Discord. Respeta los filtros activos.', captureCount: 'Jugadores', captureCopy: 'Copiar imagen', captureSave: 'Guardar PNG', captureCopied: 'Imagen copiada: ya puedes pegarla', captureCopyFail: 'No se pudo copiar; usa Guardar PNG', captureEmpty: 'No hay jugadores que mostrar con los filtros actuales.',
     roleLabel: 'Rol', roleAll: 'Todos', roleTank: 'Tank', roleHealer: 'Sanador', roleDps: 'DPS', clsLabel: 'Clase', clsAll: 'Todas', filterNone: 'Ninguna simulación cumple estos filtros: cambia el rol o la clase.',
     sessions: 'Sesiones', share: 'Compartir', sessTitle: 'Sesiones guardadas', sessHint: 'Guarda el conjunto de simulaciones de una raid con un nombre y ábrelo cuando quieras sin volver a pegar los enlaces. Al abrirla se piden de nuevo a Raidbots, así que siempre salen actualizadas.',
     sessSave: 'Guardar sesión actual', sessNamePh: 'Nombre (p. ej. Raid del jueves)', sessOpen: 'Abrir', sessAdd: 'Añadir', sessDelete: 'Borrar', sessEmpty: 'Todavía no has guardado ninguna sesión.', sessNeedSims: 'Añade simulaciones para poder guardar una sesión.',
@@ -49,6 +50,7 @@ const I18N = {
     classes: { deathknight: 'Caballero de la Muerte', demonhunter: 'Cazador de demonios', druid: 'Druida', evoker: 'Evocador', hunter: 'Cazador', mage: 'Mago', monk: 'Monje', paladin: 'Paladín', priest: 'Sacerdote', rogue: 'Pícaro', shaman: 'Chamán', warlock: 'Brujo', warrior: 'Guerrero' },
   },
   en: {
+    starItem: 'Star item', captureMode: 'Capture mode', captureTitle: 'Capture mode', captureHint: 'A clean, compact image of the overview chart, ready to paste into Discord. It respects the active filters.', captureCount: 'Players', captureCopy: 'Copy image', captureSave: 'Save PNG', captureCopied: 'Image copied: you can paste it now', captureCopyFail: 'Could not copy; use Save PNG', captureEmpty: 'There are no players to show with the current filters.',
     roleLabel: 'Role', roleAll: 'All', roleTank: 'Tank', roleHealer: 'Healer', roleDps: 'DPS', clsLabel: 'Class', clsAll: 'All', filterNone: 'No simulation matches these filters: change the role or the class.',
     sessions: 'Sessions', share: 'Share', sessTitle: 'Saved sessions', sessHint: 'Save the set of simulations of a raid under a name and open it whenever you want without pasting the links again. When opened, the reports are requested from Raidbots again, so they are always up to date.',
     sessSave: 'Save current session', sessNamePh: 'Name (e.g. Thursday raid)', sessOpen: 'Open', sessAdd: 'Add', sessDelete: 'Delete', sessEmpty: 'You have not saved any session yet.', sessNeedSims: 'Add simulations to be able to save a session.',
