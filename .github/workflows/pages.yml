@@ -25,6 +25,7 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: 22
+      - run: npm i --prefix .esb --no-audit --no-fund --no-package-lock esbuild@0.25.10
       - run: node tools/build-web.mjs
       - uses: actions/upload-pages-artifact@v3
         with:
