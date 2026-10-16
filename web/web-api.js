@@ -6,7 +6,7 @@
   const WH_LOCALE = { en: 0, fr: 2, de: 3, es: 6 };
   const RIO_SLOT = { mainhand: 'main_hand', offhand: 'off_hand', shoulders: 'shoulder', wrists: 'wrist' };
   const RELAY = 'https://ninjaloot-relay.vercel.app/api/discord';
-  const { parseReport } = window.NLParser;
+  const { parseReport, parseLootHistory } = window.NLParser;
   const { computeBosses } = window.NLBosses;
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
@@ -155,7 +155,7 @@
   setTimeout(dcTick, 3000);
 
   window.api = {
-    fetchReport, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
+    fetchReport, parseLoot: async text => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } }, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
     // En la web siempre se usa la última versión publicada: no hay nada que actualizar
     checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
     installUpdate: async () => ({ ok: false }),

@@ -2,7 +2,7 @@
 const { app, BrowserWindow, ipcMain, shell, net } = require('electron');
 const path = require('path');
 const fs = require('fs');
-const { parseReport } = require('./src/parser');
+const { parseReport, parseLootHistory } = require('./src/parser');
 const { computeBosses } = require('./src/bosses');
 
 const APP_VERSION = require('./package.json').version;
@@ -37,6 +37,9 @@ ipcMain.handle('report:fetch', async (_e, id) => {
     return { ok: false, error: 'NETWORK', detail: String(e.message || e) };
   }
 });
+
+// --- Historial de loot de RCLootCouncil (CSV/TSV exportado) ---
+ipcMain.handle('loot:parse', (_e, text) => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } });
 
 // --- Nombres de objetos localizados (Wowhead) con caché en disco ---
 const WH_LOCALE = { en: 0, es: 6 };

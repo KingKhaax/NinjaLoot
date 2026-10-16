@@ -19,9 +19,15 @@
   // Simulación personal: una o varias simulaciones de la misma persona (raid, míticas...) y su versión combinada para compararlas
   state.personalList = (() => { const l = load('ninjaloot.personalList', null); if (Array.isArray(l)) return l.filter(r => r && r.id && Array.isArray(r.items)); const one = load('ninjaloot.personal', null); return one && Array.isArray(one.items) ? [one] : []; })();
   state.personal = mergePersonal(state.personalList);
+  // Quick Sim y Top Gear (simulaciones que no son Droptimizer) y entregas de loot importadas de RCLootCouncil
+  state.extra = S0().persist ? load('ninjaloot.extra', []).filter(s => s && s.id && s.kind && s.kind !== 'drop') : [];
+  state.loot = load('ninjaloot.loot', []).filter(l => l && l.player && l.itemId);
   const S = () => state.settings;
+  function S0() { return state.settings; }
   const T = () => I18N[S().lang] || I18N.es;
   const persistSims = () => save('ninjaloot.sims', S().persist ? state.sims : []);
+  const persistExtra = () => save('ninjaloot.extra', S().persist ? state.extra : []);
+  const persistLoot = () => save('ninjaloot.loot', state.loot);
   const persistSettings = () => save('ninjaloot.settings', S());
 
   // ---------- Fuentes ----------
@@ -121,7 +127,7 @@
   const buffEffect = b => BUFF_L10N[S().lang]?.[b.id]?.[1] || b.effect[S().lang === 'es' ? 0 : 1];
   const specIcon = sim => { const d = specData(sim); return d ? `assets/specs/${sim.character.cls}-${specKey(sim)}.png` : (sim.character.cls ? `assets/classes/${sim.character.cls}.png` : null); };
   const clsColor = sim => CLASS_COLORS[sim.character.cls] || '#c8a45a';
-  const nf = () => new Intl.NumberFormat({ es: 'es-ES', en: 'en-US' }[S().lang] || 'en-US');
+  const nf = () => new Intl.NumberFormat({ es: 'es-ES', en: 'en-US' }[S().lang] || 'en-US', { useGrouping: 'always' }); // el español no agrupa los de 4 cifras (2537): se fuerza el separador de miles
 
   function valueOf(it, sim) { return S().unit === 'pct' ? it.pct : it.gain; }
   function valueText(it, sim) {
@@ -226,7 +232,8 @@
   }
   const gearOf = sim => { const g = S().checkGear !== false && state.gear[sim.gearId || sim.id]; return g && g.ok ? g.items : null; };
   // Ya lo lleva: el mismo objeto equipado ahora a su nivel o más (si lo lleva a menos nivel, la mejora sigue valiendo)
-  const owned = (sim, it) => { const g = gearOf(sim); return !!g && Object.values(g).some(x => x.id === it.id && x.ilvl >= (it.ilvl || 0)); };
+  const lootGiven = (sim, it) => { if (!state.loot.length) return false; const since = lastReset(sim.character.region || 'eu'), nm = String(sim.character.name || '').toLowerCase(); return state.loot.some(l => l.itemId === it.id && String(l.player).toLowerCase() === nm && (l.at == null || l.at >= since)); };
+  const owned = (sim, it) => { const g = gearOf(sim); return (!!g && Object.values(g).some(x => x.id === it.id && x.ilvl >= (it.ilvl || 0))) || lootGiven(sim, it); };
   function staleInfo(sim) {
     const t = T(), out = [], days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
     if (days != null && days > (Number(S().staleDays) || 7)) out.push(t.staleOld(Math.floor(days)));
@@ -652,8 +659,9 @@
     $('#urlInput').placeholder = t.urlPlaceholder;
     $('#btnAdd').textContent = t.add; $('#btnPaste').textContent = t.paste; $('#btnClear').textContent = t.clearAll;
     $('#btnExportData').textContent = t.exportData; $('#btnExportData').disabled = !state.sims.length;
-    $('#btnSessions').textContent = t.sessions; $('#btnShare').textContent = t.share; $('#btnShare').disabled = !state.sims.length;
-    $('#btnClear').disabled = !state.sims.length;
+    $('#btnSessions').textContent = t.sessions; $('#btnShare').textContent = t.share; $('#btnShare').disabled = !state.sims.length && !state.extra.length;
+    $('#btnClear').disabled = !state.sims.length && !state.extra.length;
+    $('#btnLoot').textContent = t.lootBtn;
     $('#langLabel').textContent = t.language; renderLangMenu();
     $('#navHome').textContent = t.navHome; $('#navCharts').textContent = t.navCharts; $('#navRot').textContent = t.navRotations; $('#navTiers').textContent = t.navTiers; $('#navRoster').textContent = t.navRoster;$('#navPers').textContent = t.navPersonal;
     document.querySelectorAll('.navbtn').forEach(b => b.classList.toggle('on', b.dataset.view === state.view));
@@ -678,6 +686,7 @@
       return;
     }
     if (!state.sims.length && state.loading.size) { content.innerHTML = skeletonHtml(Math.max(2, state.loading.size)); return; }
+    if (!state.sims.length && state.extra.length) { content.innerHTML = extraSection(); if (S().animations) enterAnim(content); ensureNames(); return; }
     if (!state.sims.length) {
       content.innerHTML = `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.emptyTitle)}</h2><p>${esc(t.emptyText)}</p></div>`;
       return;
@@ -686,7 +695,7 @@
     state.animateNext = false;
     const act = activeSims(), pct = S().unit === 'pct';
     const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
-    let html = toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
+    let html = extraSection() + toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
     html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
       + `<button class="btn" data-capture>${ui('export')}${esc(t.captureMode)}</button>`
       + `<div class="seg"><button data-barstyle="simple" class="${detailed() ? '' : 'on'}">${esc(t.barSimple)}</button><button data-barstyle="detailed" class="${detailed() ? 'on' : ''}">${esc(t.barDetailed)}</button></div></div>`;
@@ -697,6 +706,29 @@
     document.scrollingElement.scrollTop = scroll;
     if (animate) enterAnim(content);
     ensureNames();
+  }
+
+  // ---------- Quick Sim y Top Gear ----------
+  function extraSection() {
+    if (!state.extra.length) return '';
+    const t = T(), f = nf();
+    const stat = (label, v, pct, col) => v == null ? '' : `<div class="xs-stat" style="--sc:${col}"><span>${esc(label)}</span><b>${f.format(Math.round(v))}</b>${pct != null ? `<em>${pct.toFixed(2)}%</em>` : ''}</div>`;
+    const card = sim => {
+      const col = clsColor(sim), st = sim.stats || {}, top = sim.kind === 'topgear';
+      const prim = [['stStr', st.strength], ['stAgi', st.agility], ['stInt', st.intellect]].sort((a, b) => (b[1] || 0) - (a[1] || 0))[0];
+      const stats = [prim && prim[1] != null ? stat(t[prim[0]], prim[1], null, col) : '', stat(t.stSta, st.stamina, null, '#9aa3b2'), stat(t.stCrit, st.crit, st.critPct, '#e0554f'), stat(t.stHaste, st.haste, st.hastePct, '#f0c24f'), stat(t.stMast, st.mastery, st.masteryPct, '#5fa8ff'), stat(t.stVers, st.versatility, null, '#5fe08a'), stat(t.stArmor, st.armor, null, '#9aa3b2')].join('');
+      const fight = [sim.fight && sim.fight.style, sim.fight && sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight && sim.fight.secs ? `${sim.fight.secs} s` : ''].filter(Boolean).join(' · ');
+      let combos = '';
+      if (top) {
+        const max = Math.max(1, ...sim.combos.map(c => Math.abs(c.gain)));
+        combos = sim.combos.length ? `<div class="xs-combos"><div class="xs-chead"><span>#</span><span>${esc(t.xsCombo)}</span><span>DPS</span><span>${esc(t.xsGain)}</span></div>` + sim.combos.slice(0, 12).map((c, i) => `<div class="xs-crow${i === 0 ? ' best' : ''}"><span class="rk">${i + 1}</span><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span>${f.format(c.dps)}</span><span class="gn ${c.gain >= 0 ? 'up' : 'down'}"><i style="width:${Math.abs(c.gain) / max * 100}%"></i><b>${c.gain >= 0 ? '+' : ''}${f.format(c.gain)} (${c.pct.toFixed(2)}%)</b></span></div>`).join('') + '</div>' : `<div class="hint">${esc(t.xsNoCombos)}</div>`;
+      }
+      return `<div class="xsim" style="--cc:${col}"><div class="xs-head">${specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<div><h3 style="color:${readable(col)}">${esc(sim.character.name)} <span class="dbadge d-xs">${top ? 'TG' : 'QS'}</span></h3><div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))}${fight ? ` — ${esc(t.xsFight)}: ${esc(fight)}` : ''}</div></div><span class="spacer"></span>`
+        + `<div class="card-tools"><button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button><button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button><button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
+        + `<div class="xs-dps"><div><small>${esc(t.xsDps)}</small><b>${f.format(sim.baseDps)}</b>${sim.dpsStd ? `<em>± ${f.format(sim.dpsStd)} ${esc(t.xsStd)}</em>` : ''}</div>${sim.hps ? `<div><small>${esc(t.xsHps)}</small><b>${f.format(sim.hps)}</b></div>` : ''}${sim.dtps ? `<div><small>${esc(t.xsDtps)}</small><b>${f.format(sim.dtps)}</b></div>` : ''}</div>`
+        + (stats.trim() ? `<div class="xs-stats">${stats}</div>` : '') + combos + '</div>';
+    };
+    return `<details class="panel card extra-sims" open><summary><h2>${esc(t.xsTitle)}</h2><span class="meta">${state.extra.length}</span></summary><div class="hint">${esc(t.xsHint)}</div><div class="xs-grid">${state.extra.map(card).join('')}</div></details>`;
   }
 
   // Tarjetas fantasma con brillo mientras Raidbots responde (en vez de que el contenido salte de golpe)
@@ -714,6 +746,7 @@
     const chips = $('#chips'), eff = effectiveDiff();
     let h = '';
     for (const id of state.loading) h += `<span class="chip loading"><span class="spinner"></span>${esc(id)} — ${esc(T().loading)}</span>`;
+    for (const sim of state.extra) h += `<span class="chip" style="border-left-color:${clsColor(sim)}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}<span style="color:${readable(clsColor(sim))};font-weight:700">${esc(sim.character.name)}</span><span class="dbadge d-xs">${sim.kind === 'topgear' ? 'TG' : 'QS'}</span><button class="x" data-remove="${esc(sim.id)}" title="${esc(T().remove)}">${xmark}</button></span>`;
     for (const sim of state.sims) {
       const col = clsColor(sim), dim = (eff && sim.difficulty && sim.difficulty !== eff) || !passesRC(sim);
       h += `<span class="chip${dim ? ' dim' : ''}" style="border-left-color:${col}">${specIcon(sim) ? `<img src="${specIcon(sim)}" alt="">` : ''}`
@@ -756,6 +789,7 @@
 
   // opts.minDate: ignora sims anteriores (p. ej. de antes del reinicio semanal) · opts.newestOnly: de cada jugador y dificultad, solo la más nueva
   async function addSim(id, refresh = false, quiet = false, opts = {}) {
+    if (!refresh && state.extra.some(s => s.id === id)) { toast(`${T().duplicate} (${state.extra.find(s => s.id === id).character.name})`); return 'dup'; }
     if (!refresh && state.sims.some(s => s.id === id)) { toast(`${T().duplicate} (${state.sims.find(s => s.id === id).character.name})`); return 'dup'; }
     if (state.loading.has(id)) return 'busy';
     state.loading.add(id); renderChips();
@@ -770,6 +804,13 @@
       if (same && when(same) >= when(r.report)) { renderChips(); return 'older'; }
       if (same) state.sims = state.sims.filter(x => x !== same);
     }
+    if (r.report.kind && r.report.kind !== 'drop') {
+      const j = state.extra.findIndex(s => s.id === id);
+      if (j >= 0) state.extra[j] = r.report; else state.extra.push(r.report);
+      persistExtra(); state.animateNext = true; render();
+      if (!quiet) toast(`${refresh ? T().updated : T().added}: ${r.report.character.name} (${r.report.kind === 'topgear' ? T().xsTop : T().xsQuick})`);
+      return 'ok';
+    }
     const i = state.sims.findIndex(s => s.id === id);
     if (i >= 0) state.sims[i] = r.report; else state.sims.push(r.report);
     persistSims(); state.animateNext = true; render(); refreshGear();
@@ -779,15 +820,41 @@
 
   function removeSim(id) {
     state.sims = state.sims.filter(s => s.id !== id);
+    state.extra = state.extra.filter(s => s.id !== id);
     state.expanded.delete(id);
-    persistSims(); state.animateNext = true; render(); toast(T().removed);
+    persistSims(); persistExtra(); state.animateNext = true; render(); toast(T().removed);
   }
 
   function clearAll() {
-    const doIt = () => { state.sims = []; state.expanded.clear(); persistSims(); render(); toast(T().cleared); };
+    const doIt = () => { state.sims = []; state.extra = []; state.expanded.clear(); persistSims(); persistExtra(); render(); toast(T().cleared); };
     if (!S().confirmClear) return doIt();
     modal({ title: T().confirmClearTitle, body: `<p>${esc(T().confirmClearText)}</p>`, actions: [{ label: T().cancel }, { label: T().confirm, cls: 'danger', onclick: doIt }] });
   }
+
+  // ---------- Loot de RCLootCouncil ----------
+  function lootModal() {
+    const t = T(), since = Math.min(...[...state.sims, ...state.extra].map(s => lastReset(s.character.region || 'eu')), lastReset('eu'));
+    const week = state.loot.filter(l => l.at == null || l.at >= since).sort((a, b) => (b.at || 0) - (a.at || 0));
+    const date = ms => ms ? new Date(ms).toLocaleDateString(S().lang, { day: 'numeric', month: 'short' }) : '';
+    const list = week.length ? `<div class="loot-wrap"><table class="ptable loot-table"><thead><tr>${t.lootCols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead><tbody>${week.slice(0, 80).map(l => { state.shown.add(l.itemId); const info = itemInfo({ id: l.itemId, name: l.item });
+      return `<tr data-item="${l.itemId}" data-tip-always><td><b>${esc(l.player)}</b></td><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td><td>${esc(l.response)}</td><td>${esc(l.boss)}</td><td>${esc(date(l.at))}</td></tr>`; }).join('')}</tbody></table></div>` : `<div class="hint">${esc(t.lootEmpty)}</div>`;
+    const m = modal({ title: t.lootTitle, body: `<p class="hint">${esc(t.lootHint)}</p><textarea id="lootText" class="txt" rows="5" spellcheck="false" placeholder="${esc(t.lootPaste)}"></textarea><div class="loot-actions"><label class="btn small">${esc(t.lootFile)}<input id="lootFile" type="file" accept=".csv,.tsv,.txt,text/plain,text/csv" hidden></label><button class="btn primary small" data-loot-import>${esc(t.lootImport)}</button><span class="spacer"></span><span class="meta">${esc(t.lootTotal(state.loot.length))}</span>${state.loot.length ? `<button class="btn small danger" data-loot-clear>${esc(t.lootClear)}</button>` : ''}</div><h3 class="sec">${esc(t.lootRecent)}</h3>${list}` });
+    ensureNames();
+    const text = $('#lootText', m.el);
+    $('#lootFile', m.el).onchange = async e => { const f = e.target.files[0]; if (f) text.value = await f.text(); };
+    m.el.addEventListener('click', async e => {
+      if (e.target.closest('[data-loot-clear]')) { state.loot = []; persistLoot(); toast(t.lootCleared); m.close(); render(); return; }
+      if (!e.target.closest('[data-loot-import]')) return;
+      const r = await window.api.parseLoot(text.value);
+      if (!r.ok || !r.rows.length) return toast(t.lootNone, true);
+      // se fusionan con lo ya guardado sin duplicar (jugador + objeto + fecha)
+      const key = l => `${String(l.player).toLowerCase()}|${l.itemId}|${l.at}`, seen = new Set(state.loot.map(key));
+      for (const l of r.rows) if (!seen.has(key(l))) { state.loot.push(l); seen.add(key(l)); }
+      state.loot.sort((a, b) => (b.at || 0) - (a.at || 0)); state.loot = state.loot.slice(0, 3000);
+      persistLoot(); toast(t.lootSaved(r.rows.length)); m.close(); state.animateNext = false; render(); lootModal();
+    });
+  }
+  $('#btnLoot').onclick = lootModal;
 
   // ---------- Sesiones guardadas ----------
   // Se guardan los enlaces (ids) de cada simulación con un nombre y una fecha; al abrir una sesión se piden de nuevo a Raidbots.
@@ -796,7 +863,7 @@
   const WEB_BASE = 'https://kingkhaax.github.io/NinjaLoot/';
   const sessDate = ms => new Date(ms).toLocaleDateString(S().lang, { day: 'numeric', month: 'long', year: 'numeric' });
   async function openIds(ids, replace) {
-    if (replace) { state.sims = []; state.expanded.clear(); persistSims(); render(); }
+    if (replace) { state.sims = []; state.extra = []; state.expanded.clear(); persistSims(); persistExtra(); render(); }
     toast(T().sessOpening(ids.length));
     await Promise.all(ids.map(id => addSim(id, false, true)));
     state.view = 'charts'; state.animateNext = true; render();
@@ -812,21 +879,21 @@
       const b = e.target.closest('button'); if (!b) return;
       const key = b.dataset.sessOpen || b.dataset.sessAdd || b.dataset.sessDel;
       if (b.hasAttribute('data-sess-save')) {
-        if (!state.sims.length) return toast(t.sessNeedSims, true);
+        if (!state.sims.length && !state.extra.length) return toast(t.sessNeedSims, true);
         const name = ($('#sessName', m.el).value || '').trim() || t.sessDefaultName(sessDate(Date.now()));
-        const l = sessions(); l.push({ key: 's' + Date.now().toString(36), name, at: Date.now(), ids: state.sims.map(s => s.id), players: state.sims.map(s => ({ name: s.character.name, cls: s.character.cls })) });
+        const l = sessions(); l.push({ key: 's' + Date.now().toString(36), name, at: Date.now(), ids: [...state.sims, ...state.extra].map(s => s.id), players: [...state.sims, ...state.extra].map(s => ({ name: s.character.name, cls: s.character.cls })) });
         saveSessions(l); toast(t.sessSaved); m.close(); sessionsModal();
       } else if (b.dataset.sessOpen || b.dataset.sessAdd) {
         const s = sessions().find(x => x.key === key); if (!s) return;
-        m.close(); openIds(s.ids.filter(id => b.dataset.sessOpen || !state.sims.some(x => x.id === id)), !!b.dataset.sessOpen);
+        m.close(); openIds(s.ids.filter(id => b.dataset.sessOpen || ![...state.sims, ...state.extra].some(x => x.id === id)), !!b.dataset.sessOpen);
       } else if (b.dataset.sessDel) { saveSessions(sessions().filter(x => x.key !== key)); toast(t.sessDeleted); m.close(); sessionsModal(); }
     });
   }
   // Enlace para compartir: abre NinjaLoot web con los mismos informes de Raidbots (nada se guarda en ningún servidor)
-  const shareLink = () => `${WEB_BASE}#sims=${state.sims.map(s => s.id).join(',')}`;
+  const shareLink = () => `${WEB_BASE}#sims=${[...state.sims, ...state.extra].map(s => s.id).join(',')}`;
   function shareModal() {
     const t = T();
-    if (!state.sims.length) return toast(t.shareNone, true);
+    if (!state.sims.length && !state.extra.length) return toast(t.shareNone, true);
     const link = shareLink();
     const m = modal({ title: t.shareTitle, body: `<p class="hint">${esc(t.shareText)}</p><textarea class="txt share-link" rows="3" readonly>${esc(link)}</textarea>`, actions: [{ label: t.shareClose }, { label: t.shareCopy, cls: 'primary', onclick: () => { navigator.clipboard.writeText(link).then(() => toast(t.shareCopied)).catch(() => {}); } }] });
     const ta = $('.share-link', m.el); ta.focus(); ta.select();

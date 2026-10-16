@@ -12,6 +12,11 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 - Español / Inglés (botón 🌐), ajustes, modo claro/oscuro/sistema, colores personalizables, exportar a PNG.
 - Pestaña **Rotaciones**: jefes de la temporada activa (datos de Raidbots), banda por jefe con clics y comprobación de buffs/debuffs de banda (en rojo los que faltan).
 - Tooltip de objeto al pasar el ratón (estadísticas y nivel de objeto) y aviso **Cuidado** cuando una mejora se debe a una pieza equipada de nivel muy bajo.
+- Filtros por rol (Tank, Sanador, DPS) y por clase, además de dificultad, fuente, raid y jefe.
+- **Sesiones guardadas** (nombre y fecha) y **enlace para compartir** que abre la versión web con las mismas simulaciones.
+- **Modo captura**: imagen limpia y compacta de la gráfica general para copiar o guardar como PNG.
+- Además de Droptimizer: **Quick Sim** (DPS y estadísticas) y **Top Gear** (ranking de combinaciones).
+- **Importar loot de RCLootCouncil**: las mejoras ya entregadas esta semana salen marcadas.
 - Quitar una simulación (✕) o borrarlas todas.
 
 ## Web
