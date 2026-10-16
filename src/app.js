@@ -372,6 +372,7 @@
         + (specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : '')
         + `<div><h2 style="color:${readable(col)}">${esc(sim.character.name)} ${diffBadge(sim.difficulty)}</h2>`
         + `<div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
+        + (best => { const bi = itemInfo(best); state.shown.add(best.id); return `<div class="star-item" style="--q:${QUALITY_COLORS[bi.quality]}" data-item="${best.id}" data-ilvl="${best.ilvl || 0}" data-tip-always title="${esc(t.starItem)}"><img src="${bi.icon}" alt=""><span><small>★ ${esc(t.starItem)}</small><b>${esc(bi.name)}</b><em>${esc(valueText(best, sim))}</em></span></div>`; })(bestOf(sim))
         + `<span class="spacer"></span><div class="card-tools">`
         + (canToggle ? `<button class="btn small" data-toggle="${esc(sim.id)}">${esc(state.expanded.has(sim.id) ? t.showLess : t.showAll)}</button>` : '')
         + `<button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button>`
@@ -676,6 +677,7 @@
       ensureNames();
       return;
     }
+    if (!state.sims.length && state.loading.size) { content.innerHTML = skeletonHtml(Math.max(2, state.loading.size)); return; }
     if (!state.sims.length) {
       content.innerHTML = `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.emptyTitle)}</h2><p>${esc(t.emptyText)}</p></div>`;
       return;
@@ -686,13 +688,26 @@
     const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
     let html = toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
     html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
+      + `<button class="btn" data-capture>${ui('export')}${esc(t.captureMode)}</button>`
       + `<div class="seg"><button data-barstyle="simple" class="${detailed() ? '' : 'on'}">${esc(t.barSimple)}</button><button data-barstyle="detailed" class="${detailed() ? 'on' : ''}">${esc(t.barDetailed)}</button></div></div>`;
     html += S().chartMode === 'player' ? playerCharts(act, chartOpts) : bossCharts(act, chartOpts);
     if (S().showCaution) html += cautionSection();
     const scroll = document.scrollingElement.scrollTop;
-    content.innerHTML = html;
+    content.innerHTML = html + (state.loading.size ? skeletonHtml(state.loading.size) : '');
     document.scrollingElement.scrollTop = scroll;
+    if (animate) enterAnim(content);
     ensureNames();
+  }
+
+  // Tarjetas fantasma con brillo mientras Raidbots responde (en vez de que el contenido salte de golpe)
+  function skeletonHtml(n) {
+    return Array.from({ length: Math.min(n, 3) }, () => '<section class="panel card skel-card" aria-hidden="true"><div class="skel skel-title"></div><div class="skel skel-sub"></div><div class="skel-bars">' + [60, 90, 45, 75, 35, 55].map(h => `<i class="skel" style="height:${h}%"></i>`).join('') + '</div></section>').join('');
+  }
+  // Las tarjetas entran con un fundido escalonado al cambiar de vista o de filtros
+  function enterAnim(root) {
+    if (!S().animations) return;
+    [...root.children].slice(0, 14).forEach((el, i) => { el.style.setProperty('--i', i); el.classList.add('enter'); });
+    setTimeout(() => root.querySelectorAll('.enter').forEach(el => el.classList.remove('enter')), 1100);
   }
 
   function renderChips() {
@@ -744,9 +759,10 @@
     if (!refresh && state.sims.some(s => s.id === id)) { toast(`${T().duplicate} (${state.sims.find(s => s.id === id).character.name})`); return 'dup'; }
     if (state.loading.has(id)) return 'busy';
     state.loading.add(id); renderChips();
+    if (state.view === 'charts') { state.animateNext = false; render(); }
     const r = await window.api.fetchReport(id);
     state.loading.delete(id);
-    if (!r.ok) { renderChips(); toast(`${id}: ${errText(r)}`, true); return 'err'; }
+    if (!r.ok) { renderChips(); if (state.view === 'charts') { state.animateNext = false; render(); } toast(`${id}: ${errText(r)}`, true); return 'err'; }
     const when = x => x.simDate || x.fetchedAt || 0;
     if (opts.minDate && r.report.simDate && r.report.simDate < opts.minDate) { renderChips(); return 'old'; }
     if (opts.newestOnly) {
@@ -828,6 +844,72 @@
     setTimeout(async () => { await Promise.all(ids.map(id => addSim(id, false, true))); toast(T().shareLoaded(state.sims.length)); }, 300);
   })();
 
+  // ---------- Modo captura: imagen limpia y compacta de la gráfica general (para Discord) ----------
+  function overviewEntries(act) {
+    const pct = S().unit === 'pct';
+    return [...act].sort((a, b) => (bestOf(b)?.gain || 0) - (bestOf(a)?.gain || 0)).map(sim => {
+      const best = bestOf(sim), info = itemInfo(best), col = clsColor(sim);
+      state.shown.add(best.id);
+      return { id: sim.id, value: valueOf(best, sim), label: sim.character.name, sub: sim.difficulty ? DIFF_TAG[sim.difficulty] : '', color: col, labelColor: readable(col), icon: info.icon, iconBorder: QUALITY_COLORS[info.quality], valueText: valueText(best, sim), bottomIcon: specIcon(sim), tipIcon: 'top' };
+    }).sort((a, b) => b.value - a.value);
+  }
+  function captureSvg(n) {
+    const t = T(), colors = themeColors(), pct = S().unit === 'pct';
+    const entries = overviewEntries(activeSims()).slice(0, n);
+    if (!entries.length) return null;
+    const chart = Chart.build(entries, { colors, animate: false, showValues: true, showIcons: true, compact: S().compact, yTitle: '', slot: 96, height: 250, hScale: 1, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : undefined });
+    const cw = Number(/ width="(\d+)"/.exec(chart)[1]), ch = Number(/ height="(\d+)"/.exec(chart)[1]);
+    const W = Math.max(cw + 24, 620), headH = 74, footH = 34, up = 44, H = headH + ch + footH - up; // la gráfica trae margen superior propio: se sube para que quede pegada a la cabecera
+    const eff = effectiveDiff(), sub = [eff ? t.diffNames[eff] : '', pct ? t.unitPct : t.unitDps, new Date().toLocaleDateString(S().lang, { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('  ·  ');
+    const nested = chart.replace('<svg ', `<svg x="${Math.round((W - cw) / 2)}" y="${headH - up}" `);
+    return { W, H, svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="capture-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`
+      + `<defs><linearGradient id="capbg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${colors.bg}"/><stop offset="1" stop-color="${colors.bg}"/></linearGradient></defs>`
+      + `<rect width="100%" height="100%" fill="url(#capbg)"/><rect width="100%" height="4" fill="#8b5cf6"/>`
+      + `<image href="assets/logo.png" x="18" y="14" width="46" height="46"/>`
+      + `<text x="76" y="36" font-size="21" font-weight="800" fill="${colors.text}">${esc(t.overviewTitle)}</text>`
+      + `<text x="76" y="58" font-size="13" fill="${colors.muted}">${esc(sub)}</text>`
+      + nested
+      + `<text x="${W - 16}" y="${H - 12}" text-anchor="end" font-size="12" fill="${colors.muted}">NinjaLoot · kingkhaax.github.io/NinjaLoot</text></svg>` };
+  }
+  function captureModal() {
+    const t = T(), total = activeSims().length;
+    if (!total) return toast(t.captureEmpty, true);
+    let n = Math.min(10, total);
+    const counts = [...new Set([5, 8, 10, 15, total].filter(x => x <= total))].sort((a, b) => a - b);
+    const m = modal({ title: t.captureTitle, body: `<p class="hint">${esc(t.captureHint)}</p><div class="cap-opts"><span class="meta">${esc(t.captureCount)}:</span><div class="seg">${counts.map(c => `<button data-cap-n="${c}" class="${c === n ? 'on' : ''}">${c}</button>`).join('')}</div></div><div class="capture-stage"></div>`,
+      actions: [{ label: t.close }, { label: t.captureSave, onclick: () => captureExport('save', n) }, { label: t.captureCopy, cls: 'primary', onclick: () => captureExport('copy', n) }] });
+    m.el.querySelector('.modal').classList.add('wide');
+    const draw = () => { const c = captureSvg(n); m.el.querySelector('.capture-stage').innerHTML = c ? c.svg : `<div class="hint">${esc(t.captureEmpty)}</div>`; };
+    m.el.addEventListener('click', e => { const b = e.target.closest('[data-cap-n]'); if (!b) return; n = Number(b.dataset.capN); m.el.querySelectorAll('[data-cap-n]').forEach(x => x.classList.toggle('on', x === b)); draw(); });
+    draw();
+  }
+  async function captureExport(mode, n) {
+    const c = captureSvg(n); if (!c) return;
+    const holder = document.createElement('div'); holder.innerHTML = c.svg;
+    const blob = await svgToBlob(holder.firstChild, c.W, c.H);
+    if (!blob) return toast(T().exportFailed, true);
+    if (mode === 'save') {
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ninjaloot-captura.png'; a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000); return toast(T().exported);
+    }
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); toast(T().captureCopied); } catch { toast(T().captureCopyFail, true); }
+  }
+  // SVG (con iconos incrustados) -> PNG a doble resolución
+  async function svgToBlob(svg, w, h) {
+    try {
+      const clone = svg.cloneNode(true);
+      for (const img of clone.querySelectorAll('image')) {
+        const data = await window.api.iconData(img.getAttribute('href'));
+        if (data) img.setAttribute('href', data); else img.remove();
+      }
+      clone.setAttribute('font-family', FONT);
+      const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(new XMLSerializer().serializeToString(clone)); await img.decode();
+      const canvas = document.createElement('canvas'); canvas.width = w * 2; canvas.height = h * 2;
+      const ctx = canvas.getContext('2d'); ctx.scale(2, 2); ctx.drawImage(img, 0, 0, w, h);
+      return await new Promise(r => canvas.toBlob(r, 'image/png'));
+    } catch (e) { console.error(e); return null; }
+  }
+
   // ---------- Exportar a PNG ----------
   // Exportar todas las mejoras de todas las sims a CSV (Excel / Google Sheets) o JSON
   function exportRows() {
@@ -869,22 +951,11 @@
       const svg = document.querySelector(`[data-chart="${CSS.escape(key)}"] svg`);
       if (!svg) return;
       const clone = svg.cloneNode(true);
-      for (const img of clone.querySelectorAll('image')) {
-        const href = img.getAttribute('href');
-        const data = await window.api.iconData(href);
-        if (data) img.setAttribute('href', data); else img.remove();
-      }
-      clone.setAttribute('font-family', FONT);
       const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       bg.setAttribute('width', '100%'); bg.setAttribute('height', '100%'); bg.setAttribute('fill', themeColors().bg);
       clone.insertBefore(bg, clone.firstChild);
-      const w = Number(svg.getAttribute('width')), h = Number(svg.getAttribute('height'));
-      const url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(clone)], { type: 'image/svg+xml' }));
-      const img = new Image(); img.src = url; await img.decode();
-      const canvas = document.createElement('canvas'); canvas.width = w * 2; canvas.height = h * 2;
-      const ctx = canvas.getContext('2d'); ctx.scale(2, 2); ctx.drawImage(img, 0, 0, w, h);
-      URL.revokeObjectURL(url);
-      const blob = await new Promise(r => canvas.toBlob(r, 'image/png'));
+      const blob = await svgToBlob(clone, Number(svg.getAttribute('width')), Number(svg.getAttribute('height')));
+      if (!blob) throw new Error('PNG');
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
       a.download = `ninjaloot-${key === 'overview' ? 'resumen' : (state.sims.find(s => s.id === key)?.character.name || key)}.png`;
@@ -1409,6 +1480,7 @@
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
+    else if (q('data-capture')) captureModal();
     else if ((el = q('data-role'))) { S().roleFilter = el.dataset.role; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-clsf'))) { S().classFilter = el.dataset.clsf; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-diff'))) { S().diff = el.dataset.diff; persistSettings(); state.animateNext = true; render(); }
