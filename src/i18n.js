@@ -1,6 +1,7 @@
 'use strict';
 const I18N = {
   es: {
+    onlyAttendees: n => `Solo asistentes de WipeTime (${n})`, onlyHint: 'Mostrando solo a los jugadores del log de WipeTime', openWipeTime: 'Ver en WipeTime',
     staleGiven: n => n === 1 ? 'Ya recibió 1 de las mejoras esta semana' : `Ya recibió ${n} de las mejoras esta semana`, staleWhyGiven: 'El historial de loot importado (RCLootCouncil) dice que se le han entregado esta semana estas mejoras:',
     ownWearsNow: 'Lo lleva ahora', ownSimHad: 'Al simular llevaba', ownNothing: 'nada en esa ranura', ownGainSim: 'Mejora que decía la sim', ownSlotWord: 'Ranura',
     staleWhyOwned2: 'Estos objetos los lleva puestos ahora y NO los llevaba cuando hiciste la simulación, así que los conseguiste después y ya no le aportan lo que decía la sim:',
@@ -56,6 +57,7 @@ const I18N = {
     classes: { deathknight: 'Caballero de la Muerte', demonhunter: 'Cazador de demonios', druid: 'Druida', evoker: 'Evocador', hunter: 'Cazador', mage: 'Mago', monk: 'Monje', paladin: 'Paladín', priest: 'Sacerdote', rogue: 'Pícaro', shaman: 'Chamán', warlock: 'Brujo', warrior: 'Guerrero' },
   },
   en: {
+    onlyAttendees: n => `Only WipeTime attendees (${n})`, onlyHint: 'Showing only the players of the WipeTime log', openWipeTime: 'View in WipeTime',
     staleGiven: n => n === 1 ? 'Already received 1 of the upgrades this week' : `Already received ${n} of the upgrades this week`, staleWhyGiven: 'The imported loot history (RCLootCouncil) says these upgrades were awarded to them this week:',
     ownWearsNow: 'Wears now', ownSimHad: 'At sim time they wore', ownNothing: 'nothing in that slot', ownGainSim: 'Gain the sim promised', ownSlotWord: 'Slot',
     staleWhyOwned2: 'They wear these items now and did NOT wear them when the sim was run, so they got them afterwards and they no longer give what the sim said:',
