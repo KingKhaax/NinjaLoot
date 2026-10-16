@@ -232,8 +232,13 @@
   }
   const gearOf = sim => { const g = S().checkGear !== false && state.gear[sim.gearId || sim.id]; return g && g.ok ? g.items : null; };
   // Ya lo lleva: el mismo objeto equipado ahora a su nivel o más (si lo lleva a menos nivel, la mejora sigue valiendo)
+  // Ranura en la que lleva ahora ese objeto (mismo id y mismo nivel o más), según Raider.IO
+  const wornSlot = (sim, it) => { const g = gearOf(sim); if (!g) return null; return Object.keys(g).find(s => g[s] && g[s].id === it.id && g[s].ilvl >= (it.ilvl || 0)) || null; };
+  // ¿Ya lo llevaba puesto al lanzar la simulación? (entonces la sim ya contaba con él: no es un objeto «conseguido después»)
+  const wornAtSim = (sim, it) => Object.values(sim.equippedAtSim || {}).some(x => x && x.id === it.id && (x.ilvl || 0) >= (it.ilvl || 0));
+  const ownedGear = (sim, it) => !!wornSlot(sim, it) && !wornAtSim(sim, it);
   const lootGiven = (sim, it) => { if (!state.loot.length) return false; const since = lastReset(sim.character.region || 'eu'), nm = String(sim.character.name || '').toLowerCase(); return state.loot.some(l => l.itemId === it.id && String(l.player).toLowerCase() === nm && (l.at == null || l.at >= since)); };
-  const owned = (sim, it) => { const g = gearOf(sim); return (!!g && Object.values(g).some(x => x.id === it.id && x.ilvl >= (it.ilvl || 0))) || lootGiven(sim, it); };
+  const owned = (sim, it) => ownedGear(sim, it) || lootGiven(sim, it);
   function staleInfo(sim) {
     const t = T(), out = [], days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
     if (days != null && days > (Number(S().staleDays) || 7)) out.push(t.staleOld(Math.floor(days)));
@@ -241,9 +246,11 @@
     if (g) {
       const changed = gearChanges(sim).length;
       if (changed) out.push(t.staleGear(changed));
-      const own = sim.items.filter(it => owned(sim, it)).length;
+      const own = sim.items.filter(it => ownedGear(sim, it)).length;
       if (own) out.push(t.staleOwned(own));
     }
+    const given = sim.items.filter(it => lootGiven(sim, it)).length;
+    if (given) out.push(t.staleGiven(given));
     return out;
   }
   // Piezas que han cambiado desde la sim: ranura, lo que llevaba (objeto y nivel) y lo que lleva ahora
@@ -259,8 +266,20 @@
     if (days != null && days > max) parts.push(`<p>${esc(t.staleWhyOld(Math.floor(days), max, new Date(sim.simDate).toLocaleDateString(S().lang, { day: 'numeric', month: 'long' })))}</p>`);
     const ch = gearChanges(sim);
     if (ch.length) parts.push(`<p>${esc(t.staleWhyGear)}</p><ul>${ch.map(({ slot, from, to }) => `<li><b>${esc(capFirst(t.slots[slot] || slot))}:</b> ${esc(itemInfo({ id: from.id }).name)} (${from.ilvl}) → ${esc(itemInfo({ id: to.id }).name)} (${to.ilvl})</li>`).join('')}</ul>`);
-    const own = sim.items.filter(it => owned(sim, it));
-    if (own.length) parts.push(`<p>${esc(t.staleWhyOwned)}</p><ul>${own.map(it => `<li>${esc(itemInfo(it).name)} (${it.ilvl}) <span class="meta">+${nf().format(it.gain)}</span></li>`).join('')}</ul>`);
+    const rowOf = (it, slot) => {
+      state.shown.add(it.id);
+      const info = itemInfo(it), col = QUALITY_COLORS[info.quality], src = srcText(it);
+      const had = slot && (sim.equippedAtSim || {})[slot];
+      if (had) state.shown.add(had.id);
+      const hadTxt = had ? `${esc(itemInfo({ id: had.id }).name)} (${had.ilvl})` : esc(t.ownNothing);
+      return `<li class="own-row"><span class="own-ic" data-item="${it.id}" data-ilvl="${it.ilvl || 0}" data-tip-always><img src="${info.icon}" alt="" style="border-color:${col}"></span><span class="own-tx"><b style="color:${readable(col)}">${esc(info.name)}</b> <span class="meta">(${it.ilvl || '?'})</span>`
+        + `<span class="meta">${slot ? `${esc(t.ownSlotWord)}: ${esc(capFirst(t.slots[slot] || slot))} · ` : ''}${src ? `${esc(src.name)} · ` : ''}${esc(t.ownGainSim)}: +${nf().format(it.gain)} (${it.pct.toFixed(2)}%)</span>`
+        + (slot ? `<span class="meta">${esc(t.ownSimHad)}: ${hadTxt}</span>` : '') + '</span></li>';
+    };
+    const own = sim.items.filter(it => ownedGear(sim, it));
+    if (own.length) parts.push(`<p>${esc(t.staleWhyOwned2)}</p><ul class="own-list">${own.map(it => rowOf(it, wornSlot(sim, it))).join('')}</ul>`);
+    const gv = sim.items.filter(it => lootGiven(sim, it));
+    if (gv.length) parts.push(`<p>${esc(t.staleWhyGiven)}</p><ul class="own-list">${gv.map(it => rowOf(it, null)).join('')}</ul>`);
     if (!parts.length) return '';
     return `<span class="why" tabindex="0">?<span class="why-pop" role="tooltip">${parts.join('')}<p class="meta">${esc(t.staleWhyFix)}</p></span></span>`;
   }
