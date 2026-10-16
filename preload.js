@@ -2,6 +2,7 @@
 const { contextBridge, ipcRenderer, webFrame } = require('electron');
 contextBridge.exposeInMainWorld('api', {
   fetchReport: id => ipcRenderer.invoke('report:fetch', id),
+  parseLoot: text => ipcRenderer.invoke('loot:parse', text),
   lookupItems: (ids, lang) => ipcRenderer.invoke('items:lookup', ids, lang),
   iconData: href => ipcRenderer.invoke('icon:data', href),
   itemTooltip: (id, ilvl, lang) => ipcRenderer.invoke('items:tooltip', id, ilvl, lang),

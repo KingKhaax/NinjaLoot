@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.7.0', 'Más tipos de simulación: además de Droptimizer ahora se aceptan Quick Sim (DPS total y estadísticas) y Top Gear (ranking de combinaciones de equipo), en un panel propio. Importar loot: pega o elige el historial exportado de RCLootCouncil y las mejoras que ya se han entregado esta semana a cada jugador salen marcadas como «ya lo lleva». Los números llevan separador de miles también de 4 cifras (4.260).'],
     ['0.6.0', 'Estética: barras con degradado y brillo del color de clase también en las gráficas por objeto; tarjetas fantasma con brillo mientras Raidbots responde; fundido escalonado al cambiar de vista o de filtros; cada jugador muestra su «objeto estrella» (con tooltip) en la cabecera; y Modo captura: una imagen limpia y compacta de la gráfica general (con tus filtros) para copiar al portapapeles o guardar como PNG. Además se corrige «Guardar como PNG», que fallaba por una restricción de seguridad con las imágenes del navegador.'],
     ['0.5.0', 'Filtros por rol (Tank, Sanador, DPS) y por clase en las gráficas, que afectan a todas las vistas. Sesiones guardadas: guarda el conjunto de simulaciones de una raid con nombre y fecha y ábrelo (o añádelo a las actuales) cuando quieras. Compartir: genera un enlace que abre NinjaLoot web con tus mismas simulaciones; también puedes pegar un enlace así para cargarlas.'],
     ['0.4.6', 'Tiers: el bonus de 4 piezas del Elemental salía en portugués; ahora está traducido al castellano con los nombres oficiales de las habilidades.'],
@@ -42,6 +43,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.7.0', 'More simulation types: besides Droptimizer, Quick Sim (total DPS and stats) and Top Gear (ranking of gear combinations) are now accepted, in their own panel. Import loot: paste or pick the exported RCLootCouncil history and the upgrades already awarded to each player this week are marked as «already owned». Numbers use a thousands separator also with 4 digits (4,260).'],
     ['0.6.0', 'Aesthetics: bars with a gradient and glow in the class color also in the per-item charts; ghost cards with a shimmer while Raidbots answers; staggered fade when changing view or filters; every player shows their «star item» (with tooltip) in the header; and Capture mode: a clean, compact image of the overview chart (with your filters) to copy to the clipboard or save as PNG. Also fixes «Save as PNG», which failed because of a security restriction on browser images.'],
     ['0.5.0', 'Filters by role (Tank, Healer, DPS) and by class in the charts, applied to every view. Saved sessions: save the set of simulations of a raid with a name and date and open it (or add it to the current ones) whenever you want. Share: generates a link that opens NinjaLoot web with the same simulations; you can also paste such a link to load them.'],
     ['0.4.6', 'Tiers: the Elemental 4-piece bonus appeared in Portuguese; it is now translated to Spanish with the official ability names.'],

@@ -94,6 +94,41 @@ function detectDifficulty(items, raw) {
   return /mythic/.test(txt) ? 'mm' : /heroic/.test(txt) ? 'hc' : /normal/.test(txt) ? 'nm' : /lfr|finder/.test(txt) ? 'lfr' : null;
 }
 
+// Estadísticas de la simulación (atributos y valoraciones) a partir de los datos de SimulationCraft; cada campo es opcional
+const firstNum = (o, keys) => { for (const k of keys) { const v = o && o[k]; if (typeof v === 'number' && isFinite(v)) return v; } return null; };
+function extractStats(player) {
+  const bs = (player.collected_data && player.collected_data.buffed_stats) || {};
+  const attr = bs.attribute || {}, st = bs.stats || {};
+  const out = {
+    strength: firstNum(attr, ['strength']), agility: firstNum(attr, ['agility']), intellect: firstNum(attr, ['intellect']), stamina: firstNum(attr, ['stamina']),
+    crit: firstNum(st, ['crit_rating', 'spell_crit_rating', 'attack_crit_rating']), haste: firstNum(st, ['haste_rating', 'spell_haste_rating', 'attack_haste_rating']),
+    mastery: firstNum(st, ['mastery_rating']), versatility: firstNum(st, ['versatility_rating', 'vers_rating']), armor: firstNum(st, ['armor']),
+    critPct: firstNum(st, ['spell_crit', 'attack_crit', 'crit']), hastePct: firstNum(st, ['spell_haste', 'attack_haste', 'haste']), masteryPct: firstNum(st, ['mastery_value', 'mastery']),
+  };
+  for (const k of Object.keys(out)) if (out[k] == null) delete out[k];
+  return Object.keys(out).length ? out : null;
+}
+
+// Datos comunes de cualquier informe de SimulationCraft: personaje, DPS (media y desviación), sanación, daño recibido y tipo de pelea
+function commonOf(json, id, player, raw, sim) {
+  const cd = player.collected_data || {}, num = (o, k) => (o && typeof o[k] === 'number' ? o[k] : null);
+  const cls = detectClass(player, raw), character = (raw && raw.character) || {};
+  const ident = (raw && raw.profile && raw.profile.identity) || {}, armory = (raw && raw.armory) || {};
+  return {
+    id, url: `https://www.raidbots.com/simbot/report/${id}`,
+    title: (json.simbot && (json.simbot.publicTitle || json.simbot.title)) || '', fetchedAt: Date.now(),
+    character: { name: player.name || character.name || id, realm: character.realm || ident.realm || armory.realm || '', region: ident.region || armory.region || '', cls, spec: detectSpec(player, cls) },
+    simDate: (json.simbot && (json.simbot.date || json.simbot.jobEnqueued)) || null,
+    baseDps: Math.round(num(cd.dps, 'mean') || 0), dpsStd: Math.round(num(cd.dps, 'mean_std_dev') || 0), hps: Math.round(num(cd.hps, 'mean') || 0), dtps: Math.round(num(cd.dtps, 'mean') || 0),
+    fight: {
+      style: String((sim.options && sim.options.fight_style) || (raw && raw.fightStyle) || ''),
+      targets: Number((sim.options && sim.options.desired_targets) || (raw && raw.enemyCount)) || null,
+      secs: Number((sim.options && sim.options.max_time) || (raw && raw.fightLength)) || null,
+    },
+    stats: extractStats(player), items: [],
+  };
+}
+
 function parseReport(json, id) {
   const sim = json && json.sim;
   const players = sim && sim.players;
@@ -102,7 +137,15 @@ function parseReport(json, id) {
   const raw = json.simbot && json.simbot.meta && json.simbot.meta.rawFormData;
   const base = player.collected_data && player.collected_data.dps && player.collected_data.dps.mean;
   const results = sim.profilesets && sim.profilesets.results;
-  if (!base || !Array.isArray(results) || !results.length) throw new Error('NOT_DROPTIMIZER');
+  if (!base) throw new Error('NO_SIM');
+  // Sin comparaciones: Quick Sim (una sola simulación, con sus estadísticas)
+  if (!Array.isArray(results) || !results.length) return { ...commonOf(json, id, player, raw, sim), kind: 'quick' };
+  // Con comparaciones que no son objetos de Droptimizer: Top Gear (combinaciones de equipo)
+  if (!results.some(r => { const p = parseProfilesetName(r.name); return p && p.id > 1000; })) {
+    const combos = results.filter(r => typeof r.mean === 'number').map(r => ({ name: String(r.name).replace(/\s+/g, ' ').trim(), dps: Math.round(r.mean), gain: Math.round(r.mean - base), pct: (r.mean - base) / base * 100 }))
+      .sort((a, b) => b.dps - a.dps).slice(0, 40);
+    return { ...commonOf(json, id, player, raw, sim), kind: 'topgear', combos };
+  }
 
   const cls = detectClass(player, raw);
   // Piezas de tier: "fromToken" = sale de la ficha del jefe (clic derecho); "catalyst" = se convierte en el catalizador
@@ -139,6 +182,7 @@ function parseReport(json, id) {
     if (s && v && v.id) equippedAtSim[s] = { id: v.id, ilvl: ilvlOf(v) || v.itemLevel || 0 };
   }
   return {
+    kind: 'drop',
     id,
     url: `https://www.raidbots.com/simbot/report/${id}`,
     title: (json.simbot && (json.simbot.publicTitle || json.simbot.title)) || '',
@@ -159,4 +203,45 @@ function parseReport(json, id) {
   };
 }
 
-module.exports = { extractReportId, extractReportIds, parseReport, parseProfilesetName, armorOf };
+// Historial de loot de RCLootCouncil (Exportar → CSV/TSV): columnas player, date, time, id, item, itemID, itemString, response, votes, class, instance, boss, gear1, gear2...
+function splitCsvLine(line, d) {
+  const out = []; let cur = '', q = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (q) { if (c === '"') { if (line[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === d) { out.push(cur); cur = ''; }
+    else cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+function parseLootHistory(text) {
+  const lines = String(text || '').replace(/^\uFEFF/, '').split(/\r?\n/).filter(l => l.trim());
+  if (lines.length < 2) return [];
+  const d = ['\t', ';', ','].map(c => [c, (lines[0].match(new RegExp(c === '\t' ? '\t' : c, 'g')) || []).length]).sort((a, b) => b[1] - a[1])[0][0];
+  const head = splitCsvLine(lines[0], d).map(h => h.trim().toLowerCase());
+  const col = (...names) => { for (const n of names) { const i = head.indexOf(n); if (i >= 0) return i; } return -1; };
+  const cP = col('player', 'winner', 'name'), cDate = col('date'), cTime = col('time'), cItemId = col('itemid'), cItem = col('item', 'itemname'), cStr = col('itemstring', 'itemlink', 'id'), cResp = col('response'), cBoss = col('boss'), cInst = col('instance'), cClass = col('class');
+  if (cP < 0 || (cItemId < 0 && cStr < 0)) return [];
+  const rows = [];
+  for (const line of lines.slice(1)) {
+    const f = splitCsvLine(line, d);
+    let itemId = cItemId >= 0 ? Number(f[cItemId]) : NaN;
+    if (!(itemId > 0)) { const m = /item:(\d+)/.exec(f[cStr] || '') || /^(\d{4,})/.exec(f[cStr] || ''); itemId = m ? Number(m[1]) : NaN; }
+    const player = String(f[cP] || '').trim();
+    if (!player || !(itemId > 0)) continue;
+    // fecha dd/mm/yy o yy/mm/dd o aaaa-mm-dd, con hora opcional
+    let at = null;
+    const ds = String(f[cDate] || '').trim();
+    let m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/.exec(ds);
+    if (m) at = Date.UTC(+m[1], +m[2] - 1, +m[3]);
+    else if ((m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{2,4})$/.exec(ds))) at = Date.UTC(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[2] - 1, +m[1]);
+    const tm = /^(\d{1,2}):(\d{2})/.exec(String(f[cTime] || ''));
+    if (at != null && tm) at += (+tm[1] * 60 + +tm[2]) * 60000;
+    rows.push({ player: player.split('-')[0], itemId, item: cItem >= 0 ? String(f[cItem] || '').trim() : '', response: cResp >= 0 ? String(f[cResp] || '').trim() : '', boss: cBoss >= 0 ? String(f[cBoss] || '').trim() : '', instance: cInst >= 0 ? String(f[cInst] || '').trim() : '', cls: cClass >= 0 ? String(f[cClass] || '').trim() : '', at });
+  }
+  return rows;
+}
+
+module.exports = { extractReportId, extractReportIds, parseReport, extractStats, parseLootHistory, parseProfilesetName, armorOf };
