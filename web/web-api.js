@@ -154,6 +154,9 @@
   const dcRestart = () => { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); };
   setTimeout(dcTick, 3000);
 
+  // Service worker: caché de lo estático para que las visitas siguientes carguen al instante (solo con https)
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* sin service worker: la web funciona igual */ });
+
   window.api = {
     fetchReport, parseLoot: async text => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } }, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
     // En la web siempre se usa la última versión publicada: no hay nada que actualizar
