@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.5.0', 'Filtros por rol (Tank, Sanador, DPS) y por clase en las gráficas, que afectan a todas las vistas. Sesiones guardadas: guarda el conjunto de simulaciones de una raid con nombre y fecha y ábrelo (o añádelo a las actuales) cuando quieras. Compartir: genera un enlace que abre NinjaLoot web con tus mismas simulaciones; también puedes pegar un enlace así para cargarlas.'],
     ['0.4.6', 'Tiers: el bonus de 4 piezas del Elemental salía en portugués; ahora está traducido al castellano con los nombres oficiales de las habilidades.'],
     ['0.4.5', 'Tiers: cada especialización es ahora un desplegable cerrado; el texto de los bonus de 2 y 4 piezas solo aparece al pulsarla, para que no se vea todo el texto de golpe.'],
     ['0.4.4', 'En la barra superior, Tiers y Gráficas intercambian su sitio: ahora el orden es Inicio, Tiers, Simulación personal, Gráficas, Rotaciones y Roster.'],
@@ -40,6 +41,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.5.0', 'Filters by role (Tank, Healer, DPS) and by class in the charts, applied to every view. Saved sessions: save the set of simulations of a raid with a name and date and open it (or add it to the current ones) whenever you want. Share: generates a link that opens NinjaLoot web with the same simulations; you can also paste such a link to load them.'],
     ['0.4.6', 'Tiers: the Elemental 4-piece bonus appeared in Portuguese; it is now translated to Spanish with the official ability names.'],
     ['0.4.5', 'Tiers: each specialization is now a collapsed section; the 2-piece and 4-piece bonus text only appears when you click it, so you no longer see all the text at once.'],
     ['0.4.4', 'In the top bar, Tiers and Charts swap places: the order is now Home, Tiers, Personal simulation, Charts, Rotations and Roster.'],

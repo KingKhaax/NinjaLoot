@@ -15,7 +15,8 @@ function createWindow() {
     width: 1280, height: 820, minWidth: 820, minHeight: 560,
     title: 'NinjaLoot', backgroundColor: '#0f0f11', autoHideMenuBar: true,
     icon: path.join(__dirname, 'build/icon.png'),
-    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false },
+    show: process.env.NINJALOOT_QUIET !== '1', // modo silencioso para pruebas automáticas: no abre la ventana en pantalla
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, backgroundThrottling: process.env.NINJALOOT_QUIET !== '1' },
   });
   win.setMenu(null);
   win.loadFile(path.join(__dirname, 'src/index.html'));
