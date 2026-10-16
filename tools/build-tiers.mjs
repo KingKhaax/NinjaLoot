@@ -60,5 +60,9 @@ for (const [cls, data] of [...sets].sort()) {
   console.log(`${cls}: ${tips.es.name} — ${data.items.length} piezas, bonus de ${Object.keys(bonus).join(', ')}`);
 }
 
+// Wowhead devuelve en portugués el bonus de 4 piezas del Elemental en el idioma es: se traduce a mano (nombres oficiales de las habilidades)
+const ES_FIX = { shaman: { elemental: [null, "Cuando Guardia de la Tormenta o Ascensión se disipan, tus siguientes 2 Descargas de relámpagos, Cadenas de relámpagos o Ráfagas de lava infligen un 25% más de daño y hacen que tu siguiente Terremoto, Choque de tierra o Explosión elemental cueste un 100% menos de vorágine."] } };
+for (const [cl, specs] of Object.entries(ES_FIX)) for (const [sp, arr] of Object.entries(specs)) arr.forEach((t, i) => { const cur = classes[cl]?.bonus?.[sp]?.es; if (t && cur && /Quando |Guardi[aã]o/.test(cur[i] || '')) cur[i] = t; });
+
 const out = { season: season.name, anyBoss: ANY_BOSS, classes };
 fs.writeFileSync(path.resolve(import.meta.dirname, '../src/data/tiers.js'), `'use strict';\n// Generado por tools/build-tiers.mjs (datos de Raidbots y Wowhead)\nconst TIERS = ${JSON.stringify(out, null, 1)};\n`);

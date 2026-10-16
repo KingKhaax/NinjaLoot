@@ -990,7 +990,7 @@ const TIERS = {
      ],
      "es": [
       "Daño de Choque de tierra, Terremoto y Explosión elemental aumentado un 25%.",
-      "Quando o Guardião da Tempestade ou a Ascendência se dissipam, 2 execuções subsequentes de Raio, Cadeia de Raios ou Estouro de Lava causam 25% a mais de dano, fazendo o seu próximo Terremoto, Choque Terreno ou Impacto Elemental custar menos 100% de Voragem."
+      "Cuando Guardia de la Tormenta o Ascensión se disipan, tus siguientes 2 Descargas de relámpagos, Cadenas de relámpagos o Ráfagas de lava infligen un 25% más de daño y hacen que tu siguiente Terremoto, Choque de tierra o Explosión elemental cueste un 100% menos de vorágine."
      ]
     },
     "enhancement": {
