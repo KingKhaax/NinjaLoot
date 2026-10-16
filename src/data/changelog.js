@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['0.9.0', 'NinjaLoot vuelve a ser totalmente independiente: se quita el botón «Ver en WipeTime» y el filtro de asistentes que llegaba desde WipeTime.'],
     ['0.8.1', 'La web carga más rápido sin perder nada del aspecto ni de las animaciones: scripts y estilos en un solo archivo minificado, los datos grandes se leen como JSON, las fuentes principales se precargan y un service worker guarda lo estático para que las visitas siguientes sean instantáneas y la web abra incluso sin conexión. En una conexión lenta con CPU limitada, la primera carga pasa de 5,4 s a 3,5 s y las peticiones de 36 a 21.'],
     ['0.8.0', 'Conexión con WipeTime: el botón «Ver en WipeTime» de cada jugador abre su ficha, y un enlace de WipeTime («Abrir en NinjaLoot con estos asistentes») carga NinjaLoot mostrando solo a los jugadores de ese log, con un botón para quitar el filtro.'],
     ['0.7.1', 'Simulaciones que conviene repetir: ya no avisa de que «ya lleva» una mejora si el personaje ya la llevaba puesta cuando se lanzó la simulación (la sim ya contaba con ella); solo cuenta las que ha conseguido después. Además la explicación del «?» ahora muestra el icono de cada objeto, su ranura, de dónde sale, la mejora que decía la sim y lo que llevaba el personaje en esa ranura al simular, y separa las ya entregadas esta semana (historial de RCLootCouncil).'],
@@ -46,6 +47,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['0.9.0', 'NinjaLoot is fully independent again: the «View in WipeTime» button and the attendees filter coming from WipeTime are gone.'],
     ['0.8.1', 'The web loads faster without losing anything of the look or the animations: scripts and styles in one minified file, big data read as JSON, main fonts preloaded and a service worker that stores the static files so later visits are instant and the web even opens offline. On a slow connection with a throttled CPU, the first load goes from 5.4 s to 3.5 s and requests from 36 to 21.'],
     ['0.8.0', 'WipeTime link: the «View in WipeTime» button on each player opens their page, and a WipeTime link («Open in NinjaLoot with these attendees») loads NinjaLoot showing only the players of that log, with a button to remove the filter.'],
     ['0.7.1', 'Sims worth repeating: it no longer says the character «already wears» an upgrade if they were already wearing it when the sim was run (the sim already counted it); it only counts the ones obtained afterwards. The «?» explanation now shows each item’s icon, its slot, where it drops, the gain the sim promised and what the character wore in that slot at sim time, and separates those already awarded this week (RCLootCouncil history).'],

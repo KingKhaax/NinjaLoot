@@ -167,8 +167,6 @@
   const DIFF_TAG = { lfr: 'LFR', nm: 'NM', hc: 'HC', mm: 'MM' };
   const presentDiffs = () => [...new Set(state.sims.map(s => s.difficulty).filter(Boolean))].sort((a, b) => DIFF_RANK[a] - DIFF_RANK[b]);
   function effectiveDiff() { const p = presentDiffs(); if (p.length < 2) return null; return p.includes(S().diff) ? S().diff : p[p.length - 1]; }
-  state.only = null;
-  const setOnly = names => { state.only = names && names.length ? new Set(names.map(n => String(n).trim().toLowerCase()).filter(Boolean)) : null; };
   const TANK_SPECS = new Set(['blood', 'vengeance', 'guardian', 'brewmaster', 'protection']), HEAL_SPECS = new Set(['restoration', 'preservation', 'mistweaver', 'holy', 'discipline']);
   const roleOf = s => { const k = String(s.character.spec || '').toLowerCase().replace(/[^a-z]/g, ''); return TANK_SPECS.has(k) ? 'tank' : HEAL_SPECS.has(k) ? 'healer' : 'dps'; };
   const diffSims = () => { const e = effectiveDiff(); return state.sims.filter(s => !e || !s.difficulty || s.difficulty === e); };
@@ -176,7 +174,7 @@
   const presentClasses = () => [...new Set(diffSims().map(s => s.character.cls).filter(Boolean))];
   const effRole = () => S().roleFilter && S().roleFilter !== 'all' && presentRoles().includes(S().roleFilter) ? S().roleFilter : 'all';
   const effClass = () => S().classFilter && S().classFilter !== 'all' && presentClasses().includes(S().classFilter) ? S().classFilter : 'all';
-  const passesRC = s => (effRole() === 'all' || roleOf(s) === effRole()) && (effClass() === 'all' || s.character.cls === effClass()) && (!state.only || state.only.has(String(s.character.name).toLowerCase()));
+  const passesRC = s => (effRole() === 'all' || roleOf(s) === effRole()) && (effClass() === 'all' || s.character.cls === effClass());
   const activeSims = () => diffSims().filter(passesRC);
   const diffBadge = d => d ? `<span class="dbadge d-${d}" title="${esc(T().diffNames[d])}">${DIFF_TAG[d]}</span>` : '';
   const xmark = '<svg class="xmark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/></svg>';
@@ -300,7 +298,6 @@
     let h = `<div class="charts-bar"><div class="seg"><button data-mode="boss" class="${mode === 'boss' ? 'on' : ''}">${esc(t.modeBoss)}</button><button data-mode="player" class="${mode === 'player' ? 'on' : ''}">${esc(t.modePlayer)}</button></div>`;
     if (p.length) h += `<div class="diffbar"><span class="meta">${esc(t.diffLabel)}:</span>` + (p.length > 1 ? `<div class="seg">${p.map(d => `<button data-diff="${d}" class="${d === eff ? 'on' : ''}" title="${esc(t.diffNames[d])}">${DIFF_TAG[d]}</button>`).join('')}</div>` : diffBadge(p[0])) + '</div>';
     const ROLE_SVG = { tank: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 2 4 5v6c0 5 3.4 9.4 8 11 4.6-1.6 8-6 8-11V5l-8-3z"/></svg>', healer: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z"/></svg>', dps: '<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M14.5 3 21 3.2l-.2 6.5-9 9-2.3-.5-.5-2.3 9-9zM5 15l4 4-2 2-2.5-.5L3 17z"/></svg>' };
-    if (state.only) h += `<div class="diffbar"><button class="chip on" data-only-clear title="${esc(t.onlyHint)}">${esc(t.onlyAttendees(state.only.size))} ${xmark}</button></div>`;
     const roles = presentRoles();
     if (roles.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.roleLabel)}:</span><div class="seg"><button data-role="all" class="${effRole() === 'all' ? 'on' : ''}">${esc(t.roleAll)}</button>${roles.map(r => `<button data-role="${r}" class="role-${r}${effRole() === r ? ' on' : ''}">${ROLE_SVG[r]}${esc(t['role' + capFirst(r === 'dps' ? 'Dps' : r)])}</button>`).join('')}</div></div>`;
     const clss = presentClasses();
@@ -405,7 +402,6 @@
         + `<span class="spacer"></span><div class="card-tools">`
         + (canToggle ? `<button class="btn small" data-toggle="${esc(sim.id)}">${esc(state.expanded.has(sim.id) ? t.showLess : t.showAll)}</button>` : '')
         + `<button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button>`
-        + (sim.character.region && sim.character.realm ? `<button class="btn small" data-open="https://kingkhaax.github.io/WipeTime/#char=${esc(sim.character.region)}/${esc(encodeURIComponent(String(sim.character.realm).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/['’]/g, '').replace(/\s+/g, '-')))}/${esc(encodeURIComponent(sim.character.name))}">${ui('open')}${esc(t.openWipeTime)}</button>` : '')
         + `<button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button>`
         + `<button class="btn small" data-export="${esc(sim.id)}">${ui('export')}${esc(t.exportPng)}</button>`
         + `<button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
@@ -802,8 +798,6 @@
   }
 
   async function addFromText(text) {
-    const pm = /#players=([^&\s]+)/.exec(String(text || ''));
-    if (pm) setOnly(decodeURIComponent(pm[1]).split(','));
     const ids = extractIds(text);
     if (!ids.length) { toast(T().noUrls, true); return; }
     const res = await Promise.all(ids.map(id => addSim(id, false, true)));
@@ -927,8 +921,6 @@
   $('#btnShare').onclick = shareModal;
   // Al abrir la web con un enlace de NinjaLoot (#sims=id1,id2…) se cargan sus simulaciones
   (function loadFromHash() {
-    const pm = /[#&]players=([^&]+)/.exec(location.hash || '');
-    if (pm) { setOnly(decodeURIComponent(pm[1]).split(',')); try { history.replaceState(null, '', location.pathname + location.search); } catch { /* sin historial */ } state.view = 'charts'; }
     const m = /[#&]sims=([A-Za-z0-9,]+)/.exec(location.hash || '');
     if (!m) return;
     const ids = [...new Set(m[1].split(',').filter(x => /^[A-Za-z0-9]{16,32}$/.test(x)))];
@@ -1574,7 +1566,6 @@
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
-    else if (q('data-only-clear')) { state.only = null; state.animateNext = true; render(); }
     else if (q('data-capture')) captureModal();
     else if ((el = q('data-role'))) { S().roleFilter = el.dataset.role; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-clsf'))) { S().classFilter = el.dataset.clsf; persistSettings(); state.animateNext = true; render(); }
