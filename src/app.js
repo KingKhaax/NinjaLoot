@@ -184,6 +184,8 @@
   const catOfType = ty => /raid/.test(ty) ? 'raid' : /mplus|dungeon/.test(ty) ? 'dungeon' : /delve/.test(ty) ? 'delve' : /prey/.test(ty) ? 'prey' : /catalyst/.test(ty) ? 'catalyst' : /pvp/.test(ty) ? 'pvp' : /profession/.test(ty) ? 'craft' : /bonus/.test(ty) ? 'bonus' : 'other';
   const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
   const bossLabel = enc => (state.bosses.names || {})[enc] || '';
+  // Icono del jefe (Warcraft Logs) a partir de su nombre en inglés; si no se conoce o no carga, no se muestra nada
+  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[bossLabel(enc)]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
   const instName = id =>((state.bosses.inst || {})[id] || {}).n || '';
@@ -360,7 +362,7 @@
             + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}</td><td>${r.best.ilvl || ''}</td>`
             + `<td class="bt-players">${r.gains.map(x => `<span class="bt-p${owned(x.sim, { id: r.id, ilvl: x.ilvl }) ? ' owned' : ''}" style="border-color:${clsColor(x.sim)}">${specIcon(x.sim) ? `<img src="${specIcon(x.sim)}" alt="">` : ''}<b style="color:${readable(clsColor(x.sim))}">${esc(x.sim.character.name)}</b> ${esc(valueText({ gain: x.gain, pct: x.pct }, x.sim))}</span>`).join('')}</td></tr>`; }).join('')
         + '</tbody></table></div>';
-      html += `<section class="panel card" id="boss-${enc}"><div class="card-head"><div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
+      html += `<section class="panel card" id="boss-${enc}"><div class="card-head">${bossImg(enc, 40)}<div><h2>${esc(name)}</h2><div class="meta">${esc([groupOf.get(enc), `${rows.length} ${t.items}`].filter(Boolean).join(' · '))}</div></div><span class="spacer"></span><div class="card-tools">`
         + (n !== 0 && rows.length > n ? `<button class="btn small" data-toggle="${key}">${esc(state.expanded.has(key) ? t.showLess : t.showAll)}</button>` : '')
         + `</div></div><div class="item-cards">${cards}</div><details class="boss-details"><summary>${esc(t.bossTable)}</summary>${table}</details></section>`;
     }
@@ -1376,7 +1378,7 @@
       for (const b of g.bosses) {
         const cov = coverage(b.id), bad = cov.filter(c => c.status === 'bad').length, warn = cov.filter(c => c.status === 'warn').length;
         const cls = bad ? 'bad' : warn ? 'warn' : 'ok';
-        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><button data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}"><span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></button></th>`;
+        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><button data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}">${bossImg(b.id, 30)}<span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></button></th>`;
       }
     }
     let rows = '';

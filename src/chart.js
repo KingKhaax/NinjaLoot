@@ -75,9 +75,9 @@ const Chart = (() => {
       const onBar = e.itemId && !e.tipIcon;
       bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}" data-id="${esc(e.id ?? i)}"${onBar ? itemAttrs : e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
         + (onBar || e.tip ? '' : `<title>${esc(e.title || e.label)}</title>`)
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid})"/>`
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#${gid})"/>`
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#${gid}v)"/>`
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
       const ty = y - 8;
       bars += '</g>';
       if (showIcons && e.icon) {
@@ -147,9 +147,9 @@ const Chart = (() => {
           const base = e.color || '#b04df5', gid = `${uid}${i}`, bx = cx - barW / 2, by = top + plotH - h;
           defs += `<linearGradient id="${gid}" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${shade(base, 0.2)}"/><stop offset="1" stop-color="${shade(base, -0.2)}"/></linearGradient>`
             + `<linearGradient id="${gid}s" x1="0" x2="1" y1="0" y2="0"><stop offset="0" stop-color="#fff" stop-opacity="0.22"/><stop offset="0.5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient>`;
-          return `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="url(#${gid})" style="filter:drop-shadow(0 0 5px ${base}55)"/>`
-            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="url(#${gid}s)"/>`
-            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" rx="4" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/></g>`;
+          return `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" fill="url(#${gid})" style="filter:drop-shadow(0 0 5px ${base}55)"/>`
+            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" fill="url(#${gid}s)"/>`
+            + `<rect x="${bx}" y="${by}" width="${barW}" height="${h}" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/></g>`;
         })();
       if (e.icon && e.tipIcon === 'top') bars += icon(e.icon, cx - is / 2, top + plotH - h - is - 5, e.iconBorder);
       if (iconLabels) bars += icon(e.bottomIcon, cx - is / 2, top + plotH + 8, e.labelColor);
