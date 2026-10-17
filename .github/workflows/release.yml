@@ -1,6 +1,6 @@
 # Compila NinjaLoot en GitHub, lo firma con SignPath (si está configurado) y publica la release.
 # Se lanza solo al subir a main un cambio de la app (src/, main.js, package.json…) o a mano: Actions -> "Release" -> Run workflow.
-# Si cambia la app sin subir la "version", falla con un aviso: ni la web ni los .exe se actualizan (así siempre son la misma versión).
+# Si cambia la app sin subir la "version", avisa con una advertencia: ni la web ni los .exe se actualizan (así siempre son la misma versión).
 # Al terminar la release publica también la web (GitHub Pages) con el mismo commit.
 # Después borra las versiones anteriores (release y tag): solo queda la última.
 
@@ -40,9 +40,9 @@ jobs:
           if gh release view "v$v" >/dev/null 2>&1; then
             echo "release=false" >> "$GITHUB_OUTPUT"
             if [ "${{ github.event_name }}" = "push" ]; then
-              # Se ha subido código de la app sin subir la versión: ni la web ni los .exe se actualizan, y se avisa con un fallo visible
-              echo "::error title=Falta subir la versión::La app ha cambiado pero la versión v$v ya está publicada. La web y los .exe NO se actualizan hasta que subas 'version' en package.json."
-              exit 1
+              # Se ha subido código de la app sin subir la versión: ni la web ni los .exe se actualizan; se avisa en el resumen pero sin fallar (así no llegan correos de error)
+              echo "::warning title=Falta subir la versión::La app ha cambiado pero la versión v$v ya está publicada. La web y los .exe NO se actualizan hasta que subas 'version' en package.json."
+              exit 0
             fi
             echo "::notice::La release v$v ya existe: no se publica nada (sube la versión en package.json)."
           else
