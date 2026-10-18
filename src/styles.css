@@ -579,3 +579,5 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 :root[data-theme="light"] .btn.danger:hover { color: #fff; }
 :root[data-theme="light"] .coin-gain { color: #1a8f43; }
 :root[data-theme="light"] .warn, :root[data-theme="light"] .warnnote, :root[data-theme="light"] .small-note.warn { color: #a8650a; }
+.btn.primary, .btn.grad { background: color-mix(in srgb, var(--accent) 86%, #000); }
+.btn.primary:hover, .btn.grad:hover { background: color-mix(in srgb, var(--accent) 78%, #000); }

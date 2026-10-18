@@ -187,6 +187,7 @@
     onDiscordStatus: cb => dcListeners.status.push(cb),
     setZoom: f => { document.documentElement.style.zoom = String(Math.min(1.6, Math.max(0.7, Number(f) || 1))); },
     appInfo: async () => ({ version: VERSION, electron: null, web: true }),
-    openExternal: url => { if (/^https:\/\//.test(url)) window.open(url, '_blank', 'noopener'); },
+    // Un enlace real con target=_blank dentro del clic: lo abren todos los navegadores (window.open con noopener lo bloquean algunos)
+    openExternal: url => { if (!/^https:\/\//.test(url)) return; const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.style.display = 'none'; document.body.appendChild(a); a.click(); a.remove(); },
   };
 })();

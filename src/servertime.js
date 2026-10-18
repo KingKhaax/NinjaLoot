@@ -65,7 +65,9 @@ const ServerClock = (() => {
     const t = nextReset(now, r);
     const L = left(t - now);
     const prog = Math.min(1, Math.max(0, 1 - (t - now) / WEEK));
-    const big = `${L.d ? `<b>${L.d}</b><i>${es() ? 'd' : 'd'}</i>` : ''}<b>${pad(L.h)}</b><i>h</i><b>${pad(L.m)}</b><i>min</i><b>${pad(L.s)}</b><i>s</i>`;
+    const u = es() ? ['días', 'horas', 'minutos', 'segundos'] : ['days', 'hours', 'minutes', 'seconds'];
+    const cell = (v, label) => `<div><b>${v}</b><small>${label}</small></div>`;
+    const big = `${L.d ? cell(L.d, u[0]) : ''}${cell(pad(L.h), u[1])}${cell(pad(L.m), u[2])}${cell(pad(L.s), u[3])}`;
     return `<div class="sc-tip-h">${es() ? 'Reinicio semanal' : 'Weekly reset'}<span>${esc(es() ? r.es : r.en)}</span></div>
       <div class="sc-tip-big">${big}</div>
       <div class="sc-bar"><i style="width:${(prog * 100).toFixed(2)}%"></i></div>
@@ -106,7 +108,7 @@ const ServerClock = (() => {
     const b = root.getBoundingClientRect();
     tip.innerHTML = tipHTML(reg(), Date.now());
     tip.hidden = false;
-    tip.style.left = `${Math.max(8, Math.min(b.left, window.innerWidth - 300))}px`;
+    tip.style.left = `${Math.max(8, Math.min(b.left, window.innerWidth - 350))}px`;
     tip.style.top = `${b.bottom + 8}px`;
   }
   const hideTip = () => { if (tip) tip.hidden = true; };
@@ -129,14 +131,15 @@ const ServerClock = (() => {
 .sc-time em { font-style: normal; color: var(--accent, #4da3ff); animation: scBlink 1s steps(2, jump-none) infinite; }
 .sc-s.tick { animation: scTick .35s cubic-bezier(.2, 1.4, .4, 1); }
 .sc-reg { font-size: 10px; font-weight: 800; letter-spacing: 1px; padding: 2px 6px; border-radius: 999px; color: var(--on-accent, #fff); background: var(--accent-grad, var(--accent, #4da3ff)); }
-.sc-tip { position: fixed; z-index: 2147483000; width: 290px; padding: 12px 14px; border-radius: 14px; pointer-events: none; color: var(--text, #fff);
+.sc-tip { position: fixed; z-index: 2147483000; width: 340px; padding: 12px 14px; border-radius: 14px; pointer-events: none; color: var(--text, #fff);
   background: color-mix(in srgb, var(--panel, #15181e) 94%, #000); border: 1px solid color-mix(in srgb, var(--accent, #4da3ff) 55%, var(--line, #333)); box-shadow: 0 16px 44px rgba(0, 0, 0, .55), 0 0 24px color-mix(in srgb, var(--accent, #4da3ff) 25%, transparent); animation: scPop .18s ease-out; }
 .sc-tip[hidden] { display: none; }
 .sc-tip-h { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .6px; text-transform: uppercase; color: var(--accent, #4da3ff); }
 .sc-tip-h span { color: var(--muted, #98a2b3); letter-spacing: 0; text-transform: none; font-weight: 600; }
-.sc-tip-big { display: flex; align-items: baseline; gap: 3px; margin: 8px 0 10px; font-variant-numeric: tabular-nums; }
-.sc-tip-big b { font-size: 26px; font-weight: 800; line-height: 1; }
-.sc-tip-big i { font-style: normal; font-size: 12px; font-weight: 700; color: var(--muted, #98a2b3); margin-right: 7px; }
+.sc-tip-big { display: flex; gap: 16px; margin: 10px 0 12px; font-variant-numeric: tabular-nums; }
+.sc-tip-big div { display: grid; justify-items: start; }
+.sc-tip-big b { font-size: 34px; font-weight: 800; line-height: 1; }
+.sc-tip-big small { margin-top: 4px; font-size: 11.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--accent, #4da3ff); }
 .sc-bar { height: 6px; border-radius: 999px; background: color-mix(in srgb, var(--accent, #4da3ff) 16%, transparent); overflow: hidden; }
 .sc-bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--accent, #4da3ff), color-mix(in srgb, var(--accent, #4da3ff) 40%, #fff)); transition: width .6s ease; }
 .sc-tip-f { margin-top: 8px; font-size: 12px; color: var(--muted, #98a2b3); text-transform: capitalize; }
