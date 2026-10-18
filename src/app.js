@@ -7,7 +7,7 @@
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', vaultNew: true, checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', vaultNew: true, checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
@@ -186,6 +186,7 @@
   const bossLabel = enc => (state.bosses.names || {})[enc] || '';
   // Icono del jefe (Warcraft Logs) a partir de su nombre en inglés; si no se conoce o no carga, no se muestra nada
   const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[bossLabel(enc)]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
+  const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
   const instName = id =>((state.bosses.inst || {})[id] || {}).n || '';
@@ -583,7 +584,8 @@
   const COIN_CATS = ['raid', 'dungeon', 'delve', 'prey', 'bonus'];
   function coinSection(p) {
     const t = T(), coins = Math.max(1, Math.min(20, Number(S().coins) || 5));
-    const cands = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && COIN_CATS.includes(catOfSrc(r.s)) && (catOfSrc(r.s) !== 'raid' || r.s.encounter > 0) && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain);
+    const src = ['all', 'raid', 'dungeon'].includes(S().coinSrc) ? S().coinSrc : 'all';
+    const cands = p.items.map(it => ({ it, s: srcOf(it) })).filter(r => r.s && (src === 'all' ? COIN_CATS : [src]).includes(catOfSrc(r.s)) && (catOfSrc(r.s) !== 'raid' || r.s.encounter > 0) && srcText(r.it) && !owned(p, r.it)).sort((x, y) => y.it.gain - x.it.gain);
     // Si ya te llevas un casco con la moneda 1, otro casco no aporta: se salta a la mejor pieza de otra ranura
     const group = sl => /^finger/.test(sl) ? 'finger' : /^trinket/.test(sl) ? 'trinket' : sl || '?', cap = g => g === 'finger' || g === 'trinket' ? 2 : 1;
     const used = {}, ids = new Set(), rows = [];
@@ -594,13 +596,15 @@
       used[g] = (used[g] || 0) + 1; ids.add(r.it.id); rows.push(r);
     }
     const pick = `<label class="coin-count">${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
+    const srcSeg = `<div class="seg">${[['all', t.coinSrcAll], ['raid', t.coinSrcRaid], ['dungeon', t.coinSrcDungeon]].map(([k, l]) => `<button data-coin-src="${k}" class="${src === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     rows.forEach(({ it }, i) => {
       const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
-      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss"><span class="coin-cat cat-${catOfSrc(srcOf(it))}">${esc(catName(catOfSrc(srcOf(it))))}</span><b>${esc(st.name)}</b>${st.sub && st.sub !== catName(catOfSrc(srcOf(it))) ? `<div class="meta">${esc(st.sub)}</div>` : ""}</div><div class="coin-items">`
+      const cat = catOfSrc(srcOf(it)), ic = cat === 'dungeon' ? nameImg(st.name, 36) : cat === 'raid' ? bossImg(srcOf(it).encounter, 36) : '';
+      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss${ic ? ' has-ic' : ''}">${ic}<div class="cb-tx"><span class="coin-cat cat-${catOfSrc(srcOf(it))}">${esc(catName(catOfSrc(srcOf(it))))}</span><b>${esc(st.name)}</b>${st.sub && st.sub !== catName(catOfSrc(srcOf(it))) ? `<div class="meta">${esc(st.sub)}</div>` : ""}</div></div><div class="coin-items">`
         + `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
     });
-    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
+    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
   // Combina las simulaciones de una misma persona en una sola lista de objetos, de más a menos DPS (cada uno recuerda de qué sim viene)
@@ -1592,6 +1596,7 @@
     else if ((el = q('data-col-set'))) { for (const s of state.sims) setCell(state.bossSel, s.id, el.dataset.colSet); persistRot(); render(); }
     else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of rotBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
     else if ((el = q('data-refresh'))) addSim(el.dataset.refresh, true);
+    else if ((el = q('data-coin-src'))) { S().coinSrc = el.dataset.coinSrc; persistSettings(); state.animateNext = false; render(); }
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
     else if ((el = q('data-toggle'))) { const id = el.dataset.toggle; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); state.animateNext = false; render(); }

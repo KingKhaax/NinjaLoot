@@ -581,3 +581,9 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 :root[data-theme="light"] .warn, :root[data-theme="light"] .warnnote, :root[data-theme="light"] .small-note.warn { color: #a8650a; }
 .btn.primary, .btn.grad { background: color-mix(in srgb, var(--accent) 86%, #000); }
 .btn.primary:hover, .btn.grad:hover { background: color-mix(in srgb, var(--accent) 78%, #000); }
+
+/* Dónde tirar moneda: icono del jefe o de la mazmorra junto al nombre y selector Raid / M+ / Todo */
+.coin-boss.has-ic { display: grid; grid-template-columns: 40px 1fr; column-gap: 12px; align-items: center; }
+.coin-boss .boss-ic { width: 40px; height: 40px; border-radius: var(--r-icon, 6px); }
+.coin-boss .cb-tx { min-width: 0; }
+.card-head .coin-count { margin-left: 4px; }

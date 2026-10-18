@@ -1,5 +1,5 @@
 'use strict';
-// Nombre del jefe (en inglés, como en Raidbots) -> id de encuentro en Warcraft Logs, para mostrar su icono (assets.rpglogs.com/img/warcraft/bosses/<id>-icon.jpg)
+// Nombre del jefe o de la mazmorra (en inglés, como en Raidbots) -> id de encuentro en Warcraft Logs, para mostrar su icono (assets.rpglogs.com/img/warcraft/bosses/<id>-icon.jpg)
 const BOSS_ICONS = {
  "Nexus-Princess Ky'veza ?": 3326,
  "Nexus-Princess Ky'veza ??": 3325,
