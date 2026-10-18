@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.2.1', 'El reloj del servidor mantiene el estilo consola pero con los colores de NinjaLoot (el morado de la web) en vez de verde.'],
     ['1.2.0', 'Dónde tirar moneda: nuevo selector Todo / Raid / M+ para decidir de dónde sale la pieza, y cada fila lleva el icono del jefe o, en mazmorras, el de la mazmorra.'],
     ['1.1.1', 'Nuevo reloj del servidor con estilo consola: panel oscuro con las cifras en verde y brillo, sin la esfera.'],
     ['1.1.0', 'Los textos se ajustan solos para leerse bien en el tema claro y en el oscuro; los iconos de objetos nuevos que faltaban (por ejemplo Tentáculo de horror retorcido y Sortija del evocaenjambres) ya cargan; el contador del reinicio semanal muestra días, horas, minutos y segundos con su nombre completo; el botón Abrir Raidbots de la web abre ahora un enlace real.'],
@@ -52,6 +53,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.2.1', 'The server clock keeps the console style but uses NinjaLoot’s colors (the website’s purple) instead of green.'],
     ['1.2.0', 'Where to use a coin: new All / Raid / M+ selector to choose where the piece comes from, and each row shows the boss icon or, for dungeons, the dungeon icon.'],
     ['1.1.1', 'New console-style server clock: a dark panel with glowing green digits and no dial.'],
     ['1.1.0', 'Text now adjusts itself to stay readable in both the light and dark themes; missing icons of new items (such as the Twisted Horror Tendril and the Swarmcaller Band) now load; the weekly reset counter shows days, hours, minutes and seconds with their full names; the web Open Raidbots button now opens a real link.'],

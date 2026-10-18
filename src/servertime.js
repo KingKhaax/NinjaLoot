@@ -148,15 +148,15 @@ const ServerClock = (() => {
 @keyframes scBlink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 @keyframes scTick { 0% { transform: translateY(-5px) scale(1.18); color: var(--accent, #4da3ff); } 100% { transform: none; } }
 @keyframes scPop { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
-/* Estilo consola: panel oscuro con cifras verdes que brillan (sirve igual en el tema claro) */
-.sc { gap: 8px; padding: 6px 12px; margin-left: 10px; border-radius: 8px; background: #05080c; border: 1px solid #12332e; box-shadow: none; }
+/* Estilo consola: panel oscuro con cifras que brillan en el color de acento de la web (sirve igual en el tema claro) */
+.sc { gap: 8px; padding: 6px 12px; margin-left: 10px; border-radius: 8px; background: #05080c; border: 1px solid color-mix(in srgb, var(--accent) 30%, #05080c); box-shadow: none; }
 .sc::before { display: none; }
-.sc:hover { transform: translateY(-1px); border-color: #4ef0c0; box-shadow: 0 6px 22px rgba(78, 240, 192, .28); }
-.sc-time { gap: 0; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 19px; font-weight: 700; letter-spacing: 1px; color: #4ef0c0; text-shadow: 0 0 10px rgba(78, 240, 192, .55); }
+.sc:hover { transform: translateY(-1px); border-color: var(--accent); box-shadow: 0 6px 22px color-mix(in srgb, var(--accent) 30%, transparent); }
+.sc-time { gap: 0; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 19px; font-weight: 700; letter-spacing: 1px; color: color-mix(in srgb, var(--accent) 62%, #fff); text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent); }
 .sc-time b { min-width: 2ch; font-weight: 700; }
-.sc-time em { color: #4ef0c0; }
+.sc-time em { color: color-mix(in srgb, var(--accent) 62%, #fff); }
 .sc-s.sc-tick, .sc-s.tick { animation: none; }
-.sc-reg { padding: 0; background: none; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: .5px; color: #2d9c80; }
+.sc-reg { padding: 0; background: none; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: .5px; color: color-mix(in srgb, var(--accent) 75%, #05080c); }
 @media (prefers-reduced-motion: reduce) { .sc::before, .sc-time em, .sc-s.tick, .sc-tip { animation: none !important; } }
 `;
 
