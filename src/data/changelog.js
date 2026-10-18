@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.2.3', 'En la app de escritorio los enlaces internos siempre se abren dentro de la ventana (Mayús o Ctrl + clic solo abren otra ventana en la versión web).'],
     ['1.2.2', 'Cada pantalla tiene ahora su propia dirección (#/tiers, #/charts, #/rotations…): el botón Atrás del navegador vuelve a la pantalla anterior, F5 se queda donde estabas, y los enlaces de la barra se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic).'],
     ['1.2.1', 'El reloj del servidor mantiene el estilo consola pero con los colores de NinjaLoot (el morado de la web) en vez de verde.'],
     ['1.2.0', 'Dónde tirar moneda: nuevo selector Todo / Raid / M+ para decidir de dónde sale la pieza, y cada fila lleva el icono del jefe o, en mazmorras, el de la mazmorra.'],
@@ -54,6 +55,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.2.3', 'In the desktop app internal links always open inside the window (Shift or Ctrl + click only open another window on the web version).'],
     ['1.2.2', 'Every screen now has its own address (#/tiers, #/charts, #/rotations…): the browser Back button returns to the previous screen, F5 keeps you where you were, and the bar links open in a new window with Shift + click (or a new tab with Ctrl + click).'],
     ['1.2.1', 'The server clock keeps the console style but uses NinjaLoot’s colors (the website’s purple) instead of green.'],
     ['1.2.0', 'Where to use a coin: new All / Raid / M+ selector to choose where the piece comes from, and each row shows the boss icon or, for dungeons, the dungeon icon.'],

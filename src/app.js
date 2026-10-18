@@ -957,7 +957,7 @@
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
-  const plainClick = e => e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey;
+  const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
 
   // Al abrir la web con un enlace de NinjaLoot (#sims=id1,id2…) se cargan sus simulaciones
