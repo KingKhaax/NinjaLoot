@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.0.1', 'Tema claro: más contraste en los verdes y rojos de estado, en las insignias QS/TG y en el botón de borrar.'],
     ['1.0.0', 'Pulido visual: las barras de las gráficas y de las tablas de ganancia son cuadradas y el resto de formas siguen tres radios (controles, tarjetas e iconos); los jefes llevan su icono en el título de cada tarjeta y en la tabla de rotaciones; las cifras grandes cuentan al aparecer; mejor aspecto en ventanas estrechas y en el tema claro.'],
     ['0.9.0', 'NinjaLoot vuelve a ser totalmente independiente: se quita el botón «Ver en WipeTime» y el filtro de asistentes que llegaba desde WipeTime.'],
     ['0.8.1', 'La web carga más rápido sin perder nada del aspecto ni de las animaciones: scripts y estilos en un solo archivo minificado, los datos grandes se leen como JSON, las fuentes principales se precargan y un service worker guarda lo estático para que las visitas siguientes sean instantáneas y la web abra incluso sin conexión. En una conexión lenta con CPU limitada, la primera carga pasa de 5,4 s a 3,5 s y las peticiones de 36 a 21.'],
@@ -48,6 +49,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.0.1', 'Light theme: better contrast on the status greens and reds, the QS/TG badges and the delete button.'],
     ['1.0.0', 'Visual polish: chart and gain-table bars are square and every other shape follows three radii (controls, cards and icons); bosses show their icon in each card title and in the rotations table; big numbers count up as they appear; better look in narrow windows and in the light theme.'],
     ['0.9.0', 'NinjaLoot is fully independent again: the «View in WipeTime» button and the attendees filter coming from WipeTime are gone.'],
     ['0.8.1', 'The web loads faster without losing anything of the look or the animations: scripts and styles in one minified file, big data read as JSON, main fonts preloaded and a service worker that stores the static files so later visits are instant and the web even opens offline. On a slow connection with a throttled CPU, the first load goes from 5.4 s to 3.5 s and requests from 36 to 21.'],
