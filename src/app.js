@@ -418,7 +418,7 @@
     const t = T();
     const feats = [['charts', 'f1'], ['personal', 'f2'], ['coin', 'f3'], ['rotations', 'f4'], ['remove', 'f5'], ['lang', 'f6']];
     return `<section class="panel home-hero"><img src="assets/logo.png" alt="" width="128" height="128"><div><h2>${esc(t.homeWelcome)}</h2><p>${esc(t.homeIntro)}</p>`
-      + `<div class="home-actions"><button class="btn primary" data-view="charts">${esc(t.homeStart)}</button><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div></section>`
+      + `<div class="home-actions"><a class="btn primary" href="#/charts" data-view="charts">${esc(t.homeStart)}</a><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div></section>`
       + `<div class="feats">${feats.map(([ic, k]) => `<div class="feat"><img src="assets/ui/${ic}.png" alt=""><div><b>${esc(t[k + 't'])}</b><p>${esc(t[k + 'd'])}</p></div></div>`).join('')}</div>`
       + `<section class="panel card"><div class="card-head"><h2>${esc(t.homeHow)}</h2></div><ol class="steps">${t.homeSteps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`
       + `<footer class="made-by">${esc(t.madeBy)} <b>Drakko</b><svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 2.8 4.5 6.3 4.5c2 0 3.6 1.1 4.4 2.6l1.3 2.2 1.3-2.2c.8-1.5 2.4-2.6 4.4-2.6 3.5 0 5.4 3.7 3.9 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></footer>`;
@@ -679,6 +679,7 @@
   // ---------- Render ----------
   function render() {
     const t = T();
+    syncRoute();
     if (tipEl) { tipEl.hidden = true; tipEl.dataset.cur = ''; tipKey = null; } // el contenido se redibuja: fuera tooltips colgados
     document.documentElement.lang = S().lang;
     $('#urlInput').placeholder = t.urlPlaceholder;
@@ -925,6 +926,40 @@
   }
   $('#btnSessions').onclick = sessionsModal;
   $('#btnShare').onclick = shareModal;
+  // ---------- Rutas: cada pantalla tiene su propia URL (#/charts, #/rotations/ID...) ----------
+  // Así "Atrás" y "Adelante" del navegador funcionan, se puede copiar el enlace de una pantalla y los enlaces de la barra
+  // se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic / clic central), como en cualquier web.
+  const VIEWS = ['home', 'tiers', 'personal', 'charts', 'rotations', 'roster'];
+  const routeHash = () => `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
+  function parseRoute(h) {
+    const m = /^#\/([a-z]+)(?:\/(\d+))?\/?$/.exec(h || '');
+    return m && VIEWS.includes(m[1]) ? { view: m[1], boss: m[2] != null ? Number(m[2]) : null } : null;
+  }
+  let routed = false;
+  // Lleva la URL a donde está la pantalla: la primera vez la sustituye (no deja entrada extra) y después añade una entrada al historial
+  function syncRoute() {
+    const want = routeHash();
+    const t = T();
+    const label = { home: t.navHome, tiers: t.navTiers, personal: t.navPers, charts: t.navCharts, rotations: t.navRotations, roster: t.navRoster }[state.view];
+    document.title = label ? `NinjaLoot · ${label}` : 'NinjaLoot';
+    if (location.hash === want) { routed = true; return; }
+    try { history[routed ? 'pushState' : 'replaceState'](null, '', location.pathname + location.search + want); } catch { /* sin historial */ }
+    routed = true;
+  }
+  // Pone la pantalla que indica la URL. Devuelve true si ha cambiado algo.
+  function applyRoute() {
+    const r = parseRoute(location.hash);
+    if (!r) return false;
+    const changed = r.view !== state.view || (r.boss != null && r.boss !== state.bossSel);
+    state.view = r.view;
+    if (r.boss != null) state.bossSel = r.boss;
+    return changed;
+  }
+  window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
+  // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
+  const plainClick = e => e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey;
+  applyRoute();
+
   // Al abrir la web con un enlace de NinjaLoot (#sims=id1,id2…) se cargan sus simulaciones
   (function loadFromHash() {
     const m = /[#&]sims=([A-Za-z0-9,]+)/.exec(location.hash || '');
@@ -1382,7 +1417,7 @@
       for (const b of g.bosses) {
         const cov = coverage(b.id), bad = cov.filter(c => c.status === 'bad').length, warn = cov.filter(c => c.status === 'warn').length;
         const cls = bad ? 'bad' : warn ? 'warn' : 'ok';
-        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><button data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}">${bossImg(b.id, 30)}<span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></button></th>`;
+        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><a href="#/rotations/${b.id}" data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}">${bossImg(b.id, 30)}<span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></a></th>`;
       }
     }
     let rows = '';
@@ -1570,7 +1605,7 @@
     else if ((el = q('data-pers-remove'))) { setPersonalList(state.personalList.filter(r => r.id !== el.dataset.persRemove)); state.animateNext = false; render(); }
     else if ((el = q('data-pcat'))) { S().persCat = el.dataset.pcat; persistSettings(); render(); }
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
-    else if ((el = q('data-view'))) { state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
+    else if ((el = q('data-view'))) { if (!plainClick(e)) return; e.preventDefault(); state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
     else if (q('data-capture')) captureModal();
     else if ((el = q('data-role'))) { S().roleFilter = el.dataset.role; persistSettings(); state.animateNext = true; render(); }
@@ -1589,7 +1624,7 @@
       if (open) state.tierOpen.add(el.dataset.tsToggle); else state.tierOpen.delete(el.dataset.tsToggle);
     }
     else if ((el = q('data-tier-cls'))) { state.tierCls = state.tierCls === el.dataset.tierCls ? null : el.dataset.tierCls; render(); }
-    else if ((el = q('data-boss'))){ state.bossSel = Number(el.dataset.boss); render(); }
+    else if ((el = q('data-boss'))){ if (!plainClick(e)) return; e.preventDefault(); state.bossSel = Number(el.dataset.boss); render(); }
     else if ((el = q('data-cell-set'))) { const [sid, bid] = el.closest('[data-cell]').dataset.cell.split(':'); setCell(Number(bid), sid, el.dataset.cellSet); persistRot(); render(); }
     else if ((el = q('data-row-set'))) { const sid = el.closest('[data-row]').dataset.row; for (const b of rotBosses()) setCell(b.id, sid, el.dataset.rowSet); persistRot(); render(); }
     else if (q('data-rot-reset')) { const doIt = () => { state.rot = {}; persistRot(); render(); }; S().confirmClear ? modal({ title: T().rotResetAll, body: `<p>${esc(T().rotResetConfirm)}</p>`, actions: [{ label: T().cancel }, { label: T().confirm, cls: 'danger', onclick: doIt }] }) : doIt(); }

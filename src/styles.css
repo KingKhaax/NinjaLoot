@@ -235,7 +235,7 @@ select:focus, input[type=number]:focus { outline: none; border-color: var(--acce
 .rtable .corner { position: sticky; left: 0; z-index: 3; background: var(--panel2); text-align: left; min-width: 170px; padding: 8px 12px; }
 .rtable .grp { background: var(--bg); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .rtable .bcol { min-width: 124px; vertical-align: bottom; background: var(--panel2); }
-.rtable .bcol button { width: 100%; border: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 4px; color: var(--text); }
+.rtable .bcol button, .rtable .bcol a { box-sizing: border-box; text-decoration: none; width: 100%; border: 0; background: transparent; cursor: pointer; display: flex; flex-direction: column; gap: 6px; align-items: center; padding: 4px; color: var(--text); }
 .rtable .bcol .bn { font-weight: 700; font-size: 13px; line-height: 1.2; }
 .rtable .bcol.sel, .rtable td.sel { background: color-mix(in srgb, var(--accent) 10%, var(--panel2)); }
 .rtable th.who { position: sticky; left: 0; z-index: 2; background: var(--panel2); text-align: left; padding: 6px 12px; }
@@ -571,6 +571,7 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 :root[data-theme="light"] .xs-dps > div:first-child b { color: color-mix(in srgb, var(--cc, var(--accent)) 55%, #000); }
 :root[data-theme="light"] .coin-gain, :root[data-theme="light"] .v-count.full { color: #1f9d4a; }
 .navbtn { white-space: nowrap; }
+a.navbtn, a.btn { text-decoration: none; }
 /* Tema claro: verdes, rojos y morados pálidos pensados para fondo oscuro, con más contraste */
 :root[data-theme="light"] .verbadge.ok, :root[data-theme="light"] .ver-status.ok, :root[data-theme="light"] .ver-big, :root[data-theme="light"] .ok { color: #1a8f43; }
 :root[data-theme="light"] .verbadge.bad, :root[data-theme="light"] .ver-status.bad, :root[data-theme="light"] .bad { color: #c93a28; }
