@@ -1,0 +1,39 @@
+# Pruebas automáticas. Se lanzan antes de CADA release (la llama el workflow «Release»: si algo falla, no se publica ni la web ni los .exe),
+# en las propuestas de cambios y a mano.
+#  - syntax: comprueba que todos los scripts de la app se pueden leer
+#  - e2e: compila la web y la abre en un navegador sin red externa: portada, rutas, ajustes, pestaña Discord, nombres de contacto…
+name: Tests
+
+on:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ['tests/**', '.github/workflows/tests.yml']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: for f in src/*.js src/data/*.js main.js preload.js web/*.js tools/*.mjs; do node --check "$f" || exit 1; done
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm i --prefix .esb --no-audit --no-fund --no-package-lock esbuild@0.25.10
+      - run: node tools/build-web.mjs
+      - run: npm ci --prefix tests/e2e --no-audit --no-fund
+      - run: npx --prefix tests/e2e playwright-core install --with-deps chromium
+      - run: node tests/e2e/web.e2e.mjs

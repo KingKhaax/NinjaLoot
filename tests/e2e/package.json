@@ -1,0 +1,6 @@
+{
+  "name": "ninjaloot-e2e",
+  "private": true,
+  "type": "module",
+  "dependencies": { "playwright-core": "1.49.1" }
+}

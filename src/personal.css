@@ -100,7 +100,7 @@
 @media (max-width: 760px) { .gv-world-ctl { padding-left: 0; } }
 
 /* Botón «?» de las sims que conviene repetir: al pasar el ratón explica el motivo exacto */
-.why { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 8px; border-radius: 50%; border: 1px solid color-mix(in srgb, #f0a030 60%, var(--border)); color: #f0a030; font-size: 12px; font-weight: 700; cursor: help; flex: none; }
+.why { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; margin-left: 8px; border-radius: 50%; border: 1px solid color-mix(in srgb, #f0a030 60%, var(--border)); color: #f0a030; font-size: 12px; font-weight: 700; cursor: default; flex: none; }
 .why:hover, .why:focus { background: color-mix(in srgb, #f0a030 18%, transparent); outline: none; }
 .why-pop { display: none; position: absolute; z-index: 50; top: calc(100% + 8px); left: -12px; width: min(460px, 80vw); padding: 12px 14px; border-radius: var(--radius); background: var(--panel); border: 1px solid color-mix(in srgb, #f0a030 45%, var(--border)); box-shadow: 0 14px 40px rgba(0, 0, 0, .45); color: var(--text); font-size: 13px; font-weight: 400; line-height: 1.5; text-align: left; cursor: default; }
 .why:hover .why-pop, .why:focus .why-pop { display: block; }
@@ -141,7 +141,7 @@
 body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .home-hero > img, body.no-anim .home-hero h2, body.no-anim .feat, body.no-anim .vault-slot.on::after { animation: none; opacity: 1; }
 
 /* Al pasar el ratón por una casilla del cofre: el contenido hecho esta semana y lo que cuenta para ella */
-.vault-slot { overflow: visible; cursor: help; }
+.vault-slot { overflow: visible; cursor: default; }
 .vault-slot.on::after { border-radius: inherit; }
 .vault-slot.on { overflow: hidden; }
 .vault-slot:hover { overflow: visible; z-index: 30; }
@@ -170,3 +170,18 @@ body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .h
 
 /* Reloj del servidor: pegado a la derecha del nombre, dentro del bloque de la marca */
 .brand .sc { margin: 0 0 0 10px; }
+
+/* Cofre semanal: sin cursor de interrogación y con efecto al pasar el ratón por cada casilla
+   (se levanta, brilla con el color de su mejora y un destello la recorre; el número crece) */
+.vault-slot { cursor: default; --vc: var(--trk, #f0b232); transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .2s ease, border-color .2s ease, opacity .2s ease; }
+.vault-slot::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--vc) 30%, #fff 18%) 50%, transparent 70%); background-size: 260% 100%; background-position: 130% 0; }
+.vault-slot:hover { transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--vc) 38%, transparent), 0 0 0 1px color-mix(in srgb, var(--vc) 70%, transparent), 0 0 18px color-mix(in srgb, var(--vc) 22%, transparent) inset; }
+.vault-slot:hover::before { opacity: 1; background-position: -30% 0; transition: background-position .7s ease, opacity .2s ease; }
+.vault-slot .gv-ilvl { transition: transform .2s ease, text-shadow .2s ease; }
+.vault-slot:hover .gv-ilvl { transform: scale(1.12); text-shadow: 0 0 14px color-mix(in srgb, var(--vc) 70%, transparent); }
+.vault-slot.na:hover, .vault-slot:not(.on):hover { opacity: .9; }
+.vault-slot:not(.on):hover { border-style: solid; border-color: color-mix(in srgb, var(--muted) 55%, var(--border)); }
+@media (prefers-reduced-motion: reduce) { .vault-slot, .vault-slot::before, .vault-slot .gv-ilvl { transition: none; } .vault-slot:hover { transform: none; } }
+body.no-anim .vault-slot, body.no-anim .vault-slot::before, body.no-anim .vault-slot .gv-ilvl { transition: none; }

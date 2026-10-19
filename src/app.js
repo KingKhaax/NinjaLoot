@@ -258,11 +258,18 @@
   }
   // Piezas que han cambiado desde la sim: ranura, lo que llevaba (objeto y nivel) y lo que lleva ahora
   const SLOT_ORDER = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet', 'finger1', 'finger2', 'trinket1', 'trinket2', 'main_hand', 'off_hand'];
+  // Clave de un cambio avisado: sim, ranura y objeto/nivel actual; «Es correcto» la guarda para no volver a avisar
+  const changeKey = (sim, slot, to) => `${sim.gearId || sim.id}:${slot}:${to.id}:${to.ilvl}`;
+  // Fecha de los datos de Raider.IO: si es ANTERIOR a la sim no pueden decir qué ha cambiado después, así que no se avisa de cambios
+  const gearCrawled = sim => { const g = state.gear[sim.gearId || sim.id]; return g && g.ok ? g.crawled || null : null; };
+  const gearStaleVsSim = sim => { const c = gearCrawled(sim); return !!(c && sim.simDate && c < sim.simDate); };
   function gearChanges(sim) {
     const g = gearOf(sim), eq = sim.equippedAtSim || {};
-    if (!g) return [];
-    return SLOT_ORDER.filter(s => eq[s] && g[s] && (g[s].id !== eq[s].id || g[s].ilvl !== eq[s].ilvl)).map(s => ({ slot: s, from: eq[s], to: g[s] }));
+    if (!g || gearStaleVsSim(sim)) return [];
+    const ok = new Set(S().gearOk || []);
+    return SLOT_ORDER.filter(s => eq[s] && g[s] && (g[s].id !== eq[s].id || g[s].ilvl !== eq[s].ilvl) && !ok.has(changeKey(sim, s, g[s]))).map(s => ({ slot: s, from: eq[s], to: g[s] }));
   }
+  const crawlTxt = sim => { const c = gearCrawled(sim); return c ? new Date(c).toLocaleString(S().lang, { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : ''; };
   // Ayuda «?»: explica exactamente por qué se avisa (sim antigua, equipo cambiado, mejoras que ya lleva)
   function staleWhy(sim) {
     const t = T(), parts = [], max = Number(S().staleDays) || 7, days = sim.simDate ? (Date.now() - sim.simDate) / 864e5 : null;
@@ -294,7 +301,7 @@
       + rows.map(([s, r]) => `<div class="stale-row">${specIcon(s) ? `<img src="${specIcon(s)}" alt="">` : ''}<b style="color:${readable(clsColor(s))}">${esc(s.character.name)}</b><span class="reasons">${esc(r.join(' · '))}</span>${staleWhy(s)}`
         + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`
         + (c => c.length ? `<ul class="stale-changes">${c.map(({ slot, from, to }) => { const a = piece(from), b = piece(to);
-          return `<li><span class="sc-slot">${esc(t.slots[slot] || slot)}</span>${from.id === to.id ? t.gearUpgraded(a.html, from.ilvl, to.ilvl) : t.gearSwapped(a.html, from.ilvl, b.html, to.ilvl)}</li>`; }).join('')}</ul>` : '')(gearChanges(s))).join('') + '</section>';
+          return `<li><span class="sc-slot">${esc(t.slots[slot] || slot)}</span>${from.id === to.id ? t.gearUpgraded(a.html, from.ilvl, to.ilvl) : t.gearSwapped(a.html, from.ilvl, b.html, to.ilvl)}<button class="btn small sc-ok" data-gear-ok="${esc(changeKey(s, slot, to))}" title="${esc(t.gearOkTip)}">${esc(t.gearOk)}</button></li>`; }).join('')}</ul><div class="small-note" style="margin:-4px 0 10px 36px">${esc(t.gearSrc(crawlTxt(s)))}</div>` : '')(gearChanges(s))).join('') + '</section>';
   }
   function toolbarHtml() {
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
@@ -956,6 +963,12 @@
     return changed;
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
+  // «Es correcto»: ese cambio de equipo no vuelve a avisarse (Raider.IO puede ir por detrás del juego)
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-gear-ok]'); if (!b) return;
+    const list = new Set(S().gearOk || []); list.add(b.dataset.gearOk); S().gearOk = [...list].slice(-200);
+    persistSettings(); state.animateNext = false; render();
+  });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
   // Pulsar el nombre de Discord o de Battle.net: se copia el nombre y se abre la aplicación para agregarlo como amigo
   // (ninguna de las dos permite enlaces para agregar por nombre, así que se pega en «Agregar amigo»)
@@ -972,7 +985,7 @@
     const web = /^https?:$/.test(location.protocol);
     const scheme = dc ? 'discord://-/channels/@me' : 'battlenet://';
     // en el programa lo abre el sistema; en la web el navegador pregunta si abre la aplicación instalada (no la versión web de Discord)
-    try { if (web) location.href = scheme; else window.api.openExternal(scheme); } catch { /* sin la aplicación */ }
+    try { if (web) { if (!window.__noScheme) location.href = scheme; } else window.api.openExternal(scheme); } catch { /* sin la aplicación */ }
   });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
@@ -1145,14 +1158,24 @@
       + `<div class="card-tools" style="margin:6px 0 14px"><button class="btn primary" data-dc-invite>${esc(t.dcInvite)}</button></div>`
       + `<label class="switch-row" style="flex-direction:row;align-items:center"><input type="checkbox" class="switch" id="dcEnabled" ${c.enabled ? 'checked' : ''}> ${esc(t.dcEnable)}</label>`
       + `<div class="row"><label for="dcChannel">${esc(t.dcChannel)}</label><input id="dcChannel" class="txt" spellcheck="false" value="${esc(c.channelId)}" placeholder="${esc(t.dcChannelPh)}" style="max-width:340px"></div>`
-      + `<div class="card-tools" style="margin:12px 0"><button class="btn" data-dc-save>${esc(t.dcSave)}</button></div>`
+      + `<div class="card-tools" style="margin:12px 0"><button class="btn" data-dc-save>${esc(t.dcSave)}</button>${c.channelId ? ` <button class="btn danger" data-dc-clear>${esc(t.dcDisconnect)}</button>` : ''}</div>`
       + `<div class="status" id="dcStatus">${dcStatusText(c.status)}</div>`
       + `<h3>${esc(t.dcHelpTitle)}</h3><ol class="steps">${t.dcSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
+    // el interruptor se guarda solo al cambiarlo (antes había que pulsar también «Guardar y conectar»)
+    box.querySelector('#dcEnabled').addEventListener('change', () => saveDiscord(box, true));
   }
-  async function saveDiscord(box) {
+  async function saveDiscord(box, quiet = false) {
+    const btn = box.querySelector('[data-dc-save]');
+    if (btn) btn.disabled = true;
     const ch = box.querySelector('#dcChannel').value.trim(), en = box.querySelector('#dcEnabled').checked;
     const r = await window.api.discordSet({ channelId: ch, enabled: en });
     if (ch && !r.channelId) toast(T().dcBadChannel, true);
+    else if (!quiet) toast(T().dcSaved);
+    drawDiscord(box);
+  }
+  async function disconnectDiscord(box) {
+    await window.api.discordSet({ channelId: '', enabled: false });
+    toast(T().dcDisconnected);
     drawDiscord(box);
   }
   async function inviteDiscord() {
@@ -1282,15 +1305,22 @@
     $('#modalRoot').appendChild(back);
     const close = () => back.remove();
     const draw = view => {
+      if (view === 'about') view = 'update'; // «Acerca de» está dentro de la pestaña Versión
       const t = T(), s = S();
-      const tabs = [['general', t.tabGeneral], ['lists', t.tabLists], ['appearance', t.tabAppearance], ['discord', t.tabDiscord], ['update', t.tabUpdate], ['about', t.tabAbout]];
+      const tabs = [['general', t.tabGeneral], ['lists', t.tabLists], ['appearance', t.tabAppearance], ['discord', t.tabDiscord], ['update', t.tabUpdate]];
       const check = (key, label) => `<div class="row"><label for="s-${key}">${esc(label)}</label><input type="checkbox" id="s-${key}" data-key="${key}" ${s[key] ? 'checked' : ''}></div>`;
       const cur = k => hex((s.colors || {})[k]) || hex(getComputedStyle(document.documentElement).getPropertyValue(`--${k}`).trim()) || '#000000';
+      const aboutHTML = () => `<div class="about big"><img src="assets/logo.png" alt="" width="120" height="120"><div>`
+          + `<h2>NinjaLoot <span class="v">v${esc(state.info.version)}</span></h2>`
+          + `<p class="about-desc">${esc(t.aboutDesc)} <span class="about-es"><svg viewBox="0 0 3 2" width="30" height="20" role="img" aria-label="${esc(t.spain)}" style="border-radius:3px"><title>${esc(t.spain)}</title><rect width="3" height="2" fill="#c60b1e"/><rect y=".5" width="3" height="1" fill="#ffc400"/></svg></span></p>`
+          + `<p>${esc(t.madeBy)} <b>Drakko</b> <span class="heart">♥</span></p>`
+          + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <a href="#" class="about-friend" data-friend="discord" data-name="sr.kitkat" title="${esc(t.friendTipDc)}"><b>sr.kitkat</b></a> <span class="muted">${esc(t.questions)}</span></p>`
+          + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <a href="#" class="about-friend" data-friend="battlenet" data-name="KitKat#21202" title="${esc(t.friendTipBn)}"><b>KitKat#21202</b></a> <span class="muted">${esc(t.questions)}</span></p>`
+          + `</div></div>`;
       const views = {
         general: () => `<div class="row"><label>${S().lang === 'en' ? 'Server time' : 'Hora del servidor'}</label>${ServerClock.selectHTML()}</div>`
           + `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
           + check('persist', t.persist) + check('confirmClear', t.confirmClear)
-          + `<div class="small-note">${esc(t.shortcuts)}</div>`
           + `<div class="row reset-row"><div><b>${esc(t.resetAll)}</b><div class="small-note">${esc(t.resetHint)}</div></div><button class="btn danger" data-reset-all>${esc(t.resetAll)}</button></div>`,
         lists: () => `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.minGain)}</label><input type="number" min="0" step="50" style="width:110px" data-key="minGain" value="${Number(s.minGain) || 0}"></div>`
@@ -1306,20 +1336,13 @@
           + [['bg', t.colorBg], ['panel', t.colorPanel], ['accent', t.colorAccent], ['text', t.colorText]].map(([k, l]) => `<label>${esc(l)}<input type="color" data-color="${k}" value="${cur(k)}"></label>`).join('')
           + `</div><button class="btn small" data-reset-colors>${esc(t.resetColors)}</button>`,
         discord: () => `<div id="dcBox"><div class="spinner"></div></div>`,
-        update: () => `<div id="updBox"></div>`,
-        about: () => `<div class="about big"><img src="assets/logo.png" alt="" width="120" height="120"><div>`
-          + `<h2>NinjaLoot <span class="v">v${esc(state.info.version)}</span></h2>`
-          + `<p class="about-desc">${esc(t.aboutDesc)} <span class="about-es"><svg viewBox="0 0 3 2" width="30" height="20" role="img" aria-label="${esc(t.spain)}" style="border-radius:3px"><title>${esc(t.spain)}</title><rect width="3" height="2" fill="#c60b1e"/><rect y=".5" width="3" height="1" fill="#ffc400"/></svg></span></p>`
-          + `<p>${esc(t.madeBy)} <b>Drakko</b> <span class="heart">♥</span></p>`
-          + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <a href="#" class="about-friend" data-friend="discord" data-name="sr.kitkat" title="${esc(t.friendTipDc)}"><b>sr.kitkat</b></a> <span class="muted">${esc(t.questions)}</span></p>`
-          + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <a href="#" class="about-friend" data-friend="battlenet" data-name="KitKat#21202" title="${esc(t.friendTipBn)}"><b>KitKat#21202</b></a> <span class="muted">${esc(t.questions)}</span></p>`
-          + `</div></div>`,
+        update: () => `<div id="updBox"></div>${aboutHTML()}<div id="chlogBox"></div>`,
       };
       back.innerHTML = `<div class="panel modal settings" role="dialog" aria-modal="true"><aside class="side"><h2>${esc(t.settingsTitle)}</h2>`
         + `<nav>${tabs.map(([k, l]) => `<button class="side-tab${k === view ? ' on' : ''}" data-tab="${k}">${esc(l)}</button>`).join('')}</nav>`
         + `<button class="btn side-close" data-close>${esc(t.close)}</button></aside><section class="pane">${views[view]()}</section></div>`;
       back.dataset.view = view;
-      if (view === 'update') runUpdateCheck(back.querySelector('#updBox'));
+      if (view === 'update') runUpdateCheck(back.querySelector('#updBox'), back.querySelector('#chlogBox'));
       if (view === 'discord') drawDiscord(back.querySelector('#dcBox'));
     };
     back.addEventListener('mousedown', e => { if (e.target === back) close(); });
@@ -1329,6 +1352,7 @@
       const th = e.target.closest('[data-set-theme]'); if (th) { S().theme = th.dataset.setTheme; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); return; }
       if (e.target.closest('[data-dc-save]')) return saveDiscord(back.querySelector('#dcBox'));
       if (e.target.closest('[data-dc-invite]')) return inviteDiscord();
+      if (e.target.closest('[data-dc-clear]')) return disconnectDiscord(back.querySelector('#dcBox'));
       const rs = e.target.closest('[data-reset-all]');
       if (rs) { // dos pasos: el primer clic pide confirmar y se anula solo a los 5 s
         if (!rs.dataset.sure) { rs.dataset.sure = '1'; rs.textContent = T().resetSure; setTimeout(() => { if (rs.isConnected) { delete rs.dataset.sure; rs.textContent = T().resetAll; } }, 5000); return; }
@@ -1529,20 +1553,22 @@
   function capFirst(s) { s = String(s || ''); return s.charAt(0).toLocaleUpperCase() + s.slice(1); }
   const isNewer = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
   // Pestaña Versión: tu versión y su estado, un solo botón que busca, descarga, instala y reabre, y el historial de versiones
-  async function runUpdateCheck(box) {
+  async function runUpdateCheck(box, histBox) {
     const t = T(), cur = state.info.version;
     const log = (CHANGELOG[S().lang] || CHANGELOG.en || CHANGELOG.es);
     box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(cur)}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
       + `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`
       + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
-      + `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>${log.length > 10 ? `<button class="btn small" id="chlogMore" data-chlog-more></button>` : ''}`;
+      ;
+    if (histBox) histBox.innerHTML = `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>${log.length > 10 ? `<button class="btn small" id="chlogMore" data-chlog-more></button>` : ''}`;
     let all = false;
     const paintLog = () => {
-      box.querySelector('#chlog').innerHTML = (all ? log : log.slice(0, 10)).map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('');
-      const m = box.querySelector('#chlogMore'); if (m) m.textContent = all ? t.showLess : t.showMore(log.length - 10);
+      if (!histBox) return;
+      histBox.querySelector('#chlog').innerHTML = (all ? log : log.slice(0, 10)).map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('');
+      const m = histBox.querySelector('#chlogMore'); if (m) m.textContent = all ? t.showLess : t.showMore(log.length - 10);
     };
     paintLog();
-    box.querySelector('#chlogMore')?.addEventListener('click', () => { all = !all; paintLog(); });
+    histBox?.querySelector('#chlogMore')?.addEventListener('click', () => { all = !all; paintLog(); });
     const status = (cls, msg) => { const el = box.querySelector('#verStatus'); if (el) { el.className = `ver-status ${cls}`; el.textContent = msg; } };
     const note = msg => { const n = box.querySelector('#updNote'); if (n) n.textContent = msg; };
     box.querySelector('#autoUpd').addEventListener('change', e => { S().autoUpdateCheck = e.target.checked; persistSettings(); });

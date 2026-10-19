@@ -49,8 +49,14 @@ jobs:
             echo "release=true" >> "$GITHUB_OUTPUT"
           fi
 
-  release:
+  # Antes de publicar nada se pasan todas las pruebas; si una falla, no se publica ni la web ni los .exe
+  tests:
     needs: check
+    if: needs.check.outputs.release == 'true'
+    uses: ./.github/workflows/tests.yml
+
+  release:
+    needs: [check, tests]
     if: needs.check.outputs.release == 'true'
     runs-on: windows-latest
     steps:
