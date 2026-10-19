@@ -945,8 +945,8 @@
   // Así "Atrás" y "Adelante" del navegador funcionan, se puede copiar el enlace de una pantalla y los enlaces de la barra
   // se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic / clic central), como en cualquier web.
   const VIEWS = ['home', 'tiers', 'personal', 'charts', 'rotations', 'roster'];
-  // La portada es «#/» (igual que en WipeTime); «#/home» de los enlaces antiguos sigue valiendo
-  const routeHash = () => state.view === 'home' ? '#/' : `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
+  // La portada es la dirección limpia, sin «#/» (igual que en WipeTime); «#/», «#/home» y los enlaces antiguos siguen valiendo
+  const routeHash = () => state.view === 'home' ? '' : `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
   function parseRoute(h) {
     if (!h || /^#\/?$/.test(h)) return { view: 'home', boss: null };
     const m = /^#\/([a-z]+)(?:\/(\d+))?\/?$/.exec(h || '');
@@ -959,7 +959,7 @@
     const t = T();
     const label = { home: t.navHome, tiers: t.navTiers, personal: t.navPers, charts: t.navCharts, rotations: t.navRotations, roster: t.navRoster }[state.view];
     document.title = label && state.view !== 'home' ? `NinjaLoot · ${label}` : 'NinjaLoot'; // la portada se llama solo «NinjaLoot», como «WipeTime» en la otra web
-    if ((location.hash || '#/') === want) { routed = true; return; } // en la portada sin «#/» la URL se queda limpia, como en WipeTime
+    if (location.hash === want) { routed = true; return; } // la portada es la dirección limpia (sin «#/»), como en WipeTime; un enlace antiguo con «#/» se limpia solo
     try { history[routed ? 'pushState' : 'replaceState'](null, '', location.pathname + location.search + want); } catch { /* sin historial */ }
     routed = true;
   }

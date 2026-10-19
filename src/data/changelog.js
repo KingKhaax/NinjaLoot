@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.4.6', 'La portada siempre tiene la dirección limpia (ninjaloot.vercel.app), sin «#/», también al volver a Inicio o al abrir un enlace guardado con «#/», igual que WipeTime.'],
     ['1.4.5', 'La pestaña del navegador pone solo «NinjaLoot» en la portada, sin «· Inicio», igual que WipeTime. Las demás pantallas siguen mostrando su nombre.'],
     ['1.4.4', 'La portada ya no añade «#/» al final de la dirección al abrir NinjaLoot (queda ninjaloot.vercel.app limpio, como WipeTime). Las demás pantallas siguen teniendo su propia URL.'],
     ['1.4.3', 'Cada vez que copias algo en NinjaLoot sale un aviso en medio de la pantalla («Se ha copiado al portapapeles»), y el historial de versiones de Ajustes pasa a tarjetas con iconos de World of Warcraft, un resumen y los cambios por secciones.'],
@@ -63,6 +64,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.4.6', 'The home page always has the clean address (ninjaloot.vercel.app), without “#/”, also when returning to Home or opening a saved link with “#/”, like WipeTime.'],
     ['1.4.5', 'The browser tab now says just “NinjaLoot” on the home page, without “· Home”, like WipeTime. The other screens still show their name.'],
     ['1.4.4', 'The home page no longer adds “#/” to the end of the address when NinjaLoot opens (it stays a clean ninjaloot.vercel.app, like WipeTime). The other screens still have their own URL.'],
     ['1.4.3', 'Every time you copy something in NinjaLoot a notice appears in the middle of the screen (“Copied to the clipboard”), and the version history in Settings becomes cards with World of Warcraft icons, a summary and the changes by section.'],
