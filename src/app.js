@@ -945,8 +945,10 @@
   // Así "Atrás" y "Adelante" del navegador funcionan, se puede copiar el enlace de una pantalla y los enlaces de la barra
   // se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic / clic central), como en cualquier web.
   const VIEWS = ['home', 'tiers', 'personal', 'charts', 'rotations', 'roster'];
-  const routeHash = () => `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
+  // La portada es «#/» (igual que en WipeTime); «#/home» de los enlaces antiguos sigue valiendo
+  const routeHash = () => state.view === 'home' ? '#/' : `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
   function parseRoute(h) {
+    if (!h || /^#\/?$/.test(h)) return { view: 'home', boss: null };
     const m = /^#\/([a-z]+)(?:\/(\d+))?\/?$/.exec(h || '');
     return m && VIEWS.includes(m[1]) ? { view: m[1], boss: m[2] != null ? Number(m[2]) : null } : null;
   }
