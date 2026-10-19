@@ -210,3 +210,10 @@ jobs:
       pages: write
       id-token: write
     uses: ./.github/workflows/pages.yml
+
+  # Misma versión en la web de Vercel (si el repositorio tiene el secreto VERCEL_TOKEN)
+  vercel:
+    needs: [check, release]
+    if: ${{ needs.release.result == 'success' }}
+    uses: ./.github/workflows/vercel.yml
+    secrets: inherit

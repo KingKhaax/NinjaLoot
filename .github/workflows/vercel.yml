@@ -1,0 +1,52 @@
+# Publica la web en Vercel (https://ninjaloot.vercel.app) con la misma versión que la release y GitHub Pages.
+# La lanza el workflow «Release» justo después de publicar la release (solo si pasaron las pruebas), o a mano desde Actions.
+# Necesita un secreto del repositorio llamado VERCEL_TOKEN (Vercel → Settings → Tokens). Si no existe, este paso se salta con un aviso.
+
+name: Vercel
+
+on:
+  workflow_call:
+    secrets:
+      VERCEL_TOKEN:
+        required: false
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: team_RYtMN1xGk2ac7xZjpu8AzrrA
+      VERCEL_PROJECT_ID: prj_rUEkhFI0Qdsp7gqTI6tiSxd4Wxq5
+    steps:
+      - name: Comprobar el token
+        id: tk
+        run: |
+          if [ -z "$VERCEL_TOKEN" ]; then
+            echo "::warning title=Vercel sin token::Falta el secreto VERCEL_TOKEN del repositorio: la web de Vercel NO se ha actualizado."
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/checkout@v5
+        if: steps.tk.outputs.ok == 'true'
+      - uses: actions/setup-node@v5
+        if: steps.tk.outputs.ok == 'true'
+        with:
+          node-version: 22
+      - if: steps.tk.outputs.ok == 'true'
+        run: npm i --prefix .esb --no-audit --no-fund --no-package-lock esbuild@0.25.10
+      - if: steps.tk.outputs.ok == 'true'
+        run: node tools/build-web.mjs
+      - name: Subir a Vercel
+        if: steps.tk.outputs.ok == 'true'
+        run: |
+          cp tools/vercel.json _site/vercel.json
+          npx --yes vercel@latest deploy _site --prod --yes --token "$VERCEL_TOKEN"
