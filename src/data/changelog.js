@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.4.4', 'La portada ya no añade «#/» al final de la dirección al abrir NinjaLoot (queda ninjaloot.vercel.app limpio, como WipeTime). Las demás pantallas siguen teniendo su propia URL.'],
     ['1.4.3', 'Cada vez que copias algo en NinjaLoot sale un aviso en medio de la pantalla («Se ha copiado al portapapeles»), y el historial de versiones de Ajustes pasa a tarjetas con iconos de World of Warcraft, un resumen y los cambios por secciones.'],
     ['1.4.2', 'Seguridad: se elimina del servidor y de la app el envío de mensajes privados por Discord (ya no se usaba), así que el bot solo puede leer los enlaces de Raidbots del canal.'],
     ['1.4.1', 'La portada ahora es «#/» como en WipeTime (los enlaces antiguos «#/home» siguen funcionando).'],
@@ -61,6 +62,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.4.4', 'The home page no longer adds “#/” to the end of the address when NinjaLoot opens (it stays a clean ninjaloot.vercel.app, like WipeTime). The other screens still have their own URL.'],
     ['1.4.3', 'Every time you copy something in NinjaLoot a notice appears in the middle of the screen (“Copied to the clipboard”), and the version history in Settings becomes cards with World of Warcraft icons, a summary and the changes by section.'],
     ['1.4.2', 'Security: sending direct messages through Discord is removed from the server and the app (it was no longer used), so the bot can only read the Raidbots links in the channel.'],
     ['1.4.1', 'The home page is now “#/” like in WipeTime (old “#/home” links keep working).'],
