@@ -298,12 +298,6 @@ async function dcTick() {
 }
 function dcRestart() { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); }
 ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, channelName: c.channelName, region: c.region, reset: weeklyReset(c.region), status: dcStatus }; });
-// Recordatorio por mensaje privado a quien le falta la sim (el servidor solo escribe a quien haya escrito en el canal)
-ipcMain.handle('discord:dm', async (_e, users) => {
-  const c = dcLoad();
-  if (!c.channelId) return { error: 'NO_CHANNEL' };
-  try { return await relay('op=dm', { method: 'POST', body: JSON.stringify({ ...(users || {}), channel: c.channelId }) }); } catch (e) { return { error: e.code || 'NETWORK', retry: e.retry }; }
-});
 // Miembros de una guild (Raider.IO) para el roster
 ipcMain.handle('roster:guild', async (_e, region, realm, name) => {
   if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
