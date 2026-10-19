@@ -39,33 +39,15 @@ Alternativa: [https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.i
 
 Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
-- **Web, sin instalar nada:** [ninjaloot.vercel.app](https://ninjaloot.vercel.app) (siempre la última versión; tus datos se quedan en tu navegador).
-- **Instalable:** `NinjaLoot.vX.Y.Z.Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest) (se actualiza solo y se desinstala desde *Configuración → Aplicaciones* de Windows).
+- **Web, sin instalar nada:** [ninjaloot.vercel.app](https://ninjaloot.vercel.app) (también en [kingkhaax.github.io/NinjaLoot](https://kingkhaax.github.io/NinjaLoot/)). Siempre la última versión y tus datos se quedan en tu navegador.
+- **Instalable:** `NinjaLoot.vX.Y.Z.Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest). Se actualiza solo al abrirlo y se desinstala desde *Configuración → Aplicaciones* de Windows.
 - **Portable:** `NinjaLoot.vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
 
-`SHA256SUMS.txt` lleva los hashes para comprobar los archivos.
-
-Los ejecutables están firmados digitalmente (ver [Code signing policy](#code-signing-policy)).
+En Releases solo está la última versión. Los ejecutables todavía no llevan firma digital (está en trámite la firma gratuita de SignPath; ver [Code signing policy](#code-signing-policy)), así que Windows SmartScreen puede avisar la primera vez: pulsa *Más información → Ejecutar de todas formas*. Puedes comprobar que el archivo no se ha modificado con los hashes de `SHA256SUMS.txt`.
 
 ## Novedades
 
 El historial de versiones está en el propio programa (Ajustes → Versión) y en [Releases](https://github.com/KingKhaax/NinjaLoot/releases) (solo se conserva la última).
-
-## Desarrollo
-
-Requiere [Node.js](https://nodejs.org/) 20 o superior.
-
-```
-npm install
-npm start            # ejecutar
-npm run dist         # generar instalador y portable en dist/
-node tools/test-parser.js
-```
-
-Los iconos (`src/assets`) y `src/data/items.js` se generan con `node tools/build-assets.mjs <CleanIcons-MechagnomeEdition.zip>`
-a partir de la release de https://github.com/AcidWeb/Clean-Icons-Mechagnome-Edition (solo objetos de Dragonflight en adelante; el resto se carga de Wowhead/zamimg).
-
-Las releases oficiales se compilan y firman en GitHub Actions ([`.github/workflows/release.yml`](.github/workflows/release.yml)).
 
 ## Servidor del bot de Discord (opcional)
 
@@ -82,7 +64,7 @@ npx vercel deploy --prod --yes
 
 - `DISCORD_BOT_TOKEN`: token del bot. Solo vive en Vercel, nunca viaja en la aplicación.
 - `DISCORD_CLIENT_ID`: ID de la aplicación de Discord (opcional; sin él la app no puede mostrar el enlace de invitación).
-- Rutas: `GET /api/discord?op=info`, `?op=history`, `?channel=ID&after=MSG_ID` y `POST ?op=dm`; el detalle está en los comentarios de [`server/api/discord.js`](server/api/discord.js).
+- Rutas: `GET /api/discord?op=info`, `?op=history`, `?channel=ID&after=MSG_ID`; el detalle está en los comentarios de [`server/api/discord.js`](server/api/discord.js).
 
 > Las secciones *Code signing policy* y *Privacy policy* están en inglés a propósito (requisito de la firma de código y de las políticas de privacidad).
 
