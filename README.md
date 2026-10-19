@@ -6,6 +6,8 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 [![Descargas](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/total?label=descargas&cacheSeconds=300)](https://github.com/KingKhaax/NinjaLoot/releases)
 [![Licencia: MIT](https://img.shields.io/github/license/KingKhaax/NinjaLoot?label=licencia)](LICENSE)
 
+### 🌐 Pruébalo en la web: **[ninjaloot.vercel.app](https://ninjaloot.vercel.app)**
+
 - Pega una o varias URLs de Raidbots (`https://www.raidbots.com/simbot/report/...`), o arrástralas a la ventana.
 - Gráfica general: la mejor mejora de cada jugador, ordenada de mayor a menor, con color e icono de clase.
 - Una gráfica por jugador con todos sus objetos (iconos y nombres localizados).
@@ -23,19 +25,21 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 
 Usa NinjaLoot directamente en el navegador, sin instalar nada:
 
-**[https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.io/NinjaLoot/)**
+**[https://ninjaloot.vercel.app](https://ninjaloot.vercel.app)**
+
+Alternativa: [https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.io/NinjaLoot/)
 
 ## Requisitos
 
 - Windows 10 u 11 (64 bits) para el instalable y el portable.
-- O cualquier navegador moderno para la [versión web](https://kingkhaax.github.io/NinjaLoot/).
+- O cualquier navegador moderno para la [versión web](https://ninjaloot.vercel.app).
 - Una o varias simulaciones **Droptimizer** de [Raidbots](https://www.raidbots.com).
 
 ## Descarga
 
 Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
-- **Web, sin instalar nada:** [kingkhaax.github.io/NinjaLoot](https://kingkhaax.github.io/NinjaLoot/) (siempre la última versión; tus datos se quedan en tu navegador).
+- **Web, sin instalar nada:** [ninjaloot.vercel.app](https://ninjaloot.vercel.app) (siempre la última versión; tus datos se quedan en tu navegador).
 - **Instalable:** `NinjaLoot.vX.Y.Z.Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest) (se actualiza solo y se desinstala desde *Configuración → Aplicaciones* de Windows).
 - **Portable:** `NinjaLoot.vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
 
