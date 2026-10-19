@@ -6,12 +6,12 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 [![Descargas](https://img.shields.io/github/downloads/KingKhaax/NinjaLoot/total?label=descargas&cacheSeconds=300)](https://github.com/KingKhaax/NinjaLoot/releases)
 [![Licencia: MIT](https://img.shields.io/github/license/KingKhaax/NinjaLoot?label=licencia)](LICENSE)
 
-### 🌐 Pruébalo en la web: **[ninjaloot.vercel.app](https://ninjaloot.vercel.app)**
+### <img src="docs/icons/inv_misc_net_01.jpg" width="28" height="28" alt="" align="absmiddle"> Pruébalo en la web: **[ninjaloot.vercel.app](https://ninjaloot.vercel.app)**
 
 - Pega una o varias URLs de Raidbots (`https://www.raidbots.com/simbot/report/...`), o arrástralas a la ventana.
 - Gráfica general: la mejor mejora de cada jugador, ordenada de mayor a menor, con color e icono de clase.
 - Una gráfica por jugador con todos sus objetos (iconos y nombres localizados).
-- Español / Inglés (botón 🌐), ajustes, modo claro/oscuro/sistema, colores personalizables, exportar a PNG.
+- Español / Inglés (botón «Idioma»), ajustes, modo claro/oscuro/sistema, colores personalizables, exportar a PNG.
 - Pestaña **Rotaciones**: jefes de la temporada activa (datos de Raidbots), banda por jefe con clics y comprobación de buffs/debuffs de banda (en rojo los que faltan).
 - Tooltip de objeto al pasar el ratón (estadísticas y nivel de objeto) y aviso **Cuidado** cuando una mejora se debe a una pieza equipada de nivel muy bajo.
 - Filtros por rol (Tank, Sanador, DPS) y por clase, además de dificultad, fuente, raid y jefe.
@@ -19,9 +19,9 @@ Gráficas de mejoras de objetos a partir de simulaciones **Droptimizer** de Raid
 - **Modo captura**: imagen limpia y compacta de la gráfica general para copiar o guardar como PNG.
 - Además de Droptimizer: **Quick Sim** (DPS y estadísticas) y **Top Gear** (ranking de combinaciones).
 - **Importar loot de RCLootCouncil**: las mejoras ya entregadas esta semana salen marcadas.
-- Quitar una simulación (✕) o borrarlas todas.
+- Quitar una simulación o borrarlas todas.
 
-## Web
+## <img src="docs/icons/inv_misc_net_01.jpg" width="28" height="28" alt="" align="absmiddle"> Web
 
 Usa NinjaLoot directamente en el navegador, sin instalar nada:
 
@@ -29,13 +29,13 @@ Usa NinjaLoot directamente en el navegador, sin instalar nada:
 
 Alternativa: [https://kingkhaax.github.io/NinjaLoot/](https://kingkhaax.github.io/NinjaLoot/)
 
-## Requisitos
+## <img src="docs/icons/inv_misc_gear_01.jpg" width="28" height="28" alt="" align="absmiddle"> Requisitos
 
 - Windows 10 u 11 (64 bits) para el instalable y el portable.
 - O cualquier navegador moderno para la [versión web](https://ninjaloot.vercel.app).
 - Una o varias simulaciones **Droptimizer** de [Raidbots](https://www.raidbots.com).
 
-## Descarga
+## <img src="docs/icons/inv_misc_gift_05.jpg" width="28" height="28" alt="" align="absmiddle"> Descarga
 
 Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
@@ -45,11 +45,11 @@ Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 
 En Releases solo está la última versión. Los ejecutables todavía no llevan firma digital (está en trámite la firma gratuita de SignPath; ver [Code signing policy](#code-signing-policy)), así que Windows SmartScreen puede avisar la primera vez: pulsa *Más información → Ejecutar de todas formas*. Puedes comprobar que el archivo no se ha modificado con los hashes de `SHA256SUMS.txt`.
 
-## Novedades
+## <img src="docs/icons/inv_misc_note_06.jpg" width="28" height="28" alt="" align="absmiddle"> Novedades
 
 El historial de versiones está en el propio programa (Ajustes → Versión) y en [Releases](https://github.com/KingKhaax/NinjaLoot/releases) (solo se conserva la última).
 
-## Servidor del bot de Discord (opcional)
+## <img src="docs/icons/inv_misc_horn_02.jpg" width="28" height="28" alt="" align="absmiddle"> Servidor del bot de Discord (opcional)
 
 El bot compartido de NinjaLoot se ejecuta como una función de Vercel en [`server/`](server/) y lee los enlaces de Raidbots que se pegan en un canal. Para desplegar el tuyo:
 
