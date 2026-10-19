@@ -958,7 +958,7 @@
     const want = routeHash();
     const t = T();
     const label = { home: t.navHome, tiers: t.navTiers, personal: t.navPers, charts: t.navCharts, rotations: t.navRotations, roster: t.navRoster }[state.view];
-    document.title = label ? `NinjaLoot · ${label}` : 'NinjaLoot';
+    document.title = label && state.view !== 'home' ? `NinjaLoot · ${label}` : 'NinjaLoot'; // la portada se llama solo «NinjaLoot», como «WipeTime» en la otra web
     if ((location.hash || '#/') === want) { routed = true; return; } // en la portada sin «#/» la URL se queda limpia, como en WipeTime
     try { history[routed ? 'pushState' : 'replaceState'](null, '', location.pathname + location.search + want); } catch { /* sin historial */ }
     routed = true;
