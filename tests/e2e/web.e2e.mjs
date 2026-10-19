@@ -85,13 +85,18 @@ test('pestaña Discord: guarda, avisa, valida y desconecta', async () => {
   noErrors(p);
 });
 
-test('pulsar el nombre de Discord o Battle.net copia el nombre', async () => {
+test('pulsar el nombre de Discord o Battle.net lo copia y avisa en medio de la pantalla', async () => {
+  const p = await open();
+  await p.click('#verBadge'); await p.waitForSelector('.about-friend');
   for (const [k, name] of [['discord', 'sr.kitkat'], ['battlenet', 'KitKat#21202']]) {
-    const p = await open();
-    await p.click('#verBadge'); await p.waitForSelector('.about-friend');
-    await p.click(`.about-friend[data-friend="${k}"]`); await p.waitForTimeout(300);
+    await p.click(`.about-friend[data-friend="${k}"]`); await p.waitForSelector('#copyPop');
     assert.equal(await p.evaluate(() => navigator.clipboard.readText()), name);
+    assert.match(await p.$eval('#copyPop', (e) => e.innerText), /copiado al portapapeles/i);
+    const box = await p.$eval('#copyPop', (e) => { const r = e.getBoundingClientRect(); return { cx: r.x + r.width / 2, cy: r.y + r.height / 2, w: innerWidth, h: innerHeight }; });
+    assert.ok(Math.abs(box.cx - box.w / 2) < 40 && Math.abs(box.cy - box.h / 2) < 40, 'el aviso está en el centro');
+    await p.waitForSelector('#copyPop', { state: 'detached', timeout: 5000 });
   }
+  noErrors(p);
 });
 
 test('las casillas del cofre semanal no usan el cursor de interrogación', async () => {
@@ -101,6 +106,33 @@ test('las casillas del cofre semanal no usan el cursor de interrogación', async
     return getComputedStyle(document.getElementById('vs-test')).cursor;
   });
   assert.equal(cur, 'default');
+});
+
+
+test('pulsar un objeto abre su página de Wowhead en el idioma de la app', async () => {
+  const p = await open();
+  await p.evaluate(() => document.body.insertAdjacentHTML('beforeend', '<div class="coin-item" id="ci-test" style="position:fixed;top:10px;left:10px;z-index:99999;padding:12px;background:#222" data-item="271520" data-ilvl="321">Objeto</div>'));
+  await p.evaluate(() => { window.__links = []; HTMLAnchorElement.prototype.click = function () { window.__links.push(this.href); }; }); // se captura el enlace en vez de abrir una pestaña
+  await p.click('#ci-test'); await p.waitForTimeout(200);
+  const links = await p.evaluate(() => window.__links);
+  assert.equal(links.length, 1);
+  assert.match(links[0], /^https:\/\/www\.wowhead\.com\/(es\/)?item=271520/);
+  noErrors(p);
+});
+
+
+test('las piezas de tier llevan a Wowhead en el idioma de la web', async () => {
+  for (const [lang, re] of [['es', /wowhead\.com\/es\/item=/], ['en', /wowhead\.com\/item=/]]) {
+    const p = await open();
+    await p.evaluate((l) => { const s = JSON.parse(localStorage.getItem('ninjaloot.settings') || '{}'); s.lang = l; localStorage.setItem('ninjaloot.settings', JSON.stringify(s)); }, lang);
+    await p.goto(url + '#/tiers', { waitUntil: 'load' }); await p.reload(); await p.waitForTimeout(1200);
+    await p.click('.tier-cls'); await p.waitForSelector('tr[data-item] td.it');
+    await p.evaluate(() => { window.__links = []; HTMLAnchorElement.prototype.click = function () { window.__links.push(this.href); }; });
+    await p.click('tr[data-item] td.it'); await p.waitForTimeout(200);
+    const links = await p.evaluate(() => window.__links);
+    assert.equal(links.length, 1);
+    assert.match(links[0], re);
+  }
 });
 
 await runAll();

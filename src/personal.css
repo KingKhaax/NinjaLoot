@@ -185,3 +185,27 @@ body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .h
 .vault-slot:not(.on):hover { border-style: solid; border-color: color-mix(in srgb, var(--muted) 55%, var(--border)); }
 @media (prefers-reduced-motion: reduce) { .vault-slot, .vault-slot::before, .vault-slot .gv-ilvl { transition: none; } .vault-slot:hover { transform: none; } }
 body.no-anim .vault-slot, body.no-anim .vault-slot::before, body.no-anim .vault-slot .gv-ilvl { transition: none; }
+
+/* Cuadrados de objeto (dónde tirar moneda, tarjetas de objeto, favoritos): al pasar el ratón se levantan, brillan con el color de la calidad del
+   objeto, un destello los recorre y el icono se agranda un poco */
+.coin-item, .item-card, .star-item { position: relative; --iq: var(--ic, var(--accent, #8b5cf6)); transition: transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .2s ease, border-color .2s ease, background .2s ease; }
+.coin-item::before, .item-card::before, .star-item::before { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0;
+  background: linear-gradient(105deg, transparent 30%, color-mix(in srgb, var(--iq) 26%, #fff 14%) 50%, transparent 70%); background-size: 260% 100%; background-position: 130% 0; }
+.coin-item:hover, .item-card:hover, .star-item:hover { transform: translateY(-3px) scale(1.015); border-color: color-mix(in srgb, var(--iq) 70%, var(--border));
+  background: linear-gradient(160deg, color-mix(in srgb, var(--iq) 12%, var(--panel2)), var(--panel2));
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--iq) 32%, transparent), 0 0 0 1px color-mix(in srgb, var(--iq) 55%, transparent), 0 0 16px color-mix(in srgb, var(--iq) 18%, transparent) inset; }
+.coin-item:hover::before, .item-card:hover::before, .star-item:hover::before { opacity: 1; background-position: -30% 0; transition: background-position .7s ease, opacity .2s ease; }
+.coin-item img { transition: transform .22s cubic-bezier(.2, .8, .2, 1), box-shadow .22s ease; }
+.coin-item:hover img { transform: scale(1.14) rotate(-3deg); box-shadow: 0 0 14px color-mix(in srgb, var(--iq) 65%, transparent); }
+@media (prefers-reduced-motion: reduce) { .coin-item, .item-card, .star-item, .coin-item img { transition: none; } .coin-item:hover, .item-card:hover, .star-item:hover, .coin-item:hover img { transform: none; } }
+body.no-anim .coin-item, body.no-anim .item-card, body.no-anim .star-item, body.no-anim .coin-item img { transition: none; }
+
+/* Los objetos se pueden pulsar: abren su página de Wowhead */
+.coin-item, .star-item, .ic-icon, td.it, .own-ic, .sc-item, .lbl-item, .caution-line { cursor: pointer; }
+
+/* Filas de objetos (piezas de tier y listas): al pasar el ratón resalta la fila y el icono se agranda */
+.ptable tr[data-item] td, .ptable tr[data-item] td img { transition: background .18s ease, transform .2s cubic-bezier(.2, .8, .2, 1), box-shadow .2s ease; }
+.ptable tr[data-item]:hover td { background: color-mix(in srgb, var(--accent, #8b5cf6) 10%, transparent); }
+.ptable tr[data-item]:hover td.it img { transform: scale(1.12) rotate(-3deg); box-shadow: 0 0 14px color-mix(in srgb, var(--accent, #8b5cf6) 55%, transparent); }
+.ptable tr[data-item]:hover td.it span { text-shadow: 0 0 12px currentColor; }
+@media (prefers-reduced-motion: reduce) { .ptable tr[data-item] td, .ptable tr[data-item] td img { transition: none; } .ptable tr[data-item]:hover td.it img { transform: none; } }

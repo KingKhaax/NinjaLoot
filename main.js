@@ -248,7 +248,7 @@ ipcMain.handle('update:install', async (e, url) => {
 });
 
 ipcMain.handle('app:info', () => ({ version: APP_VERSION, electron: process.versions.electron }));
-ipcMain.handle('app:open', (_e, url) => { if (/^https:\/\//.test(url) || url === 'discord://-/channels/@me' || url === 'battlenet://') shell.openExternal(url); });
+ipcMain.handle('app:open', (_e, url) => { if (/^https:\/\//.test(url)) shell.openExternal(url); });
 
 // --- Discord: bot compartido NinjaLoot. Cualquiera lo invita a su servidor y pega el canal de sims;
 // la app pregunta al servidor intermedio (Vercel, con el token del bot) por los enlaces nuevos de Raidbots. Aquí no hay ningún token.

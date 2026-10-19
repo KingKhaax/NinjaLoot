@@ -609,7 +609,7 @@
       const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
       const cat = catOfSrc(srcOf(it)), ic = cat === 'dungeon' ? nameImg(st.name, 36) : cat === 'raid' ? bossImg(srcOf(it).encounter, 36) : '';
       body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss${ic ? ' has-ic' : ''}">${ic}<div class="cb-tx"><span class="coin-cat cat-${catOfSrc(srcOf(it))}">${esc(catName(catOfSrc(srcOf(it))))}</span><b>${esc(st.name)}</b>${st.sub && st.sub !== catName(catOfSrc(srcOf(it))) ? `<div class="meta">${esc(st.sub)}</div>` : ""}</div></div><div class="coin-items">`
-        + `<div class="coin-item" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
+        + `<div class="coin-item" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
     });
     return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
@@ -963,6 +963,16 @@
     return changed;
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
+  // Pulsar un objeto (su cuadrado, su icono o su nombre) abre su página de Wowhead en el idioma de la app
+  const ITEM_CLICK = '.coin-item, .star-item, .ic-icon, td.it, .own-ic, .sc-item, .lbl-item, .caution-line';
+  document.addEventListener('click', e => {
+    const hit = e.target.closest?.(ITEM_CLICK);
+    if (!hit || e.target.closest('button, a, select, input, label, [data-open], [data-pcat]')) return;
+    const id = Number((hit.closest('[data-item]') || {}).dataset?.item);
+    if (!id) return;
+    e.preventDefault();
+    try { window.api.openExternal(`https://www.wowhead.com/${S().lang === 'es' ? 'es/' : ''}item=${id}`); } catch { /* sin navegador */ }
+  });
   // «Es correcto»: ese cambio de equipo no vuelve a avisarse (Raider.IO puede ir por detrás del juego)
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-gear-ok]'); if (!b) return;
@@ -970,22 +980,30 @@
     persistSettings(); state.animateNext = false; render();
   });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
-  // Pulsar el nombre de Discord o de Battle.net: se copia el nombre y se abre la aplicación para agregarlo como amigo
-  // (ninguna de las dos permite enlaces para agregar por nombre, así que se pega en «Agregar amigo»)
+  // Aviso en medio de la pantalla: confirma que el texto se ha copiado (desaparece solo)
+  function showCopiedPop(text, ok) {
+    document.getElementById('copyPop')?.remove();
+    const el = document.createElement('div');
+    el.id = 'copyPop'; el.className = 'copy-pop' + (ok ? '' : ' err'); el.setAttribute('role', 'status');
+    const ic = document.createElement('span'); ic.className = 'cp-ic'; ic.textContent = ok ? '✓' : '!';
+    const tx = document.createElement('div'); tx.className = 'cp-tx';
+    const b = document.createElement('b'); b.textContent = ok ? T().copiedOk : T().copiedBad;
+    const sm = document.createElement('small'); sm.textContent = text;
+    tx.append(b, sm); el.append(ic, tx);
+    document.body.appendChild(el);
+    setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 250); }, 1700);
+  }
+  // Pulsar el nombre de Discord o de Battle.net: se copia al portapapeles y sale un aviso en medio de la pantalla
   document.addEventListener('click', async e => {
     const a = e.target.closest('[data-friend]');
     if (!a) return;
     e.preventDefault();
-    const name = a.dataset.name, dc = a.dataset.friend === 'discord';
+    const name = a.dataset.name;
     let copied = false;
     try { await navigator.clipboard.writeText(name); copied = true; } catch {
       try { const x = document.createElement('textarea'); x.value = name; x.style.position = 'fixed'; x.style.opacity = '0'; document.body.appendChild(x); x.select(); copied = document.execCommand('copy'); x.remove(); } catch { /* sin portapapeles */ }
     }
-    toast(copied ? T().friendCopied(name, dc ? 'Discord' : 'Battle.net') : name);
-    const web = /^https?:$/.test(location.protocol);
-    const scheme = dc ? 'discord://-/channels/@me' : 'battlenet://';
-    // en el programa lo abre el sistema; en la web el navegador pregunta si abre la aplicación instalada (no la versión web de Discord)
-    try { if (web) { if (!window.__noScheme) location.href = scheme; } else window.api.openExternal(scheme); } catch { /* sin la aplicación */ }
+    showCopiedPop(name, copied);
   });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
