@@ -43,7 +43,7 @@ Tres formas de usar NinjaLoot, las tres con las mismas funciones:
 - **Instalable:** `NinjaLoot.vX.Y.Z.Setup.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest). Se actualiza solo al abrirlo y se desinstala desde *Configuración → Aplicaciones* de Windows.
 - **Portable:** `NinjaLoot.vX.Y.Z.exe` en [Releases](https://github.com/KingKhaax/NinjaLoot/releases/latest), no necesita instalación.
 
-En Releases solo está la última versión. Los ejecutables todavía no llevan firma digital (está en trámite la firma gratuita de SignPath; ver [Code signing policy](#code-signing-policy)), así que Windows SmartScreen puede avisar la primera vez: pulsa *Más información → Ejecutar de todas formas*. Puedes comprobar que el archivo no se ha modificado con los hashes de `SHA256SUMS.txt`.
+En Releases solo está la última versión. Los ejecutables no llevan firma digital, así que Windows SmartScreen puede avisar la primera vez: pulsa *Más información → Ejecutar de todas formas*. Puedes comprobar que el archivo no se ha modificado con los hashes de `SHA256SUMS.txt`.
 
 ## <img src="docs/icons/inv_misc_note_06.jpg" width="28" height="28" alt="" align="absmiddle"> Novedades
 
