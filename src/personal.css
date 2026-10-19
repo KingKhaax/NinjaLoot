@@ -209,3 +209,29 @@ body.no-anim .coin-item, body.no-anim .item-card, body.no-anim .star-item, body.
 .ptable tr[data-item]:hover td.it img { transform: scale(1.12) rotate(-3deg); box-shadow: 0 0 14px color-mix(in srgb, var(--accent, #8b5cf6) 55%, transparent); }
 .ptable tr[data-item]:hover td.it span { text-shadow: 0 0 12px currentColor; }
 @media (prefers-reduced-motion: reduce) { .ptable tr[data-item] td, .ptable tr[data-item] td img { transition: none; } .ptable tr[data-item]:hover td.it img { transform: none; } }
+
+/* Roster: el estado de cada personaje se cambia a mano pulsándolo (verde = no falta, rojo = falta) */
+.ro-pill { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px 6px 8px; border-radius: 999px; font: inherit; font-weight: 700; font-size: 13px; cursor: pointer; border: 1px solid; transition: transform .18s cubic-bezier(.2, .8, .2, 1), box-shadow .18s ease, background .18s ease; }
+.ro-pill i { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; font-style: normal; font-size: 13px; font-weight: 800; transition: transform .25s cubic-bezier(.3, 1.6, .4, 1); }
+.ro-pill.ok { color: #62e38a; border-color: color-mix(in srgb, #3fcf6a 55%, transparent); background: color-mix(in srgb, #3fcf6a 14%, transparent); }
+.ro-pill.ok i { background: #3fcf6a; color: #07210f; }
+.ro-pill.bad { color: #ff8a80; border-color: color-mix(in srgb, #ef5350 55%, transparent); background: color-mix(in srgb, #ef5350 14%, transparent); }
+.ro-pill.bad i { background: #ef5350; color: #fff; }
+.ro-pill:hover { transform: translateY(-2px); }
+.ro-pill.ok:hover { box-shadow: 0 6px 18px color-mix(in srgb, #3fcf6a 35%, transparent), 0 0 0 1px color-mix(in srgb, #3fcf6a 60%, transparent); background: color-mix(in srgb, #3fcf6a 22%, transparent); }
+.ro-pill.bad:hover { box-shadow: 0 6px 18px color-mix(in srgb, #ef5350 35%, transparent), 0 0 0 1px color-mix(in srgb, #ef5350 60%, transparent); background: color-mix(in srgb, #ef5350 22%, transparent); }
+.ro-pill:hover i { transform: scale(1.18) rotate(-8deg); }
+.ro-pill:active { transform: translateY(0) scale(.97); }
+.ro-man { margin-left: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; color: #f2bf3a; background: color-mix(in srgb, #f2bf3a 14%, transparent); border: 1px solid color-mix(in srgb, #f2bf3a 40%, transparent); }
+tr.ro-ok td:first-child { box-shadow: inset 3px 0 0 #3fcf6a; }
+tr.ro-miss td:first-child { box-shadow: inset 3px 0 0 #ef5350; }
+@media (prefers-reduced-motion: reduce) { .ro-pill, .ro-pill i { transition: none; } .ro-pill:hover, .ro-pill:hover i { transform: none; } }
+
+/* Selector de rangos de la guild */
+.rk-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0 12px; }
+.rk-list { display: grid; gap: 6px; max-height: 52vh; overflow: auto; }
+.rk-row { display: grid; grid-template-columns: 22px 26px 1fr; align-items: center; gap: 10px; padding: 4px 8px; border-radius: 8px; border: 1px solid transparent; transition: background .15s ease, border-color .15s ease; }
+.rk-row:hover { background: color-mix(in srgb, var(--accent, #8b5cf6) 8%, transparent); border-color: var(--border); }
+.rk-n { font-weight: 800; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
+.rk-name { width: 100%; }
+#roRanksBtn b { font-weight: 700; }

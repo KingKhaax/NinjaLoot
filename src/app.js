@@ -7,7 +7,7 @@
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', vaultNew: true, checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
@@ -183,7 +183,15 @@
   const srcOf = it => (it.source && fixSrc(it.source)) || (ITEMS[it.id]?.[6]?.[0] ? { instance: ITEMS[it.id][6][0][0], encounter: ITEMS[it.id][6][0][1] } : null);
   const catOfType = ty => /raid/.test(ty) ? 'raid' : /mplus|dungeon/.test(ty) ? 'dungeon' : /delve/.test(ty) ? 'delve' : /prey/.test(ty) ? 'prey' : /catalyst/.test(ty) ? 'catalyst' : /pvp/.test(ty) ? 'pvp' : /profession/.test(ty) ? 'craft' : /bonus/.test(ty) ? 'bonus' : 'other';
   const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
-  const bossLabel = enc => (state.bosses.names || {})[enc] || '';
+  // Nombres en español de las bandas y jefes de la temporada actual (con la web en español); lo que no esté aquí se deja como llega de Raidbots
+  const ES_NAMES = {
+    'The Venomous Abyss': 'El Abismo Venenoso', 'The Tidebound Grotto': 'La Gruta Ligada a la Marea', "The Unbinding of Kith'ix": "El Desatamiento de Kith'ix",
+    "Nek'zali the Soulcoiler": "Nek'zali la Volutadora de Almas", 'Entombed Sentinels': 'Centinelas Sepultados', 'The Lost Explorers': 'Los exploradores perdidos',
+    'Vashnik the Malignant': 'Vashnik el Maligno', 'Sszorak': 'Sszorak', 'The Twin Fangs': 'Los colmillos gemelos', 'The Coiled Altar': 'El Altar en Espiral',
+    "Ula'tek": "Ula'tek", 'Nymrissa Wavecaller': 'Nymrissa Clamaolas', "Kith'ix": "Kith'ix"
+  };
+  const trName = n => (S().lang === 'es' && ES_NAMES[n]) || n;
+  const bossLabel = enc => trName((state.bosses.names || {})[enc] || '');
   // Icono del jefe (Warcraft Logs) a partir de su nombre en inglés; si no se conoce o no carga, no se muestra nada
   const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[bossLabel(enc)]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
   const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
@@ -320,8 +328,8 @@
       // Raid (todas o una) y jefe (todos o uno) de la temporada
       if (['all', 'raid'].includes(effCat()) && state.bosses.groups.length) {
         const raid = effRaid(), list = raidBossList();
-        if (state.bosses.groups.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.raidLabel)}:</span><div class="seg"><button data-raid="all" class="${raid === 'all' ? 'on' : ''}">${esc(t.raidAll)}</button>${state.bosses.groups.map(g => `<button data-raid="${g.id}" class="${raid === g.id ? 'on' : ''}">${esc(g.name)}</button>`).join('')}</div></div>`;
-        h += `<div class="diffbar"><span class="meta">${esc(t.bossPickLabel)}:</span><select id="bossPick" class="txt small"><option value="all">${esc(t.bossAll)}</option>${list.map(b => `<option value="${b.id}"${effBossPick() === b.id ? ' selected' : ''}>${esc(b.name)}</option>`).join('')}</select></div>`;
+        if (state.bosses.groups.length > 1) h += `<div class="diffbar"><span class="meta">${esc(t.raidLabel)}:</span><div class="seg"><button data-raid="all" class="${raid === 'all' ? 'on' : ''}">${esc(t.raidAll)}</button>${state.bosses.groups.map(g => `<button data-raid="${g.id}" class="${raid === g.id ? 'on' : ''}">${esc(trName(g.name))}</button>`).join('')}</div></div>`;
+        h += `<div class="diffbar"><span class="meta">${esc(t.bossPickLabel)}:</span><select id="bossPick" class="txt small"><option value="all">${esc(t.bossAll)}</option>${list.map(b => `<option value="${b.id}"${effBossPick() === b.id ? ' selected' : ''}>${esc(trName(b.name))}</option>`).join('')}</select></div>`;
       }
     }
     const hidden = eff ? state.sims.filter(s => s.difficulty && s.difficulty !== eff).length : 0;
@@ -486,7 +494,7 @@
     const runs = v.runs || [];
     const pop = (title, rows, n) => rows.length ? `<b>${esc(title)}</b><ol>${rows.map((x, j) => `<li class="${j < n ? 'cnt' : ''}">${x}</li>`).join('')}</ol><span class="meta">${esc(t.gvPopNote(n))}</span>` : `<span class="meta">${esc(t.gvPopNone)}</span>`;
     const ilvlTag = r => r ? ` <span class="gv-trk trk-${r.track}">${r.ilvl} · ${esc(t.gvTrack[r.track])} ${r.rank}/6</span>` : '';
-    const raidRows = raid.map(b => `${esc(t.gvDiff[b.diff])} · ${esc(b.name)}${ilvlTag(b.r)}`);
+    const raidRows = raid.map(b => `${esc(t.gvDiff[b.diff])} · ${esc(trName(b.name))}${ilvlTag(b.r)}`);
     const runRows = runs.map(k => `+${k.level} · ${esc(k.dungeon)}${ilvlTag(gvKeyReward(k.level))}`);
     let html = `<section class="panel card vault">${head}<div class="vault-grid">`;
     html += `<div class="vault-row">${rowHead(t.gvRaid, v.raid ? t.gvBosses(raid.length) : t.gvNA)}`
@@ -1034,17 +1042,16 @@
     if (!entries.length) return null;
     const chart = Chart.build(entries, { colors, animate: false, showValues: true, showIcons: true, compact: S().compact, yTitle: '', slot: 96, height: 250, hScale: 1, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : undefined });
     const cw = Number(/ width="(\d+)"/.exec(chart)[1]), ch = Number(/ height="(\d+)"/.exec(chart)[1]);
-    const W = Math.max(cw + 24, 620), headH = 74, footH = 34, up = 44, H = headH + ch + footH - up; // la gráfica trae margen superior propio: se sube para que quede pegada a la cabecera
+    const W = Math.max(cw + 24, 620), headH = 74, footH = 14, up = 44, H = headH + ch + footH - up; // la gráfica trae margen superior propio: se sube para que quede pegada a la cabecera
     const eff = effectiveDiff(), sub = [eff ? t.diffNames[eff] : '', pct ? t.unitPct : t.unitDps, new Date().toLocaleDateString(S().lang, { day: 'numeric', month: 'long', year: 'numeric' })].filter(Boolean).join('  ·  ');
     const nested = chart.replace('<svg ', `<svg x="${Math.round((W - cw) / 2)}" y="${headH - up}" `);
     return { W, H, svg: `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" class="capture-svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="${FONT}">`
       + `<defs><linearGradient id="capbg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="${colors.bg}"/><stop offset="1" stop-color="${colors.bg}"/></linearGradient></defs>`
       + `<rect width="100%" height="100%" fill="url(#capbg)"/><rect width="100%" height="4" fill="#8b5cf6"/>`
-      + `<image href="assets/logo.png" x="18" y="14" width="46" height="46"/>`
-      + `<text x="76" y="36" font-size="21" font-weight="800" fill="${colors.text}">${esc(t.overviewTitle)}</text>`
-      + `<text x="76" y="58" font-size="13" fill="${colors.muted}">${esc(sub)}</text>`
+      + `<text x="24" y="36" font-size="21" font-weight="800" fill="${colors.text}">${esc(t.overviewTitle)}</text>`
+      + `<text x="24" y="58" font-size="13" fill="${colors.muted}">${esc(sub)}</text>`
       + nested
-      + `<text x="${W - 16}" y="${H - 12}" text-anchor="end" font-size="12" fill="${colors.muted}">NinjaLoot · kingkhaax.github.io/NinjaLoot</text></svg>` };
+      + `</svg>` };
   }
   function captureModal() {
     const t = T(), total = activeSims().length;
@@ -1206,19 +1213,13 @@
     const info = await window.api.discordGet();
     for (const x of list) {
       const it = typeof x === 'string' ? { id: x } : x;
-      if (it.author) state.dcAuthors[it.author.id] = it.author.name;
       if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, newestOnly: true }) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`);
-      const sim = state.sims.find(s => s.id === it.id);
-      if (sim && it.author) state.dcLinks[charKey(sim.character.name, sim.character.realm)] = it.author;
     }
-    save('ninjaloot.dcAuthors', state.dcAuthors); save('ninjaloot.dcLinks', state.dcLinks);
     if (state.view === 'roster') render();
   });
 
   // ---------- Roster: quién ha subido su sim esta semana y recordatorio por mensaje privado ----------
   state.roster = load('ninjaloot.roster', []);       // [{ name, realm, cls }]
-  state.dcLinks = load('ninjaloot.dcLinks', {});     // personaje -> { id, name } del usuario de Discord que pegó su sim
-  state.dcAuthors = load('ninjaloot.dcAuthors', {}); // usuarios de Discord vistos en el canal: id -> nombre
   const charKey = (name, realm) => `${normName(name)}-${normName(realm || '')}`;
   const rosterKey = m => charKey(m.name, m.realm);
   function lastReset(region) {
@@ -1234,34 +1235,69 @@
     return state.sims.filter(x => normName(x.character.name) === k && (!r || !x.character.realm || normName(x.character.realm) === r))
       .sort((a, b) => (b.simDate || b.fetchedAt || 0) - (a.simDate || a.fetchedAt || 0))[0] || null;
   }
-  const linkOf = m => state.dcLinks[rosterKey(m)] || state.dcLinks[charKey(m.name, '')] || null;
+  // Marca a mano de cada personaje (tiene la sim / le falta): solo vale para la semana actual, en el siguiente reinicio vuelve a ser automática
+  state.roManual = load('ninjaloot.roManual', {});
+  const manualOf = (m, reset) => { const x = state.roManual[rosterKey(m)]; return x && x.w === reset ? x.v : null; };
   function saveRoster() { save('ninjaloot.roster', state.roster); }
+
+  // «Rotaciones desde el 14 de Octubre hasta el 21 de Octubre»: la semana actual, de reinicio a reinicio (se calcula cada vez que se pinta, así cambia sola)
+  function rotWeekText() {
+    const t = T(), start = lastReset(S().rosterRegion || 'eu'), end = start + 7 * 864e5;
+    const fmt = ms => { const d = new Date(ms).toLocaleDateString(S().lang, { day: 'numeric', month: 'long' }); return d.replace(/(\d+(?: de)? )(\p{L})/u, (m, a, b) => a + b.toLocaleUpperCase(S().lang)); };
+    return t.rotWeek(fmt(start), fmt(end));
+  }
+
+  // Rangos de la guild: Blizzard solo da el número (0 = maestro de hermandad), no su nombre; por eso cada uno les pone el suyo
+  // («Raiders», «Alters», «Oficiales»…) y elige qué rangos importar, sin que tengan que ser seguidos (por ejemplo 0, 1 y 3, y no los alters del 5)
+  const rankName = i => ((S().rankNames || [])[i] || '').trim() || (T().rankDefaults[i] || T().rankN(i));
+  const rankSel = () => { const a = S().rankSel; return new Set(Array.isArray(a) ? a : Array.from({ length: 10 }, (_, i) => i)); };
+  function rankSummary() {
+    const sel = [...rankSel()].sort((a, b) => a - b), t = T();
+    if (sel.length === 10) return t.roAllRanks;
+    if (!sel.length) return t.roRanksNone;
+    return sel.length <= 3 ? sel.map(rankName).join(', ') : `${sel.slice(0, 2).map(rankName).join(', ')} +${sel.length - 2}`;
+  }
+  function ranksModal() {
+    const t = T(), sel = rankSel();
+    const rows = Array.from({ length: 10 }, (_, i) => `<label class="rk-row"><input type="checkbox" data-rk="${i}"${sel.has(i) ? ' checked' : ''}><span class="rk-n">${i}</span><input class="txt rk-name" data-rkname="${i}" value="${esc(((S().rankNames || [])[i] || '').trim())}" placeholder="${esc(t.rankDefaults[i] || t.rankN(i))}" maxlength="24" spellcheck="false"></label>`).join('');
+    const presets = [['all', t.roAllRanks], ['gm', t.rankPresetGm], ['top2', t.rankPresetTop2], ['none', t.roRanksNone]].map(([k, l]) => `<button type="button" class="chip" data-rk-preset="${k}">${esc(l)}</button>`).join('');
+    const m = modal({ title: t.roRanksTitle, body: `<p class="hint">${esc(t.roRanksHint)}</p><div class="rk-presets">${presets}</div><div class="rk-list">${rows}</div>`,
+      actions: [{ label: t.cancel }, { label: t.roRanksSave, cls: 'primary', onclick: () => {
+        const checks = [...m.el.querySelectorAll('[data-rk]')];
+        S().rankSel = checks.filter(c => c.checked).map(c => Number(c.dataset.rk));
+        S().rankNames = [...m.el.querySelectorAll('[data-rkname]')].map(i => i.value.trim());
+        persistSettings(); render();
+      } }] });
+    m.el.addEventListener('click', e => {
+      const p = e.target.closest('[data-rk-preset]'); if (!p) return;
+      const want = { all: () => true, none: () => false, gm: i => i === 0, top2: i => i <= 1 }[p.dataset.rkPreset];
+      m.el.querySelectorAll('[data-rk]').forEach(c => { c.checked = want(Number(c.dataset.rk)); });
+    });
+  }
 
   function rosterView() {
     const t = T(), region = S().rosterRegion || 'eu', reset = lastReset(region);
-    const rows = state.roster.map(m => { const sim = rosterSim(m), when = sim ? (sim.simDate || sim.fetchedAt || 0) : 0; return { m, sim, ok: when >= reset, when, link: linkOf(m) }; })
+    const rows = state.roster.map(m => { const sim = rosterSim(m), when = sim ? (sim.simDate || sim.fetchedAt || 0) : 0; const auto = when >= reset, man = manualOf(m, reset); return { m, sim, ok: man === null ? auto : man, auto, manual: man !== null, when }; })
       .sort((a, b) => a.ok - b.ok || a.m.name.localeCompare(b.m.name));
-    const missing = rows.filter(r => !r.ok), withDc = missing.filter(r => r.link);
-    const authors = Object.entries(state.dcAuthors).sort((a, b) => a[1].localeCompare(b[1]));
+    const missing = rows.filter(r => !r.ok);
     const dateTxt = new Date(reset).toLocaleString(S().lang, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.roTitle)}</h2></div><div class="hint">${esc(t.roHint(dateTxt))}</div>`
       + `<div class="ro-forms"><div class="ro-form"><b>${esc(t.roAddTitle)}</b><div class="ro-row"><input class="txt" id="roName" placeholder="${esc(t.roName)}" spellcheck="false"><input class="txt" id="roRealm" placeholder="${esc(t.roRealm)}" spellcheck="false"><button class="btn" data-ro="add">${esc(t.roAdd)}</button></div></div>`
       + `<div class="ro-form"><b>${esc(t.roImportTitle)}</b><div class="ro-row"><input class="txt" id="roGuild" placeholder="${esc(t.roGuild)}" spellcheck="false" value="${esc(S().rosterGuild || '')}"><input class="txt" id="roGRealm" placeholder="${esc(t.roRealm)}" spellcheck="false" value="${esc(S().rosterRealm || '')}">`
       + `<select id="roRegion">${['eu', 'us'].map(r => `<option value="${r}"${r === region ? ' selected' : ''}>${r.toUpperCase()}</option>`).join('')}</select>`
-      + `<select id="roRank"><option value="99">${esc(t.roAllRanks)}</option>${Array.from({ length: 10 }, (_, i) => `<option value="${i}"${Number(S().rosterRank ?? 99) === i ? ' selected' : ''}>${esc(t.roRankUpTo(i))}</option>`).join('')}</select>`
+      + `<button type="button" class="btn" data-ro="ranks" id="roRanksBtn" title="${esc(t.roRanksTitle)}">${esc(t.roRanksLabel)}: <b>${esc(rankSummary())}</b> ▾</button>`
       + `<button class="btn" data-ro="import">${esc(t.roImport)}</button></div></div></div></section>`;
     if (!state.roster.length) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;
     html += `<section class="panel card"><div class="card-head"><h2>${esc(t.roStatus(rows.length - missing.length, rows.length))}</h2><span class="spacer"></span><div class="card-tools">`
-      + `<select id="roRl" title="${esc(t.roRl)}"><option value="">${esc(t.roRlNone)}</option>${authors.map(([id, n]) => `<option value="${esc(id)}"${S().rlDiscord === id ? ' selected' : ''}>@${esc(n)}</option>`).join('')}</select>`
-      + `<button class="btn primary" data-ro="dm"${S().rlDiscord ? '' : ' disabled'}>${esc(t.roDm(missing.length))}</button><button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
-      + `<div class="hint">${esc(authors.length ? t.roRlHint : t.roRlNoAuthors)}</div>`
-      + `<div class="ptable-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th>${esc(t.roColDiscord)}</th><th></th></tr></thead><tbody>`
-      + rows.map(({ m, sim, ok, when, link }) => {
+      + `<button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
+      + `<div class="hint">${esc(t.roHintManual)}</div>`
+      + `<div class="ptable-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th></th></tr></thead><tbody>`
+      + rows.map(({ m, sim, ok, manual, when }) => {
         const col = m.cls ? (CLASS_COLORS[m.cls] || CLASS_COLORS[String(m.cls).toLowerCase().replace(/ /g, '')] || '') : (sim ? clsColor(sim) : '');
         const k = rosterKey(m);
+        const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (when ? `<span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '') : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
         return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></td>`
-          + `<td>${ok ? `<span class="ro-badge ok">✓ ${esc(t.roHasSim)}</span> <span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : `<span class="ro-badge bad">✗ ${esc(t.roMissing)}</span>${sim ? ` <span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : ''}`}</td>`
-          + `<td><select class="ro-link" data-ro-link="${esc(k)}"><option value="">${esc(link ? '' : t.roLinkNone)}</option>${authors.map(([id, n]) => `<option value="${esc(id)}"${link && link.id === id ? ' selected' : ''}>@${esc(n)}</option>`).join('')}${link && !state.dcAuthors[link.id] ? `<option value="${esc(link.id)}" selected>@${esc(link.name)}</option>` : ''}</select></td>`
+          + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '✗'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`
           + `<td><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
       }).join('') + `</tbody></table></div></section>`;
     return html;
@@ -1277,9 +1313,9 @@
       if (!state.roster.some(m => rosterKey(m) === charKey(name, realm))) state.roster.push({ name, realm });
       saveRoster(); render();
     } else if (a === 'import') {
-      const guild = $('#roGuild').value.trim(), realm = $('#roGRealm').value.trim(), region = $('#roRegion').value, maxRank = Number($('#roRank').value);
+      const guild = $('#roGuild').value.trim(), realm = $('#roGRealm').value.trim(), region = $('#roRegion').value, ranks = rankSel();
       if (!guild || !realm) return toast(t.roNeedGuild, true);
-      Object.assign(S(), { rosterGuild: guild, rosterRealm: realm, rosterRegion: region, rosterRank: maxRank }); persistSettings();
+      Object.assign(S(), { rosterGuild: guild, rosterRealm: realm, rosterRegion: region }); persistSettings();
       window.api.discordSet?.({ region });
       el.disabled = true;
       const slug = realm.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
@@ -1287,34 +1323,26 @@
       el.disabled = false;
       if (!r.ok) return toast(r.error === 'NOT_FOUND' ? t.roGuildNotFound : `${t.roImportError}: ${r.error}`, true);
       let added = 0;
-      for (const m of r.members.filter(x => x.rank <= maxRank)) {
+      if (!ranks.size) return toast(t.roRanksNone, true);
+      for (const m of r.members.filter(x => ranks.has(x.rank))) {
         if (state.roster.some(x => rosterKey(x) === charKey(m.name, m.realm))) continue;
         state.roster.push({ name: m.name, realm: m.realm, cls: String(m.cls || '').toLowerCase().replace(/ /g, '') }); added++;
       }
       saveRoster(); render(); toast(t.roImported(added, r.guild));
+    } else if (a === 'ranks') {
+      ranksModal();
     } else if (a === 'del') {
       state.roster = state.roster.filter(m => rosterKey(m) !== el.dataset.k); saveRoster(); render();
     } else if (a === 'clear') {
       const doIt = () => { state.roster = []; saveRoster(); render(); };
       S().confirmClear ? modal({ title: t.roClear, body: `<p>${esc(t.roClearConfirm)}</p>`, actions: [{ label: t.cancel }, { label: t.confirm, cls: 'danger', onclick: doIt }] }) : doIt();
-    } else if (a === 'dm') {
-      if (!S().rlDiscord) return toast(t.roRlNone, true);
-      const reset = lastReset(S().rosterRegion || 'eu');
-      const missing = state.roster.filter(m => { const sim = rosterSim(m); return !(sim && (sim.simDate || sim.fetchedAt || 0) >= reset); }).map(m => m.name).sort((x, y) => x.localeCompare(y));
-      el.disabled = true;
-      const r = await window.api.discordDm({ rl: S().rlDiscord, missing, total: state.roster.length });
-      el.disabled = false;
-      if (r.error) return toast(r.error === 'DM_COOLDOWN' ? t.roDmCooldown(Math.ceil((r.retry || 0) / 60000)) : r.error === 'NO_CHANNEL' ? t.roDmNoChannel : r.error === 'RL_NOT_IN_CHANNEL' ? t.roRlNotInChannel : r.error === 'DM_CLOSED' ? t.roDmClosed : `${t.roDmError}: ${r.error}`, true);
-      toast(t.roDmSent);
+    } else if (a === 'toggle') {
+      const m = state.roster.find(x => rosterKey(x) === el.dataset.k); if (!m) return;
+      const reset = lastReset(S().rosterRegion || 'eu'), sim = rosterSim(m), auto = !!(sim && (sim.simDate || sim.fetchedAt || 0) >= reset), now = manualOf(m, reset) === null ? auto : manualOf(m, reset);
+      // al volver al valor que dice la sim se quita la marca manual
+      if (!now === auto) delete state.roManual[el.dataset.k]; else state.roManual[el.dataset.k] = { v: !now, w: reset };
+      save('ninjaloot.roManual', state.roManual); render();
     }
-  });
-  document.addEventListener('change', e => {
-    if (e.target.id === 'roRl') { S().rlDiscord = e.target.value; persistSettings(); render(); return; }
-    const sel = e.target.closest?.('[data-ro-link]');
-    if (!sel) return;
-    if (sel.value) state.dcLinks[sel.dataset.roLink] = { id: sel.value, name: state.dcAuthors[sel.value] || sel.value };
-    else delete state.dcLinks[sel.dataset.roLink];
-    save('ninjaloot.dcLinks', state.dcLinks);
   });
 
   function openSettings(tab = 'general') {
@@ -1463,10 +1491,10 @@
       return { b, who, status: fixed.length ? 'ok' : who.length ? 'warn' : 'bad' };
     });
   }
-  const allBosses = () => state.bosses.groups.flatMap(g => g.bosses.map(b => ({ ...b, group: g.name })));
+  const allBosses = () => state.bosses.groups.flatMap(g => g.bosses.map(b => ({ ...b, name: trName(b.name), group: trName(g.name) })));
   // Jefes de la tabla de rotaciones: los de la temporada y, si se marca, una columna para el jefe de la raid nueva de la semana que viene
-  const rotGroups = () => [...state.bosses.groups, ...(S().vaultNew ? [{ id: -1, name: T().newRaidGroup, bosses: [{ id: -1, name: T().newRaidBoss }] }] : [])];
-  const rotBosses = () => rotGroups().flatMap(g => g.bosses.map(b => ({ ...b, group: g.name })));
+  const rotGroups = () => state.bosses.groups;
+  const rotBosses = () => rotGroups().flatMap(g => g.bosses.map(b => ({ ...b, name: trName(b.name), group: trName(g.name) })));
   const ST_SYM = { n: '✓', r: '✗', p: '?' };
   const persistRot = () => save('ninjaloot.rotations', state.rot);
   const buffIcon = b => `assets/ui/buff-${b.id}.png`;
@@ -1482,11 +1510,11 @@
     // Tabla: filas = personajes, columnas = jefes
     let head1 = '<th class="corner" rowspan="2">' + esc(t.rotPlayer) + '</th>', head2 = '';
     for (const g of rotGroups()) {
-      head1 += `<th class="grp" colspan="${g.bosses.length}">${esc(g.name)}</th>`;
+      head1 += `<th class="grp" colspan="${g.bosses.length}">${esc(trName(g.name))}</th>`;
       for (const b of g.bosses) {
         const cov = coverage(b.id), bad = cov.filter(c => c.status === 'bad').length, warn = cov.filter(c => c.status === 'warn').length;
         const cls = bad ? 'bad' : warn ? 'warn' : 'ok';
-        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><a href="#/rotations/${b.id}" data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}">${bossImg(b.id, 30)}<span class="bn">${esc(b.name)}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></a></th>`;
+        head2 += `<th class="bcol${b.id === state.bossSel ? ' sel' : ''}"><a href="#/rotations/${b.id}" data-boss="${b.id}" title="${esc(t.rotSeeBuffs)}">${bossImg(b.id, 30)}<span class="bn">${esc(trName(b.name))}</span><span class="pill ${cls}">${bad ? `−${bad}` : warn ? `!${warn}` : t.complete}</span></a></th>`;
       }
     }
     let rows = '';
@@ -1519,7 +1547,7 @@
             : `<span class="tag ${status}">${esc(status === 'ok' ? t.rotCovered : t.rotOnlyRotating)}</span><div class="bw">${who.map(w => esc(w.s.character.name)).join(', ')}</div>`}</div></div>`).join('')}</div></div>`;
     }
     content.innerHTML = `<div class="rot-warning" role="note"><span class="rw-icon">⚠</span><div><b>${esc(t.rotWarnTitle)}</b><p>${esc(t.rotWarnText)}</p></div></div>`
-      + `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
+      + `<div class="panel card rot-card"><div class="card-head"><div><h2>${esc(t.rotTitle)}</h2><div class="meta">${esc(rotWeekText())}</div></div><span class="spacer"></span>`
       + `<div class="legend"><span class="lg st-n">✓ ${esc(t.stN)}</span><span class="lg st-r">✗ ${esc(t.stR)}</span><span class="lg st-p">? ${esc(t.stP)}</span></div>`
       + (state.sims.length ? `<button class="btn small" data-rot-reset>${esc(t.rotResetAll)}</button>` : '') + `</div>`
       + `<div class="hint">${esc(t.rotHint)}</div>${table}</div>${vaultSection(bosses)}${buffs}`;
@@ -1527,7 +1555,7 @@
 
   // Cofre semanal de raid: solo cuentan los jefes marcados como "no rota" (todos empiezan en 0/6); 2, 4 y 6 jefes desbloquean cada hueco
   function vaultSection(bosses) {
-    const t = T(), extra = S().vaultNew ? 1 : 0, max = bosses.length;
+    const t = T(), max = bosses.length;
     if (!state.sims.length) return '';
     const cards = state.sims.map(sim => {
       const count = s => bosses.filter(b => cellState(b.id, sim.id) === s).length, kills = count('n'), col = clsColor(sim);
@@ -1535,8 +1563,7 @@
         + `<div class="v-count${kills >= 6 ? ' full' : ''}">${kills}/6</div><div class="v-slots">${[2, 4, 6].map(n => `<span class="v-slot${kills >= n ? ' on' : ''}">${Math.min(kills, n)}/${n}</span>`).join('')}</div>`
         + `<div class="meta">${esc(t.vaultCounts(kills, count('r'), count('p')))}</div></div>`;
     }).join('');
-    return `<div class="panel card"><div class="card-head"><div><h2>${esc(t.vaultTitle)}</h2><div class="meta">${esc(t.vaultMax(max))}</div></div><span class="spacer"></span>`
-      + `<label class="v-new"><input type="checkbox" id="vaultNew" ${extra ? 'checked' : ''}> ${esc(t.vaultNew)}</label></div>`
+    return `<div class="panel card"><div class="card-head"><div><h2>${esc(t.vaultTitle)}</h2><div class="meta">${esc(t.vaultMax(max))}</div></div><span class="spacer"></span></div>`
       + `<div class="hint">${esc(t.vaultHint)}</div><div class="vaults">${cards}</div></div>`;
   }
 
@@ -1733,7 +1760,6 @@
     if (gvc && e.target.matches('[data-gv-tier]')) { const tiers = gvWorld(gvc).tiers.slice(); tiers[Number(e.target.dataset.gvTier)] = e.target.value; gvWorldSet(gvc, { tiers }); state.animateNext = false; render(); return; }
     if (e.target.id === 'coinCount') { S().coins = Math.max(1, Math.min(20, Number(e.target.value) || 5)); persistSettings(); render(); return; }
     if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
-    if (e.target.id === 'vaultNew') { S().vaultNew = e.target.checked; persistSettings(); render(); return; }
   });
   // Arrastrar enlaces o texto sobre la ventana
   let dragDepth = 0;

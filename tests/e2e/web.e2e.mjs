@@ -135,4 +135,25 @@ test('las piezas de tier llevan a Wowhead en el idioma de la web', async () => {
   }
 });
 
+
+test('Roster: estado a mano (verde / rojo) sin Discord y rangos de guild con nombres', async () => {
+  const p = await open('#/roster');
+  await p.waitForSelector('#roName');
+  assert.ok(!(await p.$('#roRl')) && !(await p.$('[data-ro="dm"]')), 'ya no hay vinculación con Discord ni envío por DM');
+  await p.fill('#roName', 'Okita'); await p.fill('#roRealm', 'Zul-jin'); await p.click('[data-ro="add"]'); await p.waitForSelector('.ro-pill');
+  assert.ok(await p.$('.ro-pill.bad'), 'sin sim: sale en rojo (Falta)');
+  await p.click('.ro-pill'); await p.waitForSelector('.ro-pill.ok');
+  assert.ok(await p.$('.ro-man'), 'marcado a mano');
+  await p.click('.ro-pill'); await p.waitForSelector('.ro-pill.bad');
+  assert.ok(!(await p.$('.ro-man')), 'al volver a lo automático se quita la marca');
+  // rangos con nombre
+  await p.click('#roRanksBtn'); await p.waitForSelector('.rk-row');
+  assert.equal(await p.$$eval('.rk-row', (e) => e.length), 10);
+  await p.click('[data-rk-preset="none"]'); await p.fill('[data-rkname="1"]', 'Raiders'); await p.check('[data-rk="1"]'); await p.check('[data-rk="3"]');
+  await p.click('.modal-foot .primary'); await p.waitForTimeout(300);
+  const label = await p.$eval('#roRanksBtn', (e) => e.innerText);
+  assert.match(label, /Raiders/);
+  noErrors(p);
+});
+
 await runAll();
