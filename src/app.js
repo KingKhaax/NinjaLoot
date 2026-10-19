@@ -957,6 +957,21 @@
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
+  // Pulsar el nombre de Discord o de Battle.net: se copia el nombre y se abre la aplicación para agregarlo como amigo
+  // (ninguna de las dos permite enlaces para agregar por nombre, así que se pega en «Agregar amigo»)
+  document.addEventListener('click', async e => {
+    const a = e.target.closest('[data-friend]');
+    if (!a) return;
+    e.preventDefault();
+    const name = a.dataset.name, dc = a.dataset.friend === 'discord';
+    let copied = false;
+    try { await navigator.clipboard.writeText(name); copied = true; } catch {
+      try { const x = document.createElement('textarea'); x.value = name; x.style.position = 'fixed'; x.style.opacity = '0'; document.body.appendChild(x); x.select(); copied = document.execCommand('copy'); x.remove(); } catch { /* sin portapapeles */ }
+    }
+    toast(copied ? T().friendCopied(name, dc ? 'Discord' : 'Battle.net') : name);
+    const web = /^https?:$/.test(location.protocol);
+    try { const u = web ? (dc ? 'https://discord.com/channels/@me' : '') : (dc ? 'discord://-/channels/@me' : 'battlenet://'); if (u) window.api.openExternal(u); } catch { /* sin la aplicación */ }
+  });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
 
@@ -1291,8 +1306,8 @@
           + `<h2>NinjaLoot <span class="v">v${esc(state.info.version)}</span></h2>`
           + `<p class="about-desc">${esc(t.aboutDesc)} <span class="about-es">${esc(t.spain)} <svg viewBox="0 0 3 2" width="30" height="20" aria-label="ES" style="border-radius:3px"><rect width="3" height="2" fill="#c60b1e"/><rect y=".5" width="3" height="1" fill="#ffc400"/></svg></span></p>`
           + `<p>${esc(t.madeBy)} <b>Drakko</b> <span class="heart">♥</span></p>`
-          + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <b>sr.kitkat</b> <span class="muted">${esc(t.questions)}</span></p>`
-          + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <b>KitKat#21202</b> <span class="muted">${esc(t.questions)}</span></p>`
+          + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <a href="#" class="about-friend" data-friend="discord" data-name="sr.kitkat" title="${esc(t.friendTipDc)}"><b>sr.kitkat</b></a> <span class="muted">${esc(t.questions)}</span></p>`
+          + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <a href="#" class="about-friend" data-friend="battlenet" data-name="KitKat#21202" title="${esc(t.friendTipBn)}"><b>KitKat#21202</b></a> <span class="muted">${esc(t.questions)}</span></p>`
           + `</div></div>`,
       };
       back.innerHTML = `<div class="panel modal settings" role="dialog" aria-modal="true"><aside class="side"><h2>${esc(t.settingsTitle)}</h2>`
