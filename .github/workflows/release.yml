@@ -1,4 +1,4 @@
-# Compila NinjaLoot en GitHub, lo firma (con el certificado de Certum SimplySign o con SignPath, el que esté configurado) y publica la release.
+# Compila NinjaLoot en GitHub, lo firma con SignPath (si está configurado) y publica la release.
 # Se lanza solo al subir a main un cambio de la app (src/, main.js, package.json…) o a mano: Actions -> "Release" -> Run workflow.
 # Si cambia la app sin subir la "version", avisa con una advertencia: ni la web ni los .exe se actualizan (así siempre son la misma versión).
 # Al terminar la release publica también la web (GitHub Pages) con el mismo commit.
@@ -85,45 +85,20 @@ jobs:
         id: sign
         shell: pwsh
         run: |
+          $ready = -not [string]::IsNullOrEmpty($env:SP_TOKEN) -and -not [string]::IsNullOrEmpty($env:SP_ORG)
           $want = '${{ github.event_name }}' -eq 'push' -or '${{ inputs.sign }}' -eq 'true'
-          $spReady = -not [string]::IsNullOrEmpty($env:SP_TOKEN) -and -not [string]::IsNullOrEmpty($env:SP_ORG)
-          $ctReady = -not [string]::IsNullOrEmpty($env:CT_USER) -and -not [string]::IsNullOrEmpty($env:CT_TOTP)
-          # Certum (certificado propio en SimplySign) tiene prioridad; si no está, SignPath; si ninguno, se compila SIN firmar
-          $certum = $want -and $ctReady
-          $on = $want -and -not $ctReady -and $spReady
-          if ($want -and -not $ctReady -and -not $spReady) { "::warning::Ni Certum (CERTUM_USERNAME y CERTUM_TOTP_SECRET) ni SignPath (SIGNPATH_API_TOKEN y SIGNPATH_ORGANIZATION_ID) están configurados: se compila SIN firmar." }
+          $on = $want -and $ready
+          if ($want -and -not $ready) { "::warning::SignPath aún no está configurado (falta SIGNPATH_API_TOKEN o SIGNPATH_ORGANIZATION_ID): se compila SIN firmar." }
           "on=$($on.ToString().ToLower())" >> $env:GITHUB_OUTPUT
-          "certum=$($certum.ToString().ToLower())" >> $env:GITHUB_OUTPUT
         env:
           SP_TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
           SP_ORG: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
-          CT_USER: ${{ secrets.CERTUM_USERNAME }}
-          CT_TOTP: ${{ secrets.CERTUM_TOTP_SECRET }}
 
       - run: npm ci
 
       # 1) Empaquetar la app (sin instalador) y firmar NinjaLoot.exe
       - name: Empaquetar app
         run: npx electron-builder --win dir --publish never
-
-      # Certum SimplySign: la sesión se abre una vez (código TOTP) y vale para firmar la app y, más abajo, los instaladores.
-      # Los códigos TOTP son de un solo uso: la concurrencia «release» del workflow impide dos firmas a la vez.
-      - name: Abrir sesión de firma (Certum SimplySign)
-        if: steps.sign.outputs.certum == 'true'
-        id: certum
-        uses: jay0lee/certum-cloud-code-sign@a3324503499c49090869856eeeecfe95fb613d87
-        with:
-          username: ${{ secrets.CERTUM_USERNAME }}
-          totp_secret: ${{ secrets.CERTUM_TOTP_SECRET }}
-
-      - name: Firmar NinjaLoot.exe (Certum)
-        if: steps.sign.outputs.certum == 'true'
-        shell: pwsh
-        run: |
-          & "${{ steps.certum.outputs.signtool-path }}" sign /sha1 ${{ steps.certum.outputs.cert-thumbprint }} /tr http://time.certum.pl /td SHA256 /fd SHA256 "dist/win-unpacked/NinjaLoot.exe"
-          if ($LASTEXITCODE) { throw "No se pudo firmar NinjaLoot.exe" }
-          & "${{ steps.certum.outputs.signtool-path }}" verify /pa "dist/win-unpacked/NinjaLoot.exe"
-          if ($LASTEXITCODE) { throw "La firma de NinjaLoot.exe no es válida" }
 
       - name: Subir NinjaLoot.exe sin firmar
         if: steps.sign.outputs.on == 'true'
@@ -157,21 +132,6 @@ jobs:
       # 2) Instalador y portable a partir de la app ya firmada, y firmarlos
       - name: Crear instalador y portable
         run: npx electron-builder --win nsis portable --prepackaged dist/win-unpacked --publish never
-
-      - name: Firmar instalador y portable (Certum)
-        if: steps.sign.outputs.certum == 'true'
-        shell: pwsh
-        run: |
-          foreach ($f in @("dist/NinjaLoot v${{ steps.ver.outputs.version }} Setup.exe", "dist/NinjaLoot v${{ steps.ver.outputs.version }}.exe")) {
-            & "${{ steps.certum.outputs.signtool-path }}" sign /sha1 ${{ steps.certum.outputs.cert-thumbprint }} /tr http://time.certum.pl /td SHA256 /fd SHA256 $f
-            if ($LASTEXITCODE) { throw "No se pudo firmar $f" }
-            & "${{ steps.certum.outputs.signtool-path }}" verify /pa $f
-            if ($LASTEXITCODE) { throw "La firma de $f no es válida" }
-          }
-
-      - name: Cerrar sesión de firma (Certum)
-        if: always() && steps.sign.outputs.certum == 'true'
-        uses: jay0lee/certum-cloud-code-sign/teardown@a3324503499c49090869856eeeecfe95fb613d87
 
       - name: Subir instaladores sin firmar
         if: steps.sign.outputs.on == 'true'
