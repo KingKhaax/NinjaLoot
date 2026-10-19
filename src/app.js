@@ -970,7 +970,9 @@
     }
     toast(copied ? T().friendCopied(name, dc ? 'Discord' : 'Battle.net') : name);
     const web = /^https?:$/.test(location.protocol);
-    try { const u = web ? (dc ? 'https://discord.com/channels/@me' : '') : (dc ? 'discord://-/channels/@me' : 'battlenet://'); if (u) window.api.openExternal(u); } catch { /* sin la aplicación */ }
+    const scheme = dc ? 'discord://-/channels/@me' : 'battlenet://';
+    // en el programa lo abre el sistema; en la web el navegador pregunta si abre la aplicación instalada (no la versión web de Discord)
+    try { if (web) location.href = scheme; else window.api.openExternal(scheme); } catch { /* sin la aplicación */ }
   });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
@@ -1281,22 +1283,25 @@
     const close = () => back.remove();
     const draw = view => {
       const t = T(), s = S();
-      const tabs = [['general', t.tabGeneral], ['appearance', t.tabAppearance], ['discord', t.tabDiscord], ['update', t.tabUpdate], ['about', t.tabAbout]];
+      const tabs = [['general', t.tabGeneral], ['lists', t.tabLists], ['appearance', t.tabAppearance], ['discord', t.tabDiscord], ['update', t.tabUpdate], ['about', t.tabAbout]];
       const check = (key, label) => `<div class="row"><label for="s-${key}">${esc(label)}</label><input type="checkbox" id="s-${key}" data-key="${key}" ${s[key] ? 'checked' : ''}></div>`;
       const cur = k => hex((s.colors || {})[k]) || hex(getComputedStyle(document.documentElement).getPropertyValue(`--${k}`).trim()) || '#000000';
       const views = {
         general: () => `<div class="row"><label>${S().lang === 'en' ? 'Server time' : 'Hora del servidor'}</label>${ServerClock.selectHTML()}</div>`
           + `<div class="row"><label>${esc(t.language)}</label><select data-key="lang">${LANGS.map(([c, n]) => `<option value="${c}" ${s.lang === c ? 'selected' : ''}>${n}</option>`).join('')}</select></div>`
-          + `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
+          + check('persist', t.persist) + check('confirmClear', t.confirmClear)
+          + `<div class="small-note">${esc(t.shortcuts)}</div>`
+          + `<div class="row reset-row"><div><b>${esc(t.resetAll)}</b><div class="small-note">${esc(t.resetHint)}</div></div><button class="btn danger" data-reset-all>${esc(t.resetAll)}</button></div>`,
+        lists: () => `<div class="row"><label>${esc(t.topN)}</label><select data-key="topN">${[5, 10, 15, 20, 30, 0].map(n => `<option value="${n}" ${s.topN === n ? 'selected' : ''}>${n === 0 ? esc(t.all) : n}</option>`).join('')}</select></div>`
           + `<div class="row"><label>${esc(t.minGain)}</label><input type="number" min="0" step="50" style="width:110px" data-key="minGain" value="${Number(s.minGain) || 0}"></div>`
-          + check('checkGear', t.checkGear) + `<div class="row"><label>${esc(t.staleDays)}</label><input type="number" min="1" max="60" style="width:90px" data-key="staleDays" value="${Number(s.staleDays) || 7}"></div>` + check('showValues', t.showValues) + check('showCaution', t.showCaution) + check('tooltips', t.tooltips) + check('chartTall', t.chartTall) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>` + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact)
-          + check('animations', t.animations) + check('persist', t.persist) + check('confirmClear', t.confirmClear)
-          + `<div class="small-note">${esc(t.shortcuts)}</div>`,
+          + check('checkGear', t.checkGear) + `<div class="row"><label>${esc(t.staleDays)}</label><input type="number" min="1" max="60" style="width:90px" data-key="staleDays" value="${Number(s.staleDays) || 7}"></div>`
+          + check('showCaution', t.showCaution) + `<div class="row"><label>${esc(t.cautionGap)}</label><input type="number" min="1" max="100" style="width:90px" data-key="cautionGap" value="${Number(s.cautionGap) || 15}"></div>`,
         appearance: () => `<div class="row"><label>${esc(t.theme)}</label><div class="seg">${[['dark', t.themeDark], ['light', t.themeLight], ['auto', t.themeAuto]].map(([k, l]) => `<button data-set-theme="${k}" class="${s.theme === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div></div>`
           + `<div class="row"><label>${esc(t.font)}</label><select data-key="font">${Object.entries(FONTS).map(([k, v]) => `<option value="${k}" ${s.font === k ? 'selected' : ''}>${v[0]}${k === 'noto' ? ` (${esc(t.fontDefault)})` : ''}</option>`).join('')}</select></div>`
           + (s.font === 'expressway' && !fontInstalled('Expressway') ? `<div class="small-note warn">${esc(t.fontMissing)}</div>` : '')
-          + `<div class="row"><label>${esc(t.fontScale)}</label><select data-key="fontScale">${[90, 100, 110, 120, 130].map(n => `<option value="${n}" ${Number(s.fontScale) === n ? 'selected' : ''}>${n}%</option>`).join('')}</select></div>`
+          + `<div class="row"><label>${esc(t.fontScale)}</label><span class="range-row"><input type="range" min="90" max="130" step="5" data-key="fontScale" value="${Number(s.fontScale) || 100}"><output>${Number(s.fontScale) || 100} %</output></span></div>`
           + `<div class="row"><label>${esc(t.density)}</label><select data-key="density"><option value="normal" ${s.density !== 'compact' ? 'selected' : ''}>${esc(t.densityNormal)}</option><option value="compact" ${s.density === 'compact' ? 'selected' : ''}>${esc(t.densityCompact)}</option></select></div>`
+          + `<h3>${esc(t.groupDisplay)}</h3>` + check('showValues', t.showValues) + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact) + check('chartTall', t.chartTall) + check('tooltips', t.tooltips) + check('animations', t.animations)
           + `<h3>${esc(t.customColors)}</h3><div class="colors">`
           + [['bg', t.colorBg], ['panel', t.colorPanel], ['accent', t.colorAccent], ['text', t.colorText]].map(([k, l]) => `<label>${esc(l)}<input type="color" data-color="${k}" value="${cur(k)}"></label>`).join('')
           + `</div><button class="btn small" data-reset-colors>${esc(t.resetColors)}</button>`,
@@ -1304,7 +1309,7 @@
         update: () => `<div id="updBox"></div>`,
         about: () => `<div class="about big"><img src="assets/logo.png" alt="" width="120" height="120"><div>`
           + `<h2>NinjaLoot <span class="v">v${esc(state.info.version)}</span></h2>`
-          + `<p class="about-desc">${esc(t.aboutDesc)} <span class="about-es">${esc(t.spain)} <svg viewBox="0 0 3 2" width="30" height="20" aria-label="ES" style="border-radius:3px"><rect width="3" height="2" fill="#c60b1e"/><rect y=".5" width="3" height="1" fill="#ffc400"/></svg></span></p>`
+          + `<p class="about-desc">${esc(t.aboutDesc)} <span class="about-es"><svg viewBox="0 0 3 2" width="30" height="20" role="img" aria-label="${esc(t.spain)}" style="border-radius:3px"><title>${esc(t.spain)}</title><rect width="3" height="2" fill="#c60b1e"/><rect y=".5" width="3" height="1" fill="#ffc400"/></svg></span></p>`
           + `<p>${esc(t.madeBy)} <b>Drakko</b> <span class="heart">♥</span></p>`
           + `<p class="about-dc first"><svg viewBox="0 0 127.14 96.36" width="26" height="20" aria-hidden="true"><path fill="#5865F2" d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.11 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.1 105.25 105.25 0 0 0 32.19-16.14c2.64-27.38-4.51-51.11-18.9-72.15ZM42.45 65.69C36.18 65.69 31 60 31 53s5-12.74 11.43-12.74S54 46 53.89 53s-5.05 12.69-11.44 12.69Zm42.24 0C78.41 65.69 73.25 60 73.25 53s5-12.74 11.44-12.74S96.23 46 96.12 53s-5.04 12.69-11.43 12.69Z"/></svg> <a href="#" class="about-friend" data-friend="discord" data-name="sr.kitkat" title="${esc(t.friendTipDc)}"><b>sr.kitkat</b></a> <span class="muted">${esc(t.questions)}</span></p>`
           + `<p class="about-dc"><img src="assets/battlenet.png" width="26" height="26" alt="" style="border-radius:6px"> <a href="#" class="about-friend" data-friend="battlenet" data-name="KitKat#21202" title="${esc(t.friendTipBn)}"><b>KitKat#21202</b></a> <span class="muted">${esc(t.questions)}</span></p>`
@@ -1324,16 +1329,23 @@
       const th = e.target.closest('[data-set-theme]'); if (th) { S().theme = th.dataset.setTheme; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); return; }
       if (e.target.closest('[data-dc-save]')) return saveDiscord(back.querySelector('#dcBox'));
       if (e.target.closest('[data-dc-invite]')) return inviteDiscord();
+      const rs = e.target.closest('[data-reset-all]');
+      if (rs) { // dos pasos: el primer clic pide confirmar y se anula solo a los 5 s
+        if (!rs.dataset.sure) { rs.dataset.sure = '1'; rs.textContent = T().resetSure; setTimeout(() => { if (rs.isConnected) { delete rs.dataset.sure; rs.textContent = T().resetAll; } }, 5000); return; }
+        const cur = S(); Object.keys(cur).forEach(k => delete cur[k]); Object.assign(cur, JSON.parse(JSON.stringify(DEFAULTS)));
+        persistSettings(); applyTheme(); toast(T().resetDone); draw('general'); state.animateNext = false; render(); return;
+      }
       if (e.target.closest('[data-reset-colors]')) { S().colors = null; persistSettings(); applyTheme(); draw('appearance'); state.animateNext = false; render(); }
     });
     back.addEventListener('input', e => {
+      if (e.target.type === 'range' && e.target.nextElementSibling) e.target.nextElementSibling.textContent = `${e.target.value} %`;
       const c = e.target.closest('[data-color]');
       if (c) { S().colors = { ...(S().colors || {}), [c.dataset.color]: c.value }; persistSettings(); applyTheme(); state.animateNext = false; render(); }
     });
     back.addEventListener('change', e => {
       const el = e.target.closest('[data-key]'); if (!el) return;
       const key = el.dataset.key, s = S();
-      s[key] = el.type === 'checkbox' ? el.checked : el.tagName === 'SELECT' && !['lang', 'font', 'density'].includes(key) ? Number(el.value) : el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value;
+      s[key] = el.type === 'checkbox' ? el.checked : el.type === 'range' ? Number(el.value) : el.tagName === 'SELECT' && !['lang', 'font', 'density'].includes(key) ? Number(el.value) : el.type === 'number' ? Math.max(0, Number(el.value) || 0) : el.value;
       persistSettings();
       if (key === 'persist') persistSims();
       if (key === 'checkGear') refreshGear();
@@ -1523,7 +1535,14 @@
     box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(cur)}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
       + `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`
       + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
-      + `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog">${log.map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('')}</div>`;
+      + `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>${log.length > 10 ? `<button class="btn small" id="chlogMore" data-chlog-more></button>` : ''}`;
+    let all = false;
+    const paintLog = () => {
+      box.querySelector('#chlog').innerHTML = (all ? log : log.slice(0, 10)).map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('');
+      const m = box.querySelector('#chlogMore'); if (m) m.textContent = all ? t.showLess : t.showMore(log.length - 10);
+    };
+    paintLog();
+    box.querySelector('#chlogMore')?.addEventListener('click', () => { all = !all; paintLog(); });
     const status = (cls, msg) => { const el = box.querySelector('#verStatus'); if (el) { el.className = `ver-status ${cls}`; el.textContent = msg; } };
     const note = msg => { const n = box.querySelector('#updNote'); if (n) n.textContent = msg; };
     box.querySelector('#autoUpd').addEventListener('change', e => { S().autoUpdateCheck = e.target.checked; persistSettings(); });

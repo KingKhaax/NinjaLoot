@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.2.5', 'Ajustes renovados: nueva pestaña Listas (límites y avisos), lo que se muestra pasa a Apariencia, el tamaño de la interfaz es un deslizador, la densidad se llama Cómoda y «Restablecer todos los ajustes» pide confirmación. El historial muestra las últimas 10 versiones con «Ver más». Pulsar Discord o Battle.net en Acerca de abre la aplicación instalada, y la bandera de España va sin el texto.'],
     ['1.2.4', 'En Acerca de, al pulsar el nombre de Discord o de Battle.net se copia el nombre y se abre la aplicación para agregarlo como amigo.'],
     ['1.2.3', 'En la app de escritorio los enlaces internos siempre se abren dentro de la ventana (Mayús o Ctrl + clic solo abren otra ventana en la versión web).'],
     ['1.2.2', 'Cada pantalla tiene ahora su propia dirección (#/tiers, #/charts, #/rotations…): el botón Atrás del navegador vuelve a la pantalla anterior, F5 se queda donde estabas, y los enlaces de la barra se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic).'],
@@ -56,6 +57,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.2.5', 'Settings revamp: new Lists tab (limits and warnings), display options move to Appearance, the interface size is a slider, density is called Comfortable and “Reset all settings” asks for confirmation. The history shows the latest 10 versions with “Show more”. Clicking Discord or Battle.net in About opens the installed app, and the Spain flag shows without the text.'],
     ['1.2.4', 'In About, clicking the Discord or Battle.net name copies it and opens the app so you can add it as a friend.'],
     ['1.2.3', 'In the desktop app internal links always open inside the window (Shift or Ctrl + click only open another window on the web version).'],
     ['1.2.2', 'Every screen now has its own address (#/tiers, #/charts, #/rotations…): the browser Back button returns to the previous screen, F5 keeps you where you were, and the bar links open in a new window with Shift + click (or a new tab with Ctrl + click).'],

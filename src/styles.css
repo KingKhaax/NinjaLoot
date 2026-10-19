@@ -591,3 +591,10 @@ a.navbtn, a.btn { text-decoration: none; }
 
 .about-friend { color: inherit; text-decoration: none; cursor: pointer; border-bottom: 1px dashed currentColor; }
 .about-friend:hover { color: var(--accent, #8fd14f); }
+
+/* Ajustes: restablecer y deslizador de tamaño */
+.reset-row { margin-top: 18px; align-items: center; gap: 14px; }
+.reset-row .small-note { margin: 2px 0 0; }
+.range-row { display: inline-flex; align-items: center; gap: 10px; }
+.range-row input[type=range] { width: 170px; }
+.range-row output { min-width: 52px; font-variant-numeric: tabular-nums; color: var(--muted); }
