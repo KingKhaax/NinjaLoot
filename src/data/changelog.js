@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.4.7', 'Los iconos de la barra superior (Inicio, Tiers, Simulación personal, Gráficas, Rotaciones, Roster, Idioma y Ajustes) y el resto de iconos de interfaz se ven menos ampliados: se recorta solo su marco, igual que en WipeTime.'],
     ['1.4.6', 'La portada siempre tiene la dirección limpia (ninjaloot.vercel.app), sin «#/», también al volver a Inicio o al abrir un enlace guardado con «#/», igual que WipeTime.'],
     ['1.4.5', 'La pestaña del navegador pone solo «NinjaLoot» en la portada, sin «· Inicio», igual que WipeTime. Las demás pantallas siguen mostrando su nombre.'],
     ['1.4.4', 'La portada ya no añade «#/» al final de la dirección al abrir NinjaLoot (queda ninjaloot.vercel.app limpio, como WipeTime). Las demás pantallas siguen teniendo su propia URL.'],
@@ -64,6 +65,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.4.7', 'The top bar icons (Home, Tiers, Personal sim, Charts, Rotations, Roster, Language and Settings) and the other interface icons are less zoomed in: only their frame is trimmed, like in WipeTime.'],
     ['1.4.6', 'The home page always has the clean address (ninjaloot.vercel.app), without “#/”, also when returning to Home or opening a saved link with “#/”, like WipeTime.'],
     ['1.4.5', 'The browser tab now says just “NinjaLoot” on the home page, without “· Home”, like WipeTime. The other screens still show their name.'],
     ['1.4.4', 'The home page no longer adds “#/” to the end of the address when NinjaLoot opens (it stays a clean ninjaloot.vercel.app, like WipeTime). The other screens still have their own URL.'],

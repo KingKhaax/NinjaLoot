@@ -144,7 +144,7 @@ select:focus, input[type=number]:focus { outline: none; border-color: var(--acce
 
 /* Iconos de interfaz (iconos de WoW) */
 /* Los iconos de Clean Icons traen un marco negro y un borde oscurecido: se recortan para que se vean limpios */
-.uiicon { width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; flex: none; object-view-box: inset(13%); }
+.uiicon { width: 20px; height: 20px; border-radius: 4px; vertical-align: middle; flex: none; object-view-box: inset(6.5%); }
 .btn .uiicon { margin: -3px 7px -3px 0; }
 .btn.small .uiicon { width: 16px; height: 16px; margin-right: 5px; }
 .btn.small[title] .uiicon:only-child, .btn.ghost.small .uiicon { margin-right: 0; }
