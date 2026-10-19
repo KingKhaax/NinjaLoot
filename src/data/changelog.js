@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.4.3', 'Cada vez que copias algo en NinjaLoot sale un aviso en medio de la pantalla («Se ha copiado al portapapeles»), y el historial de versiones de Ajustes pasa a tarjetas con iconos de World of Warcraft, un resumen y los cambios por secciones.'],
     ['1.4.2', 'Seguridad: se elimina del servidor y de la app el envío de mensajes privados por Discord (ya no se usaba), así que el bot solo puede leer los enlaces de Raidbots del canal.'],
     ['1.4.1', 'La portada ahora es «#/» como en WipeTime (los enlaces antiguos «#/home» siguen funcionando).'],
     ['1.4.0', 'Con la web en español las bandas y los jefes de la temporada salen en español (El Abismo Venenoso, La Gruta Ligada a la Marea, El Desatamiento de Kith’ix…). Rotaciones: en vez de «Midnight Season 2» pone la semana actual, de reinicio a reinicio («Rotaciones desde el 14 de Octubre hasta el 21 de Octubre»), y se quitan «Raid nueva» y «Jefe nuevo». Modo captura sin el logo ni el enlace de GitHub. Roster: se quita la vinculación con Discord y el envío por mensaje privado; ahora cada personaje se marca a mano pulsando su estado (verde: no falta, rojo: falta) y la marca se borra sola en el reinicio. Rangos de la guild con nombres propios (Raiders, Alters, Oficiales…) y selección libre de qué rangos importar.'],
@@ -60,6 +61,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.4.3', 'Every time you copy something in NinjaLoot a notice appears in the middle of the screen (“Copied to the clipboard”), and the version history in Settings becomes cards with World of Warcraft icons, a summary and the changes by section.'],
     ['1.4.2', 'Security: sending direct messages through Discord is removed from the server and the app (it was no longer used), so the bot can only read the Raidbots links in the channel.'],
     ['1.4.1', 'The home page is now “#/” like in WipeTime (old “#/home” links keep working).'],
     ['1.4.0', 'With the website in Spanish the season’s raids and bosses appear in Spanish (El Abismo Venenoso, La Gruta Ligada a la Marea, El Desatamiento de Kith’ix…). Rotations: instead of “Midnight Season 2” it shows the current week, reset to reset (“Rotations from October 14 to October 21”), and “New raid” and “New boss” are removed. Capture mode without the logo or the GitHub link. Roster: Discord linking and direct-message sending are removed; each character is now set by hand by clicking its status (green: not missing, red: missing) and the mark clears itself at the reset. Guild ranks with your own names (Raiders, Alts, Officers…) and a free choice of which ranks to import.'],
@@ -118,3 +120,104 @@ const CHANGELOG = {
     ['0.1.0', 'First version: item upgrade charts from Raidbots sims.'],
   ],
 };
+
+// Historial con aspecto de «notas del parche»: cada versión es una tarjeta con icono, un resumen y secciones con iconos de World of Warcraft.
+// Las versiones que no están en RICH_LOG se muestran igual, troceando su texto en frases (con un icono según de qué hablan).
+const RICH_LOG = {
+  '1.4.3': {
+    es: { intro: 'Cada vez que copias algo en NinjaLoot sale un aviso en medio de la pantalla, y el historial de versiones estrena este diseño.', sections: [
+      ['inv_scroll_03', 'Avisos al copiar', ['Al copiar un enlace para compartir, la imagen del modo captura o los nombres de Discord y Battle.net sale «Se ha copiado al portapapeles» en el centro de la pantalla.', 'Si no se puede copiar, el aviso sale en rojo y dice qué hacer.']],
+      ['inv_misc_note_06', 'Historial de versiones', ['Cada versión es una tarjeta con iconos de World of Warcraft, un resumen y sus cambios por secciones.', 'Las versiones antiguas se reparten solas en frases, cada una con su icono.']],
+    ] },
+    en: { intro: 'Every time you copy something in NinjaLoot a notice appears in the middle of the screen, and the version history gets this new look.', sections: [
+      ['inv_scroll_03', 'Copy notices', ['Copying a share link, the capture-mode image or the Discord and Battle.net names shows “Copied to the clipboard” in the center of the screen.', 'If it cannot be copied the notice turns red and says what to do.']],
+      ['inv_misc_note_06', 'Version history', ['Each version is a card with World of Warcraft icons, a summary and its changes by section.', 'Older versions are split into sentences automatically, each with its own icon.']],
+    ] },
+  },
+  '1.4.2': {
+    es: { intro: 'Seguridad: el bot de Discord ya solo puede leer.', sections: [
+      ['inv_shield_04', 'Seguridad', ['Se elimina del servidor y de la app el envío de mensajes privados por Discord (ya no se usaba).', 'El bot solo puede leer los enlaces de Raidbots del canal.']],
+    ] },
+    en: { intro: 'Security: the Discord bot can only read now.', sections: [
+      ['inv_shield_04', 'Security', ['Sending direct messages through Discord is removed from the server and the app (it was no longer used).', 'The bot can only read the Raidbots links in the channel.']],
+    ] },
+  },
+  '1.4.1': {
+    es: { intro: 'La portada ahora es «#/», igual que en WipeTime.', sections: [
+      ['inv_misc_net_01', 'Direcciones', ['Los enlaces antiguos «#/home» siguen funcionando.']],
+    ] },
+    en: { intro: 'The home page is now “#/”, like in WipeTime.', sections: [
+      ['inv_misc_net_01', 'Addresses', ['Old “#/home” links keep working.']],
+    ] },
+  },
+  '1.4.0': {
+    es: { intro: 'Bandas en español, rotaciones por semana, roster a mano y rangos con nombre.', sections: [
+      ['inv_misc_book_11', 'En español', ['Con la web en español las bandas y los jefes de la temporada salen en español (El Abismo Venenoso, La Gruta Ligada a la Marea, El Desatamiento de Kith’ix…).']],
+      ['ability_warrior_innerrage', 'Rotaciones', ['En vez de «Midnight Season 2» pone la semana actual, de reinicio a reinicio («Rotaciones desde el 14 de Octubre hasta el 21 de Octubre»).', 'Se quitan «Raid nueva» y «Jefe nuevo».']],
+      ['inv_scroll_03', 'Modo captura', ['La imagen sale sin el logo ni el enlace de GitHub.']],
+      ['inv_shirt_guildtabard_01', 'Roster y rangos', ['Se quita la vinculación con Discord y el envío por mensaje privado: cada personaje se marca a mano pulsando su estado (verde: no falta, rojo: falta) y la marca se borra sola en el reinicio.', 'Rangos de la guild con tus propios nombres (Raiders, Alters, Oficiales…) y elección libre de qué rangos importar.']],
+    ] },
+    en: { intro: 'Raids in Spanish, weekly rotations, hand-set roster and named ranks.', sections: [
+      ['inv_misc_book_11', 'In Spanish', ['With the website in Spanish the season’s raids and bosses appear in Spanish (El Abismo Venenoso, La Gruta Ligada a la Marea, El Desatamiento de Kith’ix…).']],
+      ['ability_warrior_innerrage', 'Rotations', ['Instead of “Midnight Season 2” it shows the current week, reset to reset (“Rotations from October 14 to October 21”).', '“New raid” and “New boss” are removed.']],
+      ['inv_scroll_03', 'Capture mode', ['The image comes out without the logo or the GitHub link.']],
+      ['inv_shirt_guildtabard_01', 'Roster and ranks', ['Discord linking and direct-message sending are removed: each character is set by hand by clicking its status (green: not missing, red: missing) and the mark clears itself at the reset.', 'Guild ranks with your own names (Raiders, Alts, Officers…) and a free choice of which ranks to import.']],
+    ] },
+  },
+  '1.3.1': {
+    es: { intro: 'Copiar con aviso, objetos que llevan a Wowhead y efectos al pasar el ratón.', sections: [
+      ['inv_scroll_03', 'Copiar', ['Pulsar el nombre de Discord o de Battle.net lo copia al portapapeles con un aviso en medio de la pantalla; ya no se abre ninguna aplicación.']],
+      ['inv_chest_plate04', 'Objetos', ['Pulsar un objeto (cuadrados de «Dónde tirar moneda», piezas de tier y listas) abre su página de Wowhead en el idioma de la web.', 'Los cuadrados de objeto brillan y se levantan al pasar el ratón.']],
+      ['inv_misc_book_11', 'Cofre semanal', ['Dice «Delves y cacerías» en vez de «bajadas y presas».']],
+    ] },
+    en: { intro: 'Copy with a notice, items that lead to Wowhead and hover effects.', sections: [
+      ['inv_scroll_03', 'Copy', ['Clicking the Discord or Battle.net name copies it to the clipboard with a notice in the middle of the screen; no app is opened anymore.']],
+      ['inv_chest_plate04', 'Items', ['Clicking an item (the “Where to use a coin” boxes, tier pieces and lists) opens its Wowhead page in the website language.', 'Item boxes glow and lift on hover.']],
+      ['inv_misc_book_11', 'Weekly vault', ['The Spanish wording is fixed (“Delves y cacerías” instead of “bajadas y presas”).']],
+    ] },
+  },
+  '1.3.0': {
+    es: { intro: 'Cambios de equipo más fiables, Versión y Acerca de unidos y la pestaña Discord revisada.', sections: [
+      ['inv_chest_plate04', 'Cambios de equipo', ['Ya no salen cambiados por error: NinjaLoot compara con la fecha de los datos de Raider.IO (si son anteriores a la sim no se avisa), la nota dice de cuándo son y cada cambio tiene un botón «Es correcto».']],
+      ['inv_misc_note_06', 'Versión y Acerca de', ['Una sola pestaña, como en WipeTime.']],
+      ['inv_misc_horn_02', 'Discord', ['Avisa al guardar, el interruptor se guarda solo y hay botón para desconectar el canal.']],
+      ['inv_misc_gem_diamond_07', 'Cofre semanal', ['Sin el cursor de interrogación y cada casilla brilla al pasar el ratón.']],
+    ] },
+    en: { intro: 'More reliable gear changes, Version and About merged and the Discord tab reviewed.', sections: [
+      ['inv_chest_plate04', 'Gear changes', ['They no longer show up by mistake: NinjaLoot compares against the date of the Raider.IO data (if it is older than the sim nothing is flagged), the note says how old it is and each change has a “That is right” button.']],
+      ['inv_misc_note_06', 'Version and About', ['A single tab, like in WipeTime.']],
+      ['inv_misc_horn_02', 'Discord', ['It confirms when saving, the toggle saves by itself and there is a button to disconnect the channel.']],
+      ['inv_misc_gem_diamond_07', 'Weekly vault', ['No question-mark cursor and each slot glows on hover.']],
+    ] },
+  },
+};
+const LOG_ICONS = [
+  [/ajustes|settings|tema|theme|color|fuente|font|densidad/i, 'inv_gizmo_02'], [/guild|banda|roster/i, 'inv_shirt_guildtabard_01'],
+  [/rotaci|rotation|buff|debuff/i, 'ability_warrior_innerrage'], [/tier|moneda|coin|objeto|item|equipo|gear|pieza|piece|gema/i, 'inv_chest_plate04'],
+  [/discord|battle\.net|contacto/i, 'inv_misc_horn_02'], [/reloj|clock|servidor|server|hora/i, 'inv_misc_gear_01'], [/arreglo|fix|error|corrig/i, 'inv_hammer_20'],
+  [/seguridad|security|prueba|test/i, 'inv_shield_04'], [/web|navegador|browser|direcci|address|enlace|link/i, 'inv_misc_net_01'], [/copi|captura|capture/i, 'inv_scroll_03'],
+  [/gr[aá]fic|chart|barra|bar|simulaci|sim/i, 'achievement_bg_winwsg'], [/cofre|vault|jefe|boss/i, 'inv_misc_book_11'],
+];
+const logIcon = t => (LOG_ICONS.find(([re]) => re.test(t)) || [0, 'inv_scroll_02'])[1];
+const logEsc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+// Frases de un texto plano (sin partir «1.2.3»)
+const logSentences = t => String(t).split(/(?<=[.!?])\s+(?=[A-ZÁÉÍÓÚÑ«¿¡“‘(])/).map(x => x.trim()).filter(Boolean);
+const logIconUrl = n => `https://wow.zamimg.com/images/wow/icons/medium/${n}.jpg`;
+function changelogCards(list, lang, latestLabel) {
+  const l = lang === 'es' ? 'es' : 'en';
+  return `<div class="cl-list">${list.map(([v, text], i) => {
+    const rich = RICH_LOG[v] && RICH_LOG[v][l];
+    let intro, sections;
+    if (rich) { intro = rich.intro; sections = rich.sections; } else {
+      const ss = logSentences(text);
+      intro = ss[0] || text;
+      sections = ss.length > 1 ? [[null, null, ss.slice(1)]] : [];
+    }
+    const main = rich && rich.sections[0] ? rich.sections[0][0] : logIcon(text);
+    return `<article class="cl-card${i === 0 ? ' latest' : ''}"><header class="cl-head"><img class="cl-ic" src="${logIconUrl(main)}" width="40" height="40" alt="" loading="lazy">`
+      + `<div class="cl-ht"><b class="cl-ver">v${logEsc(v)}</b>${i === 0 ? `<span class="cl-tag">${logEsc(latestLabel)}</span>` : ''}</div></header>`
+      + `<p class="cl-intro">${logEsc(intro)}</p>`
+      + sections.map(([ic, title, items]) => `<section class="cl-sec">${ic ? `<img class="cl-sic" src="${logIconUrl(ic)}" width="26" height="26" alt="" loading="lazy">` : ''}<div class="cl-sb">${title ? `<h4>${logEsc(title)}</h4>` : ''}<ul>${items.map(i2 => `<li>${logEsc(i2)}</li>`).join('')}</ul></div></section>`).join('')
+      + '</article>';
+  }).join('')}</div>`;
+}

@@ -619,3 +619,23 @@ a.navbtn, a.btn { text-decoration: none; }
 .copy-pop .cp-tx small { font-size: 13px; opacity: .75; overflow-wrap: anywhere; }
 @keyframes copy-pop-in { from { opacity: 0; transform: translate(-50%, -42%) scale(.92); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
 @media (prefers-reduced-motion: reduce) { .copy-pop { animation: none; } }
+
+/* Historial de versiones con aspecto de notas del parche: tarjeta por versión, resumen y secciones con iconos */
+.cl-list { display: grid; gap: 14px; margin-top: 10px; }
+.cl-card { padding: 16px 18px; border: 1px solid var(--border); border-radius: 14px; background: var(--panel2); transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease; }
+.cl-card:hover { transform: translateY(-2px); border-color: color-mix(in srgb, var(--accent, #8b5cf6) 45%, var(--border)); box-shadow: 0 10px 26px color-mix(in srgb, var(--accent, #8b5cf6) 16%, transparent); }
+.cl-card.latest { border-color: color-mix(in srgb, var(--accent, #8b5cf6) 55%, var(--border)); background: linear-gradient(160deg, color-mix(in srgb, var(--accent, #8b5cf6) 9%, var(--panel2)), var(--panel2)); }
+.cl-head { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.cl-ic { width: 40px; height: 40px; border-radius: 9px; border: 1px solid color-mix(in srgb, var(--accent, #8b5cf6) 50%, var(--border)); box-shadow: 0 0 14px color-mix(in srgb, var(--accent, #8b5cf6) 22%, transparent); }
+.cl-ht { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; }
+.cl-ver { font-size: 20px; font-weight: 800; letter-spacing: .2px; }
+.cl-tag { padding: 2px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: #fff; background: var(--accent, #8b5cf6); }
+.cl-intro { margin: 0 0 6px; font-size: 14.5px; line-height: 1.55; color: var(--text); }
+.cl-sec { display: grid; grid-template-columns: 26px 1fr; gap: 10px; margin-top: 12px; }
+.cl-sec:not(:has(.cl-sic)) { grid-template-columns: 1fr; }
+.cl-sic { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); margin-top: 1px; }
+.cl-sb h4 { margin: 0 0 4px; font-size: 14px; color: var(--accent, #8b5cf6); }
+.cl-sb ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.cl-sb li { font-size: 13.5px; line-height: 1.5; color: var(--muted); }
+.cl-sb li::marker { color: var(--accent, #8b5cf6); }
+@media (prefers-reduced-motion: reduce) { .cl-card { transition: none; } .cl-card:hover { transform: none; } }

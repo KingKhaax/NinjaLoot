@@ -62,10 +62,11 @@ test('Ajustes: pestañas, tamaño con deslizador, restablecer con confirmación 
   await p.click('[data-reset-all]'); await p.waitForTimeout(400);
   assert.equal(await size(), 100, 'el segundo clic restablece');
   // versión + acerca de, historial recortado
-  await p.click('[data-tab="update"]'); await p.waitForSelector('.chlog-row');
-  assert.equal(await p.$$eval('.chlog-row', (e) => e.length), 10);
+  await p.click('[data-tab="update"]'); await p.waitForSelector('.cl-card');
+  assert.equal(await p.$$eval('.cl-card', (e) => e.length), 10);
+  assert.ok((await p.$$eval('.cl-card .cl-sic', (e) => e.length)) >= 6, 'secciones con iconos de WoW');
   await p.click('#chlogMore'); await p.waitForTimeout(150);
-  assert.ok((await p.$$eval('.chlog-row', (e) => e.length)) > 10);
+  assert.ok((await p.$$eval('.cl-card', (e) => e.length)) > 10);
   assert.ok(await p.$('.about-friend'), 'acerca de dentro de la pestaña');
   assert.ok(!/España/.test(await p.$eval('.about-es', (e) => e.innerText)), 'bandera sin texto');
   noErrors(p);

@@ -936,7 +936,7 @@
     const t = T();
     if (!state.sims.length && !state.extra.length) return toast(t.shareNone, true);
     const link = shareLink();
-    const m = modal({ title: t.shareTitle, body: `<p class="hint">${esc(t.shareText)}</p><textarea class="txt share-link" rows="3" readonly>${esc(link)}</textarea>`, actions: [{ label: t.shareClose }, { label: t.shareCopy, cls: 'primary', onclick: () => { navigator.clipboard.writeText(link).then(() => toast(t.shareCopied)).catch(() => {}); } }] });
+    const m = modal({ title: t.shareTitle, body: `<p class="hint">${esc(t.shareText)}</p><textarea class="txt share-link" rows="3" readonly>${esc(link)}</textarea>`, actions: [{ label: t.shareClose }, { label: t.shareCopy, cls: 'primary', onclick: () => { navigator.clipboard.writeText(link).then(() => showCopiedPop(link)).catch(() => {}); } }] });
     const ta = $('.share-link', m.el); ta.focus(); ta.select();
   }
   $('#btnSessions').onclick = sessionsModal;
@@ -991,7 +991,7 @@
   });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
   // Aviso en medio de la pantalla: confirma que el texto se ha copiado (desaparece solo)
-  function showCopiedPop(text, ok) {
+  function showCopiedPop(text, ok = true) {
     document.getElementById('copyPop')?.remove();
     const el = document.createElement('div');
     el.id = 'copyPop'; el.className = 'copy-pop' + (ok ? '' : ' err'); el.setAttribute('role', 'status');
@@ -1076,7 +1076,7 @@
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'ninjaloot-captura.png'; a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 5000); return toast(T().exported);
     }
-    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); toast(T().captureCopied); } catch { toast(T().captureCopyFail, true); }
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); showCopiedPop(T().captureCopied); } catch { showCopiedPop(T().captureCopyFail, false); }
   }
   // SVG (con iconos incrustados) -> PNG a doble resolución
   async function svgToBlob(svg, w, h) {
@@ -1611,7 +1611,7 @@
     let all = false;
     const paintLog = () => {
       if (!histBox) return;
-      histBox.querySelector('#chlog').innerHTML = (all ? log : log.slice(0, 10)).map(([v, txt]) => `<div class="chlog-row"><b>v${esc(v)}</b><p>${esc(txt)}</p></div>`).join('');
+      histBox.querySelector('#chlog').innerHTML = changelogCards(all ? log : log.slice(0, 10), S().lang, t.latestVersion);
       const m = histBox.querySelector('#chlogMore'); if (m) m.textContent = all ? t.showLess : t.showMore(log.length - 10);
     };
     paintLog();
