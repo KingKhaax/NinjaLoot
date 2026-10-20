@@ -800,7 +800,7 @@
       return `<div class="cat-note">${esc(t.catKeep(t.statNames[cf.stats[0]] || cf.stats[0], nm))}</div>`;
     }
     state.shown.add(BIBELOT.id);
-    const bn = itemInfo({ id: BIBELOT.id, name: t.bibelotName }).name;
+    const bn = t.bibelotName;
     return `<div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(bn)}</b> <span>${esc(t.bibelotNote)}</span></div>`;
   }
   // Retrato 3D del personaje: se pide una vez a Blizzard y se recuerda
@@ -1559,7 +1559,6 @@
     const rows = [...document.querySelectorAll('tr[data-tip-trim]')];
     if (!rows.length || !window.api || !window.api.itemTooltip) return;
     const lang = S().lang;
-    let lvl = '';
     await Promise.all(rows.map(async tr => {
       try {
         const r = await window.api.itemTooltip(Number(tr.dataset.item), 0, lang);
@@ -1571,8 +1570,6 @@
         if (il) lvl = il[1];
       } catch { /* sin datos: se queda solo el nombre de la estadística */ }
     }));
-    const hint = document.querySelector('.tier-detail .hint');
-    if (lvl && hint && !hint.dataset.lvl) { hint.dataset.lvl = '1'; hint.insertAdjacentHTML('beforebegin', `<div class="hint">${esc(S().lang === 'es' ? 'Entre paréntesis, lo que da cada estadística con la pieza al máximo (nivel de objeto ' + lvl + ').' : 'In brackets, what each stat gives with the piece maxed out (item level ' + lvl + ').')}</div>`); }
   }
   function placeTip(x, y) {
     const w = tipEl.offsetWidth, h = tipEl.offsetHeight, m = 16;
@@ -1716,7 +1713,7 @@
       + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
         return `<tr data-item="${it.id}" data-ilvl="" data-tip-trim="set"><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
           + `<td>${esc(capFirst(t.slots[it.slot] || it.slot))}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat" data-stat="${s}">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td class="tb"><span class="tb-in">${bossImg(it.boss, 24)}<b>${esc(bossLabel(it.boss) || '')}</b></span></td></tr>`; }).join('')
-      + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div><div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(itemInfo({ id: BIBELOT.id, name: t.bibelotName }).name)}</b> <span>${esc(t.bibelotNote)}</span></div></section>`;
+      + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div><div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(t.bibelotName)}</b> <span>${esc(t.bibelotNote)}</span></div></section>`;
     return html;
   }
 
