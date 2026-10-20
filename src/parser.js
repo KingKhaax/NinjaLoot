@@ -208,9 +208,11 @@ function parseReport(json, id) {
     else if (Array.isArray(e.tags) && e.tags.includes('catalyst') && !tierOf.has(k)) tierOf.set(k, 'catalyst');
   }
   const best = new Map(); // un objeto/ilvl cuenta una sola vez (anillos y trinkets se prueban en dos ranuras)
+  const lootSets = {}; // jefe (y catalizador aparte) -> piezas distintas simuladas, hayan mejorado o no
   for (const r of results) {
     const p = parseProfilesetName(r.name);
     if (!p || typeof r.mean !== 'number') continue;
+    if (p.source && p.source.encounter != null) { const ck = p.source.encounter + (p.catalystFrom ? ':c' : ''); (lootSets[ck] = lootSets[ck] || new Set()).add(p.id); }
     const gain = r.mean - base;
     if (gain <= 0) continue;
     const key = `${p.id}:${p.ilvl}`;
@@ -250,6 +252,7 @@ function parseReport(json, id) {
     },
     gear: extractGear(raw && raw.character) || extractGear(player) || null,
     head: headerOf(json, player, raw),
+    lootCounts: Object.fromEntries(Object.entries(lootSets).map(([k, v]) => [k, v.size])),
     items,
   };
 }

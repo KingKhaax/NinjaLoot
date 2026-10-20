@@ -550,11 +550,26 @@
     const lootSort = ['priority', 'boss', 'ev', 'best'].includes(S().lootSort) ? S().lootSort : 'priority';
     const bossPos = new Map(state.bosses.groups.flatMap(g => g.bosses).map((b, i) => [b.id, i]));
     const posOf = g => (g.src && bossPos.has(g.src.encounter) ? bossPos.get(g.src.encounter) : 999);
-    const avg = g => g.total / (g.items.length || 1), top = g => Math.max(...g.items.map(i => i.gain));
+    // Como Raidbots: Expected Value = DPS medio de TODAS las piezas de la tabla del jefe (las que no mejoran cuentan 0);
+    // Best = la mejor pieza; Priority = jefes con valor esperado parecido (a menos de 0,2 %) agrupados y, dentro, primero el que más probabilidad tiene de dar una mejora
+    const counts = (p.lootCounts) || ((list[0] && list[0].lootCounts) || {});
+    const sizeOf = g => Math.max(g.items.length, (g.src && counts[g.src.encounter + (g.items[0] && g.items[0].tier === 'catalyst' ? ':c' : '')]) || 0, 1);
+    const avg = g => g.total / sizeOf(g), top = g => Math.max(...g.items.map(i => i.gain));
+    const chance = g => g.items.length / sizeOf(g);
     const byGain = (x, y) => y.total - x.total;
-    const cmp = { priority: byGain, boss: (x, y) => posOf(x) - posOf(y) || byGain(x, y), ev: (x, y) => avg(y) - avg(x) || byGain(x, y), best: (x, y) => top(y) - top(x) || byGain(x, y) }[lootSort];
+    const byEv = (x, y) => avg(y) - avg(x) || byGain(x, y);
+    const byPriority = (arr) => {
+      const sorted = arr.slice().sort(byEv), out = [], base = (p.baseDps || 1) / 100;
+      let bucket = [];
+      for (const g of sorted) {
+        if (bucket.length && (avg(bucket[0]) - avg(g)) / base > 0.2) { out.push(...bucket.sort((x, y) => chance(y) - chance(x) || byEv(x, y))); bucket = []; }
+        bucket.push(g);
+      }
+      return out.concat(bucket.sort((x, y) => chance(y) - chance(x) || byEv(x, y)));
+    };
+    const cmp = { priority: null, boss: (x, y) => posOf(x) - posOf(y) || byGain(x, y), ev: byEv, best: (x, y) => top(y) - top(x) || byGain(x, y) }[lootSort];
     const sortBar = `<div class="loot-sortbar"><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
-    const groupsHTML = [...groups.values()].sort(cmp).map(g => {
+    const groupsHTML = (cmp ? [...groups.values()].sort(cmp) : byPriority([...groups.values()])).map(g => {
       const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = g.items.map(it => {
@@ -960,10 +975,10 @@
   const upgradeTried = new Set();
   async function upgradeOldSims() {
     if (!window.api || !window.api.fetchReport) return;
-    const old = [...state.sims, ...state.extra].filter(s => s && s.id && !s.head && !upgradeTried.has(s.id));
+    const old = [...state.sims, ...state.extra].filter(s => s && s.id && (!s.head || (s.kind === 'drop' && !s.lootCounts)) && !upgradeTried.has(s.id));
     let ok = 0;
     // la simulación personal se guarda aparte: se vuelve a pedir y se sustituye conservando su ranura
-    const pold = state.personalList.filter(r => r && r.id && !r.head && !upgradeTried.has('p:' + r.id));
+    const pold = state.personalList.filter(r => r && r.id && (!r.head || !r.lootCounts) && !upgradeTried.has('p:' + r.id));
     if (pold.length) {
       const list = state.personalList.slice();
       let n = 0;
