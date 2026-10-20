@@ -537,15 +537,27 @@
     const catKeys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
     const pcat = catKeys.includes(S().persCat) ? S().persCat : 'all';
     const shownItems = pcat === 'all' ? p.items : p.items.filter(it => catOfSrc(srcOf(it)) === pcat);
-    const rows = shownItems.filter(i => i.gain >= min).map((it, i) => {
+    // Botín por jefe: las piezas se agrupan por su fuente (jefe, mazmorra...) y los grupos van de más a menos DPS en total
+    const groups = new Map();
+    shownItems.filter(i => i.gain >= min).forEach(it => {
       state.shown.add(it.id);
-      const info = itemInfo(it), st = srcText(it), boss = st && st.name, group = st && st.sub;
-      return `<tr class="${owned(p, it) ? 'owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><td class="rk">${i + 1}</td>`
-        + `<td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${owned(p, it) ? `<span class="owned-tag">${esc(t.ownedTag)}</span>` : ''}</td>`
-        + `<td>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</td><td>${it.ilvl || ''}</td>`
-        + (multi ? `<td class="sc"><span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>${esc(simLabel(simOf(it)))}</td>` : '')
-        + `<td class="bs">${boss ? `<b>${esc(boss)}</b>${group ? `<div class="meta">${esc(group)}</div>` : ''}` : `<span class="meta">${esc(t.persNoBoss)}</span>`}</td>`
-        + `<td class="gn"><div class="gbar"><span style="width:${Math.max(2, it.gain / max * 100)}%;background:${col}"></span></div><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></td></tr>`;
+      const st = srcText(it), key = (st && st.name) || '';
+      if (!groups.has(key)) groups.set(key, { st, src: srcOf(it), items: [], total: 0 });
+      const g = groups.get(key);
+      g.items.push(it); g.total += it.gain;
+    });
+    const groupsHTML = [...groups.values()].sort((x, y) => y.total - x.total).map(g => {
+      const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
+      const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
+      const rowsHTML = g.items.map(it => {
+        const info = itemInfo(it);
+        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
+          + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}`
+          + `<small>${multi ? `<span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>` : ''}${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small></div>`
+          + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
+      }).join('');
+      return `<section class="lg-boss"><header class="lg-head">${ic || '<span class="lg-ph"></span>'}<div class="lg-t"><b>${esc(st ? st.name : t.persNoBoss)}</b>${st && st.sub ? `<span class="meta">${esc(st.sub)}</span>` : ''}</div>`
+        + `<div class="lg-tot"><b>+${nf().format(g.total)}</b><span class="meta">${g.items.length} ${esc(t.items)}</span></div></header>${rowsHTML}</section>`;
     }).join('');
     html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
     html += vaultPanel(list[0]);
@@ -567,7 +579,7 @@
     html += `<section class="panel card"><div class="card-head">${specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
       + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${multi ? '' : diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
       + `<span class="spacer"></span><div class="card-tools">${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
-      + `<div class="ptable-wrap"><table class="ptable"><thead><tr><th>#</th><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.colIlvl)}</th>${multi ? `<th>${esc(t.colSim)}</th>` : ''}<th>${esc(t.colBoss)}</th><th>${esc(t.colGain)}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+      + (groupsHTML ? `<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
   }
 

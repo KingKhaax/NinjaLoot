@@ -674,3 +674,25 @@ a.navbtn, a.btn { text-decoration: none; }
   .coin-line .cl-boss { display: none; }
 }
 :root[data-theme="light"] .coin-sum b.g, :root[data-theme="light"] .cp-big { color: #1a8f43; }
+
+/* Todas las piezas: botín por jefe. Una columna por jefe o mazmorra con sus piezas y lo que suman */
+.loot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-top: 6px; }
+.lg-boss { border: 1px solid var(--border); border-radius: var(--r-card, 10px); overflow: hidden; background: var(--panel2); }
+.lg-head { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+.lg-head .boss-ic { width: 36px; height: 36px; flex: none; border-radius: var(--r-icon, 6px); }
+.lg-head .lg-ph { width: 36px; height: 36px; flex: none; border-radius: var(--r-icon, 6px); background: var(--panel); border: 1px solid var(--border); }
+.lg-head .lg-t { min-width: 0; }
+.lg-head .lg-t b { display: block; font-size: 14px; }
+.lg-head .lg-tot { margin-left: auto; text-align: right; white-space: nowrap; }
+.lg-head .lg-tot b { display: block; color: #3fcf6a; font-variant-numeric: tabular-nums; }
+.lg-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border); transition: background .15s ease; }
+.lg-row:last-child { border-bottom: 0; }
+.lg-row:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+.lg-row.owned-row { opacity: .55; }
+.lg-row img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid; }
+.lg-row .lg-n { min-width: 0; font-size: 13px; }
+.lg-row .lg-n small { display: block; color: var(--muted); font-size: 11.5px; }
+.lg-row .lg-g { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.lg-row .lg-g b { color: #3fcf6a; }
+:root[data-theme="light"] .lg-head .lg-tot b, :root[data-theme="light"] .lg-row .lg-g b { color: #1a8f43; }
+@media (max-width: 760px) { .loot-grid { grid-template-columns: 1fr; } }

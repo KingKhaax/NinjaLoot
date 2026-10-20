@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.5.1', 'Todas las piezas pasa a verse como botín por jefe: una tarjeta por jefe o mazmorra con sus piezas, lo que suman en DPS y las de mayor mejora arriba, en vez de una tabla larga.'],
     ['1.5.0', 'Dónde tirar moneda estrena diseño: un resumen arriba (monedas, DPS que ganas, mejora total y fuentes distintas), un podio con las tres mejores monedas en tarjetas grandes y el resto del plan en una lista compacta.'],
     ['1.4.9', 'En la web, cuando hay una versión nueva de NinjaLoot sale un aviso abajo («Hay una versión nueva de NinjaLoot») con el botón «Recargar», igual que en WipeTime.'],
     ['1.4.8', 'Con la web en español ya salen los iconos de todos los jefes (Nymrissa Clamaolas, Nek’zali, Los colmillos gemelos, El Altar en Espiral…): se buscaban por su nombre traducido y solo salían los que se llaman igual en inglés.'],
@@ -68,6 +69,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.5.1', 'All pieces now show as loot by boss: one card per boss or dungeon with its pieces, what they add in DPS and the biggest upgrades on top, instead of one long table.'],
     ['1.5.0', 'Where to use a coin has a new design: a summary on top (coins, DPS you gain, total gain and different sources), a podium with the three best coins in big cards and the rest of the plan in a compact list.'],
     ['1.4.9', 'On the web, when there is a new NinjaLoot version a notice appears at the bottom (“There is a new version of NinjaLoot”) with a “Reload” button, like WipeTime.'],
     ['1.4.8', 'With the web in Spanish every boss icon now shows (Nymrissa Wavecaller, Nek’zali, The Twin Fangs, The Coiled Altar…): they were looked up by their translated name, so only the ones named the same in English appeared.'],
