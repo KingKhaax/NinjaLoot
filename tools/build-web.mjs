@@ -32,6 +32,7 @@ html = html.replace(/<meta http-equiv="Content-Security-Policy" content="[^"]*">
 if (!html.includes('web-api.js')) html = html.replace('<script src="i18n.js"></script>', '<script src="web-libs.js"></script>\n<script src="web-api.js"></script>\n<script src="i18n.js"></script>');
 fs.writeFileSync(path.join(out, 'index.html'), html);
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
+fs.writeFileSync(path.join(out, 'version.json'), JSON.stringify({ version: pkg.version }));
 fs.writeFileSync(path.join(out, 'sw.js'), fs.readFileSync(path.join(root, 'web', 'sw.js'), 'utf8').replaceAll('__VERSION__', pkg.version));
 
 // ---- Optimización de la carga: un solo paquete de scripts minificado, un solo CSS minificado, datos grandes como JSON y conexiones tempranas.

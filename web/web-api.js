@@ -154,6 +154,37 @@
   const dcRestart = () => { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); };
   setTimeout(dcTick, 3000);
 
+  // Versión nueva de la web: version.json (se publica con cada versión) frente a la que está cargada.
+  // Si es más nueva sale un aviso con «Recargar», que borra la caché de la web y la vuelve a cargar entera.
+  const semver = (v) => String(v || '').replace(/^v/i, '').split('.').map((n) => parseInt(n, 10) || 0);
+  const isNewer = (a, b) => { const x = semver(a), y = semver(b); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+  async function fetchLatest() {
+    try { const r = await fetch('version.json?_=' + Date.now(), { cache: 'no-store' }); return r.ok ? String((await r.json()).version || '') : ''; } catch { return ''; }
+  }
+  async function hardReload() {
+    try { if (window.caches) for (const k of await caches.keys()) if (k.startsWith('nl-')) await caches.delete(k); } catch { /* sin caché */ }
+    try { if (navigator.serviceWorker) for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); } catch { /* sin service worker */ }
+    location.reload();
+  }
+  function showNewVersion(latest) {
+    if (document.getElementById('newVer')) return;
+    const es = (document.documentElement.lang || navigator.language || 'es').slice(0, 2) !== 'en';
+    const bar = document.createElement('div');
+    bar.id = 'newVer'; bar.className = 'newver'; bar.setAttribute('role', 'status');
+    bar.innerHTML = '<span></span><button type="button" class="btn primary small" data-nv="go"></button><button type="button" class="btn ghost small" data-nv="x" aria-label="×">×</button>';
+    bar.firstChild.textContent = es ? 'Hay una versión nueva de NinjaLoot (v' + latest + ').' : 'There is a new version of NinjaLoot (v' + latest + ').';
+    bar.querySelector('[data-nv="go"]').textContent = es ? 'Recargar' : 'Reload';
+    bar.addEventListener('click', (ev) => { const b = ev.target.closest('[data-nv]'); if (!b) return; if (b.dataset.nv === 'go') hardReload(); else bar.remove(); });
+    document.body.appendChild(bar);
+  }
+  async function checkNewVersion() {
+    const latest = await fetchLatest();
+    if (latest && VERSION && isNewer(latest, VERSION)) showNewVersion(latest);
+  }
+  setTimeout(checkNewVersion, 4000);
+  setInterval(checkNewVersion, 10 * 60 * 1000);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') checkNewVersion(); });
+
   // Service worker: caché de lo estático para que las visitas siguientes carguen al instante (solo con https)
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* sin service worker: la web funciona igual */ });
 
