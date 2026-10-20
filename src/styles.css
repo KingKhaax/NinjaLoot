@@ -700,3 +700,35 @@ a.navbtn, a.btn { text-decoration: none; }
 /* Todas las piezas: selector de orden de las tarjetas de jefe (solo con piezas de raid) */
 .loot-sortbar { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; }
 .loot-sortbar select { min-width: 160px; }
+
+/* Cabecera de las simulaciones al estilo de Raidbots */
+.sim-hdr { display: grid; gap: 14px; padding: 4px 2px 14px; margin-bottom: 8px; border-bottom: 1px solid var(--border); }
+.sh-top { display: flex; justify-content: space-between; align-items: flex-end; gap: 12px 24px; flex-wrap: wrap; }
+.sh-title { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: .28em; color: var(--text); text-transform: uppercase; }
+.sh-sub { margin-top: 4px; color: var(--muted); font-size: 14px; }
+.sh-dps { text-align: right; }
+.sh-dps b { display: block; font-size: 34px; line-height: 1; letter-spacing: .12em; font-variant-numeric: tabular-nums; }
+.sh-dps b span { font-size: 28px; }
+.sh-dps small { color: var(--muted); font-size: 13px; }
+.sh-mid { display: grid; grid-template-columns: auto 1fr auto; gap: 14px 18px; align-items: center; }
+.sh-port { width: 84px; height: 84px; border-radius: 10px; border: 2px solid var(--cc, var(--accent)); background: var(--panel2); overflow: hidden; display: grid; place-items: center; }
+.sh-port img { width: 62px; height: 62px; border-radius: 8px; }
+.sh-char h3 { margin: 0 0 8px; font-size: 22px; letter-spacing: .22em; text-transform: uppercase; }
+.sh-chips { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sh-chips img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid var(--border); }
+.sh-chip { padding: 3px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; background: var(--panel2); border: 1px solid var(--border); }
+.sh-meta { text-align: right; display: grid; gap: 4px; justify-items: end; color: var(--muted); font-size: 14px; }
+.sh-realm { color: #5fb8ff; font-weight: 600; }
+.sh-exp { margin-top: 2px; background: none; border: 0; padding: 0; font: inherit; font-size: 13px; color: #f0a030; cursor: pointer; }
+.sh-exp:hover { text-decoration: underline; }
+.sh-gear { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.sh-slot { display: inline-flex; }
+.sh-slot img { width: 36px; height: 36px; border-radius: 6px; border: 2px solid; display: block; transition: transform .15s ease; }
+.sh-slot:hover img { transform: translateY(-2px) scale(1.06); }
+.sh-gap { width: 14px; }
+.sh-ilvl { margin-left: 14px; padding: 3px 12px; border-radius: 999px; background: #17c1ee; color: #04222c; font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; }
+.xsim .sim-hdr { padding-bottom: 10px; }
+.xsim .sh-title { font-size: 22px; } .xsim .sh-dps b { font-size: 26px; } .xsim .sh-dps b span { font-size: 20px; }
+.xsim .sh-port { width: 64px; height: 64px; } .xsim .sh-port img { width: 46px; height: 46px; }
+.xsim .sh-slot img { width: 30px; height: 30px; }
+@media (max-width: 760px) { .sh-mid { grid-template-columns: auto 1fr; } .sh-meta { grid-column: 1 / -1; text-align: left; justify-items: start; } .sh-title { font-size: 22px; letter-spacing: .2em; } .sh-dps { text-align: left; } }

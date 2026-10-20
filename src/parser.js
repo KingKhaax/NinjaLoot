@@ -109,6 +109,45 @@ function extractStats(player) {
   return Object.keys(out).length ? out : null;
 }
 
+// Cabecera estilo Raidbots: título de la sim, raza y nivel, reino, equipo (con iconos) y texto SimC para exportar
+const HEAD_SLOT_KEYS = { head: 'head', neck: 'neck', shoulder: 'shoulder', shoulders: 'shoulder', back: 'back', chest: 'chest', wrist: 'wrist', wrists: 'wrist', hands: 'hands', waist: 'waist', legs: 'legs', feet: 'feet', finger1: 'finger1', finger2: 'finger2', trinket1: 'trinket1', trinket2: 'trinket2', mainhand: 'mainHand', main_hand: 'mainHand', offhand: 'offHand', off_hand: 'offHand' };
+function headerOf(json, player, raw) {
+  try {
+    const simbot = json.simbot || {}, meta = simbot.meta || {};
+    const ident = (raw && raw.profile && raw.profile.identity) || {};
+    const text = String((raw && raw.text) || '');
+    const rm = (text.split('\n')[0] || '').match(/-\s*(EU|US|KR|TW|CN)\/(.+?)\s*$/i);
+    const equipped = {};
+    const eq = raw && raw.droptimizer && raw.droptimizer.equipped;
+    if (eq && typeof eq === 'object') {
+      for (const [k, v] of Object.entries(eq)) {
+        const key = HEAD_SLOT_KEYS[String(k).toLowerCase()];
+        if (key && v && v.id) equipped[key] = { id: v.id, name: v.name || '', icon: v.icon || '', quality: v.quality == null ? 4 : v.quality, ilvl: v.itemLevel || ilvlOf(v) || 0 };
+      }
+    }
+    if (!Object.keys(equipped).length && player && player.gear && typeof player.gear === 'object') {
+      for (const [k, v] of Object.entries(player.gear)) {
+        const key = HEAD_SLOT_KEYS[String(k).toLowerCase()];
+        const id = v && v.encoded_item && Number((String(v.encoded_item).match(/id=(\d+)/) || [])[1]);
+        if (key && id) equipped[key] = { id, name: '', icon: '', quality: 4, ilvl: ilvlOf(v) };
+      }
+    }
+    let sum = 0;
+    for (const [k, v] of Object.entries(equipped)) sum += v.ilvl || 0;
+    if (equipped.mainHand && !equipped.offHand) sum += equipped.mainHand.ilvl || 0; // arma a dos manos: cuenta dos veces
+    const avgIlvl = Object.keys(equipped).length >= 8 ? Math.round(sum / 16) : null;
+    return {
+      subtitle: simbot.publicTitle || simbot.title || '',
+      race: String((player && player.race) || meta.race || ''),
+      level: Number((player && player.level) || ident.level) || null,
+      realmName: rm ? rm[2].trim() : '',
+      region: String(ident.region || (rm && rm[1]) || '').toUpperCase(),
+      equipped, avgIlvl,
+      simc: text.length <= 40000 ? text : '',
+    };
+  } catch { return null; }
+}
+
 // Datos comunes de cualquier informe de SimulationCraft: personaje, DPS (media y desviación), sanación, daño recibido y tipo de pelea
 function commonOf(json, id, player, raw, sim) {
   const cd = player.collected_data || {}, num = (o, k) => (o && typeof o[k] === 'number' ? o[k] : null);
@@ -126,6 +165,7 @@ function commonOf(json, id, player, raw, sim) {
       secs: Number((sim.options && sim.options.max_time) || (raw && raw.fightLength)) || null,
     },
     stats: extractStats(player), items: [],
+    head: headerOf(json, player, raw),
   };
 }
 
@@ -199,6 +239,7 @@ function parseReport(json, id) {
       secs: Number((sim.options && sim.options.max_time) || (raw && raw.fightLength)) || null,
     },
     gear: extractGear(raw && raw.character) || extractGear(player) || null,
+    head: headerOf(json, player, raw),
     items,
   };
 }

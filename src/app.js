@@ -584,8 +584,8 @@
           + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
           + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
     }
-    html += `<section class="panel card"><div class="card-head">${specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
-      + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${multi ? '' : diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
+    html += `<section class="panel card">${multi ? '' : simHeader(p)}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
+      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
       + `<span class="spacer"></span><div class="card-tools">${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
       + (groupsHTML ? `${sortBar}<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
@@ -787,6 +787,35 @@
   }
 
   // ---------- Quick Sim y Top Gear ----------
+  // Cabecera de una simulación al estilo de Raidbots: tipo de sim, DPS, opciones, personaje, equipo y exportación de SimC
+  const HEAD_ORDER = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet', '|', 'finger1', 'finger2', '|', 'trinket1', 'trinket2', '|', 'mainHand', 'offHand'];
+  function simHeader(sim, compact = false) {
+    const t = T(), h = sim.head || {}, col = clsColor(sim), f = nf();
+    const kind = sim.kind;
+    const title = kind === 'topgear' ? t.shTop : kind === 'quick' ? t.shQuick : t.shDrop;
+    const best = kind === 'drop' ? sim.baseDps + ((sim.items && sim.items[0] && sim.items[0].gain) || 0) : kind === 'topgear' ? ((sim.combos && sim.combos[0] && sim.combos[0].dps) || sim.baseDps) : sim.baseDps;
+    const dpsLbl = kind === 'drop' ? t.shBestItem : kind === 'topgear' ? t.shBestCombo : t.shDps;
+    const rk = String(h.race || '').toLowerCase().replace(/[^a-z]/g, '');
+    const race = (t.shRaces && t.shRaces[rk]) || (h.race ? capFirst(String(h.race).replace(/_/g, ' ')) : '');
+    const realm = h.realmName || (sim.character && sim.character.realm) || '';
+    const realmTxt = realm ? `${realm}${h.region ? ` (${h.region})` : ''}` : '';
+    const fight = sim.fight ? [sim.fight.style, sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight.secs ? `${sim.fight.secs} s` : ''].filter(Boolean).join(' · ') : '';
+    const slots = HEAD_ORDER.map(k => {
+      if (k === '|') return '<i class="sh-gap"></i>';
+      const it = h.equipped && h.equipped[k];
+      if (!it) return '';
+      const info = itemInfo({ id: it.id, name: it.name }); state.shown.add(it.id);
+      const src = it.icon ? WEB_ICON(it.icon) : info.icon, q = QUALITY_COLORS[it.quality == null ? info.quality : it.quality] || QUALITY_COLORS[4];
+      return `<span class="sh-slot" data-item="${it.id}" data-ilvl="${it.ilvl || ''}" title="${esc(it.name || info.name)}${it.ilvl ? ' · ' + it.ilvl : ''}"><img src="${src}" alt="" style="border-color:${q}"></span>`;
+    }).join('');
+    const spec = specIcon(sim);
+    return `<div class="sim-hdr" style="--cc:${col}${compact ? '' : ''}"><div class="sh-top"><div class="sh-tt"><h2 class="sh-title">${esc(title)}</h2>${h.subtitle || sim.title ? `<div class="sh-sub">${esc(h.subtitle || sim.title)}</div>` : ''}</div>`
+      + `<div class="sh-dps"><b>${f.format(Math.round(best))} <span>DPS</span></b><small>${esc(dpsLbl)}</small></div></div>`
+      + `<div class="sh-mid"><div class="sh-port">${spec ? `<img src="${spec}" alt="">` : ''}</div><div class="sh-char"><h3 style="color:${readable(col)}">${esc(sim.character.name)}</h3><div class="sh-chips">${spec ? `<img src="${spec}" alt="" title="${esc(specName(sim))}">` : ''}${fight ? `<span class="sh-chip">${esc(fight)}</span>` : ''}${kind === 'drop' ? diffBadge(sim.difficulty) : ''}</div></div>`
+      + `<div class="sh-meta"><div>${h.level ? h.level + ' ' : ''}${race ? esc(race) + ' ' : ''}<b style="color:${readable(col)}">${esc((S().lang === 'es' ? [clsName(sim), specName(sim)] : [specName(sim), clsName(sim)]).filter(Boolean).join(' '))}</b></div>${realmTxt ? `<div class="sh-realm">${esc(realmTxt)}</div>` : ''}${h.simc ? `<button type="button" class="sh-exp" data-simc="${esc(sim.id)}">${esc(t.shExport)}</button>` : ''}</div></div>`
+      + (slots.replace(/<i class="sh-gap"><\/i>/g, '') ? `<div class="sh-gear">${slots}${h.avgIlvl ? `<span class="sh-ilvl" title="${esc(t.shAvgIlvl)}">${h.avgIlvl}</span>` : ''}</div>` : '') + `</div>`;
+  }
+
   function extraSection() {
     if (!state.extra.length) return '';
     const t = T(), f = nf();
@@ -801,7 +830,7 @@
         const max = Math.max(1, ...sim.combos.map(c => Math.abs(c.gain)));
         combos = sim.combos.length ? `<div class="xs-combos"><div class="xs-chead"><span>#</span><span>${esc(t.xsCombo)}</span><span>DPS</span><span>${esc(t.xsGain)}</span></div>` + sim.combos.slice(0, 12).map((c, i) => `<div class="xs-crow${i === 0 ? ' best' : ''}"><span class="rk">${i + 1}</span><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span>${f.format(c.dps)}</span><span class="gn ${c.gain >= 0 ? 'up' : 'down'}"><i style="width:${Math.abs(c.gain) / max * 100}%"></i><b>${c.gain >= 0 ? '+' : ''}${f.format(c.gain)} (${c.pct.toFixed(2)}%)</b></span></div>`).join('') + '</div>' : `<div class="hint">${esc(t.xsNoCombos)}</div>`;
       }
-      return `<div class="xsim" style="--cc:${col}"><div class="xs-head">${specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<div><h3 style="color:${readable(col)}">${esc(sim.character.name)} <span class="dbadge d-xs">${top ? 'TG' : 'QS'}</span></h3><div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))}${fight ? ` — ${esc(t.xsFight)}: ${esc(fight)}` : ''}</div></div><span class="spacer"></span>`
+      return `<div class="xsim" style="--cc:${col}">${simHeader(sim, true)}<div class="xs-head">${specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<div><h3 style="color:${readable(col)}">${esc(sim.character.name)} <span class="dbadge d-xs">${top ? 'TG' : 'QS'}</span></h3><div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))}${fight ? ` — ${esc(t.xsFight)}: ${esc(fight)}` : ''}</div></div><span class="spacer"></span>`
         + `<div class="card-tools"><button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button><button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button><button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
         + `<div class="xs-dps"><div><small>${esc(t.xsDps)}</small><b>${f.format(sim.baseDps)}</b>${sim.dpsStd ? `<em>± ${f.format(sim.dpsStd)} ${esc(t.xsStd)}</em>` : ''}</div>${sim.hps ? `<div><small>${esc(t.xsHps)}</small><b>${f.format(sim.hps)}</b></div>` : ''}${sim.dtps ? `<div><small>${esc(t.xsDtps)}</small><b>${f.format(sim.dtps)}</b></div>` : ''}</div>`
         + (stats.trim() ? `<div class="xs-stats">${stats}</div>` : '') + combos + '</div>';
@@ -1775,6 +1804,7 @@
     else if ((el = q('data-col-set'))) { for (const s of state.sims) setCell(state.bossSel, s.id, el.dataset.colSet); persistRot(); render(); }
     else if (q('data-roster-copy')) { const src = state.rot[state.bossSel]; for (const b of rotBosses()) state.rot[b.id] = { ...(src && !Array.isArray(src) ? src : {}) }; persistRot(); render(); toast(T().rotCopied); }
     else if ((el = q('data-refresh'))) addSim(el.dataset.refresh, true);
+    else if ((el = q('data-simc'))) { const sm = [...state.personalList, ...state.sims, ...state.extra].find(x => x && x.id === el.dataset.simc); const txt = sm && sm.head && sm.head.simc; if (txt) { try { navigator.clipboard.writeText(txt).then(() => toast(T().shCopied), () => toast(T().noClip || 'No se pudo copiar', true)); } catch { toast('No se pudo copiar', true); } } }
     else if ((el = q('data-coin-src'))) { S().coinSrc = el.dataset.coinSrc; persistSettings(); state.animateNext = false; render(); }
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
