@@ -122,7 +122,7 @@ function headerOf(json, player, raw) {
     if (eq && typeof eq === 'object') {
       for (const [k, v] of Object.entries(eq)) {
         const key = HEAD_SLOT_KEYS[String(k).toLowerCase()];
-        if (key && v && v.id) equipped[key] = { id: v.id, name: v.name || '', icon: v.icon || '', quality: v.quality == null ? 4 : v.quality, ilvl: v.itemLevel || ilvlOf(v) || 0 };
+        if (key && v && v.id) equipped[key] = { id: v.id, name: v.name || '', icon: v.icon || '', quality: v.quality == null ? 4 : v.quality, ilvl: v.itemLevel || ilvlOf(v) || 0, track: (v.upgrade && v.upgrade.name) || '' };
       }
     }
     if (!Object.keys(equipped).length && player && player.gear && typeof player.gear === 'object') {

@@ -26,7 +26,7 @@ for (const f of ['web-api.js', 'privacy.html', 'terms.html']) fs.copyFileSync(pa
 
 // index.html: política de seguridad para el navegador (pide los datos directamente) y la capa web antes que la app
 let html = fs.readFileSync(path.join(out, 'index.html'), 'utf8');
-const csp = "default-src 'self'; img-src 'self' data: https://wow.zamimg.com https://assets.rpglogs.com; style-src 'self' 'unsafe-inline'; script-src 'self'; "
+const csp = "default-src 'self'; img-src 'self' data: https://wow.zamimg.com https://assets.rpglogs.com https://render.worldofwarcraft.com; style-src 'self' 'unsafe-inline'; script-src 'self'; "
   + "connect-src 'self' https://www.raidbots.com https://nether.wowhead.com https://wow.zamimg.com https://raider.io https://ninjaloot-relay.vercel.app https://wipetime-proxy.vercel.app";
 html = html.replace(/<meta http-equiv="Content-Security-Policy" content="[^"]*">/, `<meta http-equiv="Content-Security-Policy" content="${csp}">`);
 if (!html.includes('web-api.js')) html = html.replace('<script src="i18n.js"></script>', '<script src="web-libs.js"></script>\n<script src="web-api.js"></script>\n<script src="i18n.js"></script>');

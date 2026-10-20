@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.6.2', 'En la cabecera de la simulación el personaje sale con su modelo 3D (el retrato que da Blizzard) en vez del icono de la especialización, y encima de cada pieza equipada aparece su nivel de objeto exacto con el color de su mejora: naranja Mítico, morado Heroico, azul Campeón, verde Veterano y gris lo inferior.'],
     ['1.6.1', 'En cada simulación cargada, junto a «de hoy» o «hace N días» ahora sale también la hora a la que se hizo (por ejemplo «de hoy, 18:36»).'],
     ['1.6.0', 'Las simulaciones tienen una cabecera igual que la de Raidbots según su tipo (Droptimizer, Quick Sim o Top Gear): título, DPS grande (mejor pieza o mejor combinación), opciones de la sim, personaje con raza, nivel y reino, botón para exportar SimC y la fila de equipo con su nivel de objeto medio.'],
     ['1.5.2', 'Todas las piezas, con la fuente Raid: nuevo selector de orden para las tarjetas de jefe (Prioridad, Orden de jefes de la raid, Valor esperado y Mejor), como en Raidbots.'],
@@ -72,6 +73,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.6.2', 'In the simulation header the character shows with its 3D model (the portrait Blizzard provides) instead of the spec icon, and above each equipped piece its exact item level appears coloured by upgrade track: orange Myth, purple Hero, blue Champion, green Veteran and grey for lower.'],
     ['1.6.1', 'On each loaded simulation, next to “today” or “N days ago” the time it was run now shows too (for example “today, 18:36”).'],
     ['1.6.0', 'Simulations have a header like Raidbots one depending on their type (Droptimizer, Quick Sim or Top Gear): title, big DPS (best item or best combo), sim options, character with race, level and realm, a SimC export button and the gear row with its average item level.'],
     ['1.5.2', 'All pieces, with the Raid source: new sort selector for the boss cards (Priority, Boss Order of the raid, Expected Value and Best), like Raidbots.'],

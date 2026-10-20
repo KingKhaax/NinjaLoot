@@ -97,6 +97,18 @@
     }
   }
 
+  // --- Retrato 3D del personaje (Blizzard vía el servidor de WipeTime) ---
+  async function fetchPortrait(region, realm, name) {
+    if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false };
+    const slug = String(realm).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
+    const path = `/profile/wow/character/${slug}/${encodeURIComponent(name.toLowerCase())}/character-media?namespace=profile-${region}&locale=en_US`;
+    try {
+      const j = await getJSON(`https://wipetime-proxy.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`);
+      const a = Object.fromEntries((j.assets || []).map(x => [x.key, x.value])), url = a.inset || a['main-raw'] || a.main || a.avatar;
+      return url && /^https:\/\/render\.worldofwarcraft\.com\//.test(url) ? { ok: true, url } : { ok: false };
+    } catch { return { ok: false }; }
+  }
+
   // --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda desde el reinicio (Blizzard vía el servidor de WipeTime) ---
   async function fetchVault(region, realm, name) {
     if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
@@ -189,7 +201,7 @@
   if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => { /* sin service worker: la web funciona igual */ });
 
   window.api = {
-    fetchReport, parseLoot: async text => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } }, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
+    fetchReport, fetchPortrait, parseLoot: async text => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } }, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
     // En la web siempre se usa la última versión publicada: no hay nada que actualizar
     checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
     installUpdate: async () => ({ ok: false }),

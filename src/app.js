@@ -788,6 +788,19 @@
 
   // ---------- Quick Sim y Top Gear ----------
   // Cabecera de una simulación al estilo de Raidbots: tipo de sim, DPS, opciones, personaje, equipo y exportación de SimC
+  // Retrato 3D del personaje: se pide una vez a Blizzard y se recuerda
+  const portraits = load('ninjaloot.portraits', {}), portraitReq = new Set();
+  const trackColor = tr => (/myth/i.test(tr) ? '#ff8000' : /hero/i.test(tr) ? '#a335ee' : /champion/i.test(tr) ? '#0070ff' : /veteran/i.test(tr) ? '#1eff00' : tr ? '#9d9d9d' : '');
+  function portraitOf(sim) {
+    const c = sim.character || {}, region = String(c.region || (sim.head && sim.head.region) || '').toLowerCase(), key = [region, c.realm, c.name].join(':').toLowerCase();
+    if (!region || !c.realm || !c.name) return '';
+    if (portraits[key]) return portraits[key];
+    if (!portraitReq.has(key) && window.api && window.api.fetchPortrait) {
+      portraitReq.add(key);
+      window.api.fetchPortrait(region, c.realm, c.name).then(r => { if (r && r.ok && r.url) { portraits[key] = r.url; save('ninjaloot.portraits', portraits); state.animateNext = false; render(); } }).catch(() => {});
+    }
+    return '';
+  }
   const HEAD_ORDER = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet', '|', 'finger1', 'finger2', '|', 'trinket1', 'trinket2', '|', 'mainHand', 'offHand'];
   function simHeader(sim, compact = false) {
     const t = T(), h = sim.head || {}, col = clsColor(sim), f = nf();
@@ -806,12 +819,13 @@
       if (!it) return '';
       const info = itemInfo({ id: it.id, name: it.name }); state.shown.add(it.id);
       const src = it.icon ? WEB_ICON(it.icon) : info.icon, q = QUALITY_COLORS[it.quality == null ? info.quality : it.quality] || QUALITY_COLORS[4];
-      return `<span class="sh-slot" data-item="${it.id}" data-ilvl="${it.ilvl || ''}" title="${esc(it.name || info.name)}${it.ilvl ? ' · ' + it.ilvl : ''}"><img src="${src}" alt="" style="border-color:${q}"></span>`;
+      const tc = trackColor(it.track);
+      return `<span class="sh-slot" data-item="${it.id}" data-ilvl="${it.ilvl || ''}" title="${esc(it.name || info.name)}${it.track ? ' · ' + esc(it.track) : ''}"><b class="sh-il"${tc ? ` style="color:${tc}"` : ''}>${it.ilvl || ''}</b><img src="${src}" alt="" style="border-color:${q}"></span>`;
     }).join('');
-    const spec = specIcon(sim);
+    const spec = specIcon(sim), portrait = portraitOf(sim);
     return `<div class="sim-hdr" style="--cc:${col}${compact ? '' : ''}"><div class="sh-top"><div class="sh-tt"><h2 class="sh-title">${esc(title)}</h2>${h.subtitle || sim.title ? `<div class="sh-sub">${esc(h.subtitle || sim.title)}</div>` : ''}</div>`
       + `<div class="sh-dps"><b>${f.format(Math.round(best))} <span>DPS</span></b><small>${esc(dpsLbl)}</small></div></div>`
-      + `<div class="sh-mid"><div class="sh-port">${spec ? `<img src="${spec}" alt="">` : ''}</div><div class="sh-char"><h3 style="color:${readable(col)}">${esc(sim.character.name)}</h3><div class="sh-chips">${spec ? `<img src="${spec}" alt="" title="${esc(specName(sim))}">` : ''}${fight ? `<span class="sh-chip">${esc(fight)}</span>` : ''}${kind === 'drop' ? diffBadge(sim.difficulty) : ''}</div></div>`
+      + `<div class="sh-mid"><div class="sh-port${portrait ? ' has-3d' : ''}"${portrait ? ` style="background-image:url('${esc(portrait)}')"` : ''}>${portrait ? '' : (spec ? `<img src="${spec}" alt="">` : '')}</div><div class="sh-char"><h3 style="color:${readable(col)}">${esc(sim.character.name)}</h3><div class="sh-chips">${spec ? `<img src="${spec}" alt="" title="${esc(specName(sim))}">` : ''}${fight ? `<span class="sh-chip">${esc(fight)}</span>` : ''}${kind === 'drop' ? diffBadge(sim.difficulty) : ''}</div></div>`
       + `<div class="sh-meta"><div>${h.level ? h.level + ' ' : ''}${race ? esc(race) + ' ' : ''}<b style="color:${readable(col)}">${esc((S().lang === 'es' ? [clsName(sim), specName(sim)] : [specName(sim), clsName(sim)]).filter(Boolean).join(' '))}</b></div>${realmTxt ? `<div class="sh-realm">${esc(realmTxt)}</div>` : ''}${h.simc ? `<button type="button" class="sh-exp" data-simc="${esc(sim.id)}">${esc(t.shExport)}</button>` : ''}</div></div>`
       + (slots.replace(/<i class="sh-gap"><\/i>/g, '') ? `<div class="sh-gear">${slots}${h.avgIlvl ? `<span class="sh-ilvl" title="${esc(t.shAvgIlvl)}">${h.avgIlvl}</span>` : ''}</div>` : '') + `</div>`;
   }
