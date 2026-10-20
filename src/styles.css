@@ -752,3 +752,13 @@ a.navbtn, a.btn { text-decoration: none; }
 .cat-note.bib img { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #a335ee; }
 .cat-note.bib b { color: #c58bff; font-weight: 600; }
 .lg-row .cat-note { grid-column: 2 / -1; }
+
+/* Todas las piezas: la cabecera del jefe se distingue claramente de las piezas */
+.lg-boss { border-top: 3px solid var(--accent); box-shadow: 0 10px 28px -20px var(--accent); }
+.lg-head { padding: 14px 16px; gap: 12px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, var(--panel)), var(--panel) 75%); border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.lg-head .boss-ic, .lg-head .lg-ph { width: 46px; height: 46px; border: 2px solid color-mix(in srgb, var(--accent) 60%, var(--border)); box-shadow: 0 4px 12px -4px #000a; }
+.lg-head .lg-t b { font-size: 16px; letter-spacing: .01em; }
+.lg-head .lg-tot b { font-size: 18px; }
+.lg-row { padding: 9px 16px; }
+.lg-row img { width: 28px; height: 28px; }
+.lg-row .lg-n > span:first-child { font-size: 13px; font-weight: 500; }

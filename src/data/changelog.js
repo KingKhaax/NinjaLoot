@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.6.7', 'Todas las piezas: la cabecera de cada jefe se distingue claramente de las piezas, con una banda de color arriba, fondo degradado, icono más grande con marco y nombre y total más grandes.'],
     ['1.6.6', 'El nivel de objeto de encima de cada pieza de la cabecera también lleva color en las simulaciones antiguas o en piezas sin mejora (crafteadas): se colorea por tramos de nivel de objeto (naranja Mítico, morado Heroico, azul Normal, verde por debajo y gris lo inferior).'],
     ['1.6.5', 'Piezas de tier: se quita el texto repetido «Entre paréntesis, lo que da cada estadística…» de debajo de la tabla, y el bibelot de Ula’tek sale con su nombre en el idioma de la web.'],
     ['1.6.4', 'Piezas de tier: la columna de estadísticas lleva entre paréntesis la cantidad exacta de cada una. Las piezas de Ula’tek pasadas a catalizador cuya pieza de origen tiene una sola estadística y una pasiva avisan de que conservan esa pasiva y esa estadística (no pasan a 2 de tier), y las de tier normal de Ula’tek llevan el icono del bibelot de voluta durmiente con la nota de que es el que dropea al matarlo.'],
@@ -77,6 +78,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.6.7', 'All pieces: each boss header now stands out clearly from the pieces, with a coloured band on top, a gradient background, a bigger framed icon and a bigger name and total.'],
     ['1.6.6', 'The item level above each header piece is now coloured also in older simulations or on pieces without upgrade data (crafted): coloured by item level bands (orange Mythic, purple Heroic, blue Normal, green below and grey lower).'],
     ['1.6.5', 'Tier pieces: the repeated “In brackets, what each stat gives…” text under the table is removed, and the Ula’tek trinket shows its name in the web language.'],
     ['1.6.4', 'Tier pieces: the stats column shows the exact amount of each in brackets. Ula’tek pieces catalyzed from a one-stat piece with a passive now say they keep that passive and stat (they do not switch to 2 tier stats), and Ula’tek normal tier pieces show the Slumbering Scroll Trinket icon with a note that it is the one it drops when killed.'],
