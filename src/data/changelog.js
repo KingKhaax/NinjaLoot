@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.6.9', 'Las simulaciones guardadas antes de la cabecera nueva (sin raza, reino, iconos del equipo ni SimC) se actualizan solas al abrir NinjaLoot: se vuelven a pedir a Raidbots una vez, en silencio, y se quedan completas. Si una ya caducó en Raidbots, se queda como estaba.'],
     ['1.6.8', 'La barra superior de NinjaLoot se queda fija arriba al bajar con la rueda en las pantallas largas (antes desaparecía al pasar de la primera pantalla).'],
     ['1.6.7', 'Todas las piezas: la cabecera de cada jefe se distingue claramente de las piezas, con una banda de color arriba, fondo degradado, icono más grande con marco y nombre y total más grandes.'],
     ['1.6.6', 'El nivel de objeto de encima de cada pieza de la cabecera también lleva color en las simulaciones antiguas o en piezas sin mejora (crafteadas): se colorea por tramos de nivel de objeto (naranja Mítico, morado Heroico, azul Normal, verde por debajo y gris lo inferior).'],
@@ -79,6 +80,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.6.9', 'Simulations saved before the new header (without race, realm, gear icons or SimC) update themselves when NinjaLoot opens: they are requested again from Raidbots once, silently, and end up complete. If one has already expired on Raidbots, it stays as it was.'],
     ['1.6.8', 'The NinjaLoot top bar now stays pinned at the top when scrolling down on long screens (it used to disappear after the first screen).'],
     ['1.6.7', 'All pieces: each boss header now stands out clearly from the pieces, with a coloured band on top, a gradient background, a bigger framed icon and a bigger name and total.'],
     ['1.6.6', 'The item level above each header piece is now coloured also in older simulations or on pieces without upgrade data (crafted): coloured by item level bands (orange Mythic, purple Heroic, blue Normal, green below and grey lower).'],

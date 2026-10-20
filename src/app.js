@@ -934,7 +934,7 @@
     if (state.view === 'charts') { state.animateNext = false; render(); }
     const r = await window.api.fetchReport(id);
     state.loading.delete(id);
-    if (!r.ok) { renderChips(); if (state.view === 'charts') { state.animateNext = false; render(); } toast(`${id}: ${errText(r)}`, true); return 'err'; }
+    if (!r.ok) { renderChips(); if (state.view === 'charts') { state.animateNext = false; render(); } if (!opts.silentErr) toast(`${id}: ${errText(r)}`, true); return 'err'; }
     const when = x => x.simDate || x.fetchedAt || 0;
     if (opts.minDate && r.report.simDate && r.report.simDate < opts.minDate) { renderChips(); return 'old'; }
     if (opts.newestOnly) {
@@ -954,6 +954,34 @@
     persistSims(); state.animateNext = true; render(); refreshGear();
     if (!quiet) toast(`${refresh ? T().updated : T().added}: ${r.report.character.name}`);
     return 'ok';
+  }
+
+  // Simulaciones guardadas antes de la cabecera nueva (sin raza, reino, iconos del equipo ni SimC): se vuelven a pedir una vez, en silencio
+  const upgradeTried = new Set();
+  async function upgradeOldSims() {
+    if (!window.api || !window.api.fetchReport) return;
+    const old = [...state.sims, ...state.extra].filter(s => s && s.id && !s.head && !upgradeTried.has(s.id));
+    let ok = 0;
+    // la simulación personal se guarda aparte: se vuelve a pedir y se sustituye conservando su ranura
+    const pold = state.personalList.filter(r => r && r.id && !r.head && !upgradeTried.has('p:' + r.id));
+    if (pold.length) {
+      const list = state.personalList.slice();
+      let n = 0;
+      for (const r of pold) {
+        upgradeTried.add('p:' + r.id);
+        try {
+          const res = await window.api.fetchReport(r.id);
+          const i = list.findIndex(x => x.id === r.id);
+          if (res && res.ok && res.report && i >= 0) { list[i] = r.slot ? { ...res.report, slot: r.slot } : res.report; n++; }
+        } catch { /* sin conexión o informe caducado: se queda como estaba */ }
+      }
+      if (n) { setPersonalList(list); state.animateNext = false; render(); ok += n; }
+    }
+    for (const s of old) {
+      upgradeTried.add(s.id);
+      if (await addSim(s.id, true, true, { silentErr: true }) === 'ok') ok++;
+    }
+    if (ok) toast(`${T().updated}: ${ok}`);
   }
 
   function removeSim(id) {
@@ -1903,6 +1931,7 @@
   // ---------- Inicio ----------
   applyTheme();
   render();
+  setTimeout(upgradeOldSims, 1500);
   refreshGear();
   // Reinicio semanal con la app abierta: se vuelve a pintar (fechas del roster y del cofre, que se pide otra vez)
   let seenReset = lastReset('eu') + ':' + lastReset('us');
