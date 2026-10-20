@@ -546,7 +546,15 @@
       const g = groups.get(key);
       g.items.push(it); g.total += it.gain;
     });
-    const groupsHTML = [...groups.values()].sort((x, y) => y.total - x.total).map(g => {
+    // Orden de las tarjetas (solo con las piezas de raid): prioridad, orden de jefes de la raid, valor esperado o mejor pieza
+    const lootSort = pcat === 'raid' && ['priority', 'boss', 'ev', 'best'].includes(S().lootSort) ? S().lootSort : 'priority';
+    const bossPos = new Map(state.bosses.groups.flatMap(g => g.bosses).map((b, i) => [b.id, i]));
+    const posOf = g => (g.src && bossPos.has(g.src.encounter) ? bossPos.get(g.src.encounter) : 999);
+    const avg = g => g.total / (g.items.length || 1), top = g => Math.max(...g.items.map(i => i.gain));
+    const byGain = (x, y) => y.total - x.total;
+    const cmp = { priority: byGain, boss: (x, y) => posOf(x) - posOf(y) || byGain(x, y), ev: (x, y) => avg(y) - avg(x) || byGain(x, y), best: (x, y) => top(y) - top(x) || byGain(x, y) }[lootSort];
+    const sortBar = pcat === 'raid' ? `<div class="loot-sortbar"><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>` : '';
+    const groupsHTML = [...groups.values()].sort(cmp).map(g => {
       const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = g.items.map(it => {
@@ -579,7 +587,7 @@
     html += `<section class="panel card"><div class="card-head">${specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
       + `<div><h2 style="color:${readable(col)}">${esc(p.character.name)} ${multi ? '' : diffBadge(p.difficulty)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
       + `<span class="spacer"></span><div class="card-tools">${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
-      + (groupsHTML ? `<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
+      + (groupsHTML ? `${sortBar}<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
   }
 
@@ -1789,6 +1797,7 @@
     const gvc = state.personalList[0]?.character;
     if (gvc && e.target.matches('[data-gv-count]')) { gvWorldSet(gvc, { count: Number(e.target.value) || 0 }); state.animateNext = false; render(); return; }
     if (gvc && e.target.matches('[data-gv-tier]')) { const tiers = gvWorld(gvc).tiers.slice(); tiers[Number(e.target.dataset.gvTier)] = e.target.value; gvWorldSet(gvc, { tiers }); state.animateNext = false; render(); return; }
+    if (e.target.id === 'lootSort') { S().lootSort = e.target.value; persistSettings(); state.animateNext = false; render(); return; }
     if (e.target.id === 'coinCount') { S().coins = Math.max(1, Math.min(20, Number(e.target.value) || 5)); persistSettings(); render(); return; }
     if (e.target.id === 'bossPick') { S().bossPick = e.target.value === 'all' ? 'all' : Number(e.target.value); persistSettings(); state.animateNext = true; render(); return; }
   });

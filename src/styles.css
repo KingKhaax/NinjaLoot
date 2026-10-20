@@ -696,3 +696,7 @@ a.navbtn, a.btn { text-decoration: none; }
 .lg-row .lg-g b { color: #3fcf6a; }
 :root[data-theme="light"] .lg-head .lg-tot b, :root[data-theme="light"] .lg-row .lg-g b { color: #1a8f43; }
 @media (max-width: 760px) { .loot-grid { grid-template-columns: 1fr; } }
+
+/* Todas las piezas: selector de orden de las tarjetas de jefe (solo con piezas de raid) */
+.loot-sortbar { display: flex; align-items: center; gap: 8px; margin: 4px 0 8px; }
+.loot-sortbar select { min-width: 160px; }
