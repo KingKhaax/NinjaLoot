@@ -193,7 +193,7 @@
   const trName = n => (S().lang === 'es' && ES_NAMES[n]) || n;
   const bossLabel = enc => trName((state.bosses.names || {})[enc] || '');
   // Icono del jefe (Warcraft Logs) a partir de su nombre en inglés; si no se conoce o no carga, no se muestra nada
-  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[bossLabel(enc)]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
+  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
   const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];

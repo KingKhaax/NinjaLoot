@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.4.8', 'Con la web en español ya salen los iconos de todos los jefes (Nymrissa Clamaolas, Nek’zali, Los colmillos gemelos, El Altar en Espiral…): se buscaban por su nombre traducido y solo salían los que se llaman igual en inglés.'],
     ['1.4.7', 'Los iconos de la barra superior (Inicio, Tiers, Simulación personal, Gráficas, Rotaciones, Roster, Idioma y Ajustes) y el resto de iconos de interfaz se ven menos ampliados: se recorta solo su marco, igual que en WipeTime.'],
     ['1.4.6', 'La portada siempre tiene la dirección limpia (ninjaloot.vercel.app), sin «#/», también al volver a Inicio o al abrir un enlace guardado con «#/», igual que WipeTime.'],
     ['1.4.5', 'La pestaña del navegador pone solo «NinjaLoot» en la portada, sin «· Inicio», igual que WipeTime. Las demás pantallas siguen mostrando su nombre.'],
@@ -65,6 +66,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.4.8', 'With the web in Spanish every boss icon now shows (Nymrissa Wavecaller, Nek’zali, The Twin Fangs, The Coiled Altar…): they were looked up by their translated name, so only the ones named the same in English appeared.'],
     ['1.4.7', 'The top bar icons (Home, Tiers, Personal sim, Charts, Rotations, Roster, Language and Settings) and the other interface icons are less zoomed in: only their frame is trimmed, like in WipeTime.'],
     ['1.4.6', 'The home page always has the clean address (ninjaloot.vercel.app), without “#/”, also when returning to Home or opening a saved link with “#/”, like WipeTime.'],
     ['1.4.5', 'The browser tab now says just “NinjaLoot” on the home page, without “· Home”, like WipeTime. The other screens still show their name.'],
