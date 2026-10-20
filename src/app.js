@@ -547,13 +547,13 @@
       g.items.push(it); g.total += it.gain;
     });
     // Orden de las tarjetas (solo con las piezas de raid): prioridad, orden de jefes de la raid, valor esperado o mejor pieza
-    const lootSort = pcat === 'raid' && ['priority', 'boss', 'ev', 'best'].includes(S().lootSort) ? S().lootSort : 'priority';
+    const lootSort = ['priority', 'boss', 'ev', 'best'].includes(S().lootSort) ? S().lootSort : 'priority';
     const bossPos = new Map(state.bosses.groups.flatMap(g => g.bosses).map((b, i) => [b.id, i]));
     const posOf = g => (g.src && bossPos.has(g.src.encounter) ? bossPos.get(g.src.encounter) : 999);
     const avg = g => g.total / (g.items.length || 1), top = g => Math.max(...g.items.map(i => i.gain));
     const byGain = (x, y) => y.total - x.total;
     const cmp = { priority: byGain, boss: (x, y) => posOf(x) - posOf(y) || byGain(x, y), ev: (x, y) => avg(y) - avg(x) || byGain(x, y), best: (x, y) => top(y) - top(x) || byGain(x, y) }[lootSort];
-    const sortBar = pcat === 'raid' ? `<div class="loot-sortbar"><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>` : '';
+    const sortBar = `<div class="loot-sortbar"><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
     const groupsHTML = [...groups.values()].sort(cmp).map(g => {
       const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
@@ -1515,8 +1515,18 @@
   document.body.appendChild(tipEl);
   const tipCache = new Map();
   let tipKey = null;
-  function cleanTip(html) { // quita scripts, eventos y enlaces del HTML externo
+  function cleanTip(html, trimSet) { // quita scripts, eventos y enlaces del HTML externo (y, si se pide, el bloque del conjunto)
     const doc = new DOMParser().parseFromString(html, 'text/html');
+    if (trimSet) {
+      const link = doc.querySelector('a[href*="item-set="]'), box = link && link.closest('span.q');
+      if (box) {
+        let n = box.nextSibling;
+        while (n) { const nx = n.nextSibling; n.remove(); n = nx; }
+        let p = box.previousSibling;
+        while (p && p.nodeName === 'BR') { const pv = p.previousSibling; p.remove(); p = pv; }
+        box.remove();
+      }
+    }
     doc.querySelectorAll('script,style,iframe,object,embed,link,meta,form,input,button').forEach(n => n.remove());
     doc.querySelectorAll('[class*=sellprice],[class*=money]').forEach(n => n.remove());
     doc.querySelectorAll('div,span').forEach(n => { if (/^\s*(Sell Price|Precio de venta)/i.test(n.textContent) && n.textContent.length < 60) n.remove(); });
@@ -1537,13 +1547,13 @@
     tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
   }
   async function showTip(g, x, y) {
-    const id = Number(g.dataset.item), ilvl = Number(g.dataset.ilvl) || 0, lang = S().lang, key = `${lang}:${id}:${ilvl}`;
+    const id = Number(g.dataset.item), ilvl = Number(g.dataset.ilvl) || 0, lang = S().lang, trim = g.dataset.tipTrim === 'set', key = `${lang}:${id}:${ilvl}${trim ? ':t' : ''}`;
     tipKey = key;
     const foot = g.dataset.gain ? `<div class="tip-gain">${esc(g.dataset.gain)}</div>` : '';
     const fallback = () => { const info = itemInfo({ id }); return `<div class="tip-fallback"><b style="color:${QUALITY_COLORS[info.quality]}">${esc(info.name)}</b><br>${esc(T().ilvl)} ${ilvl}</div>`; };
     if (!tipCache.has(key)) {
       tipEl.innerHTML = `<div class="tip-load">${esc(T().loading)}</div>`; tipEl.hidden = false; placeTip(x, y);
-      window.api.itemTooltip(id, ilvl, lang).then(r => { tipCache.set(key, r && r.ok ? cleanTip(r.html) : fallback()); if (tipKey === key) { tipEl.innerHTML = tipCache.get(key) + foot; placeTip(x, y); } });
+      window.api.itemTooltip(id, ilvl, lang).then(r => { tipCache.set(key, r && r.ok ? cleanTip(r.html, trim) : fallback()); if (tipKey === key) { tipEl.innerHTML = tipCache.get(key) + foot; placeTip(x, y); } });
       return;
     }
     tipEl.innerHTML = tipCache.get(key) + foot; tipEl.hidden = false; placeTip(x, y);
@@ -1669,8 +1679,8 @@
           + `<div class="ts-body"${open ? '' : ' hidden'}><div class="ts-bonus"><span class="ts-pc">${esc(t.tier2)}</span><p>${esc(b[0] || '')}</p></div><div class="ts-bonus"><span class="ts-pc">${esc(t.tier4)}</span><p>${esc(b[1] || '')}</p></div></div></div>`; }).join('')
       + `</div><h3>${esc(t.tierPieces)}</h3><div class="ptable-wrap"><table class="ptable"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.statsLabel)}</th><th>${esc(t.colBoss)}</th></tr></thead><tbody>`
       + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
-        return `<tr data-item="${it.id}" data-ilvl=""><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
-          + `<td>${esc(capFirst(t.slots[it.slot] || it.slot))}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td><b>${esc(bossLabel(it.boss) || '')}</b></td></tr>`; }).join('')
+        return `<tr data-item="${it.id}" data-ilvl="" data-tip-trim="set"><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
+          + `<td>${esc(capFirst(t.slots[it.slot] || it.slot))}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td class="tb"><span class="tb-in">${bossImg(it.boss, 24)}<b>${esc(bossLabel(it.boss) || '')}</b></span></td></tr>`; }).join('')
       + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div></section>`;
     return html;
   }

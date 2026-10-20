@@ -739,3 +739,7 @@ a.navbtn, a.btn { text-decoration: none; }
 .sh-slot { flex-direction: column; align-items: center; gap: 3px; }
 .sh-il { font-size: 11.5px; line-height: 1; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
 .sh-gear { align-items: flex-end; }
+
+/* Piezas de tier: el jefe que las suelta lleva su icono */
+.ptable td.tb .tb-in { display: flex; align-items: center; gap: 9px; }
+.ptable td.tb .boss-ic { width: 24px; height: 24px; border-radius: var(--r-icon, 6px); flex: none; }
