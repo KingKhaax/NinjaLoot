@@ -743,3 +743,12 @@ a.navbtn, a.btn { text-decoration: none; }
 /* Piezas de tier: el jefe que las suelta lleva su icono */
 .ptable td.tb .tb-in { display: flex; align-items: center; gap: 9px; }
 .ptable td.tb .boss-ic { width: 24px; height: 24px; border-radius: var(--r-icon, 6px); flex: none; }
+
+.ptable .stat-n { color: var(--muted); font-weight: 500; font-variant-numeric: tabular-nums; }
+
+/* Notas de catalizador de Ula'tek y bibelot */
+.cat-note { margin-top: 4px; font-size: 12px; color: var(--muted); line-height: 1.35; }
+.cat-note.bib { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.cat-note.bib img { width: 22px; height: 22px; border-radius: 5px; border: 1px solid #a335ee; }
+.cat-note.bib b { color: #c58bff; font-weight: 600; }
+.lg-row .cat-note { grid-column: 2 / -1; }

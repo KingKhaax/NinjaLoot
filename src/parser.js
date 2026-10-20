@@ -191,6 +191,16 @@ function parseReport(json, id) {
   // Piezas de tier: "fromToken" = sale de la ficha del jefe (clic derecho); "catalyst" = se convierte en el catalizador
   const tierOf = new Map(), armor = new Map();
   const meta = (json.simbot && json.simbot.meta) || {}, lib = meta.itemLibrary;
+  // Datos de las piezas de origen de los catalizadores (nombre, estadísticas secundarias y dónde caen)
+  const infoById = new Map();
+  for (const e of [...(Array.isArray(lib) ? lib : []), ...(Array.isArray(meta.encounterItems) ? meta.encounterItems : [])]) if (e && e.id && !infoById.has(e.id)) infoById.set(e.id, e);
+  const SEC = new Set([32, 36, 40, 49]);
+  const catInfo = (fromId, encounter) => {
+    const e = infoById.get(fromId);
+    if (!e) return { from: fromId };
+    const stats = [...new Set((e.stats || []).map(x => x.id).filter(id => SEC.has(id)))];
+    return { from: fromId, name: e.name || '', stats, same: (e.sources || []).some(x => x.encounterId === encounter) };
+  };
   for (const e of [...(Array.isArray(lib) ? lib : []), ...(Array.isArray(meta.encounterItems) ? meta.encounterItems : [])]) if (e && e.itemClass != null) armor.set(e.id, armorOf(e));
   for (const e of Array.isArray(lib) ? lib : []) {
     const k = `${e.id}:${e.encounterId}`;
@@ -206,7 +216,7 @@ function parseReport(json, id) {
     const key = `${p.id}:${p.ilvl}`;
     const prev = best.get(key);
     const tier = (p.catalystFrom && 'catalyst') || (p.source && tierOf.get(`${p.id}:${p.source.encounter}`)) || null;
-    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier, armor: armor.get(p.id) || null });
+    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier, armor: armor.get(p.id) || null, catFrom: p.catalystFrom ? catInfo(p.catalystFrom, p.source && p.source.encounter) : null });
   }
   if (!best.size) {
     const any = results.some(r => parseProfilesetName(r.name));
