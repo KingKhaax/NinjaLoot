@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.6.1', 'En cada simulación cargada, junto a «de hoy» o «hace N días» ahora sale también la hora a la que se hizo (por ejemplo «de hoy, 18:36»).'],
     ['1.6.0', 'Las simulaciones tienen una cabecera igual que la de Raidbots según su tipo (Droptimizer, Quick Sim o Top Gear): título, DPS grande (mejor pieza o mejor combinación), opciones de la sim, personaje con raza, nivel y reino, botón para exportar SimC y la fila de equipo con su nivel de objeto medio.'],
     ['1.5.2', 'Todas las piezas, con la fuente Raid: nuevo selector de orden para las tarjetas de jefe (Prioridad, Orden de jefes de la raid, Valor esperado y Mejor), como en Raidbots.'],
     ['1.5.1', 'Todas las piezas pasa a verse como botín por jefe: una tarjeta por jefe o mazmorra con sus piezas, lo que suman en DPS y las de mayor mejora arriba, en vez de una tabla larga.'],
@@ -71,6 +72,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.6.1', 'On each loaded simulation, next to “today” or “N days ago” the time it was run now shows too (for example “today, 18:36”).'],
     ['1.6.0', 'Simulations have a header like Raidbots one depending on their type (Droptimizer, Quick Sim or Top Gear): title, big DPS (best item or best combo), sim options, character with race, level and realm, a SimC export button and the gear row with its average item level.'],
     ['1.5.2', 'All pieces, with the Raid source: new sort selector for the boss cards (Priority, Boss Order of the raid, Expected Value and Best), like Raidbots.'],
     ['1.5.1', 'All pieces now show as loot by boss: one card per boss or dungeon with its pieces, what they add in DPS and the biggest upgrades on top, instead of one long table.'],

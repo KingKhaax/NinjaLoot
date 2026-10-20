@@ -687,7 +687,7 @@
   const fightLabel = r => r.fight && r.fight.targets ? `${r.fight.targets}T ${Math.round((r.fight.secs || 300) / 60)}m${r.fight.style && !/patchwerk/i.test(r.fight.style) ? ' ' + r.fight.style : ''}` : '';
   const simLabel = r => [catName(simCategory(r)), r.difficulty ? DIFF_TAG[r.difficulty] : '', fightLabel(r)].filter(Boolean).join(' ');
   const SIM_COLORS = ['#b04df5', '#3fcf6a', '#f0a030', '#3fc7eb', '#ee5a45', '#e8d44d'];
-  const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; return d == null ? '' : d < 1 ? T().simToday : T().simDays(d); };
+  const simAge = r => { const d = r.simDate ? Math.floor((Date.now() - r.simDate) / 864e5) : null; if (d == null) return ''; const tm = new Date(r.simDate).toLocaleTimeString({ es: 'es-ES', en: 'en-GB' }[S().lang] || 'es-ES', { hour: '2-digit', minute: '2-digit' }); return `${d < 1 ? T().simToday : T().simDays(d)}, ${tm}`; };
 
   // Huecos fijos para cargar una simulación de cada tipo (raid, míticas+, delves); las sims de otro tipo o mixtas salen como hueco extra
   const SLOT_KEYS = ['raid', 'dungeon', 'other']; // «Otro contenido»: cualquier sim que no sea de raid ni de míticas (delves, profesiones, PvP...)
