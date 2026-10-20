@@ -643,3 +643,34 @@ a.navbtn, a.btn { text-decoration: none; }
 /* Aviso de versión nueva de la web (con «Recargar»), como en WipeTime */
 .newver { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 10px; padding: 8px 12px; max-width: calc(100vw - 24px); background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; box-shadow: 0 8px 28px #0009; font-size: 14px; color: var(--text); animation: nvIn .35s cubic-bezier(.2, .9, .25, 1.15) both; }
 @keyframes nvIn { from { opacity: 0; transform: translateX(-50%) translateY(14px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+/* Dónde tirar moneda: resumen, podio con las tres mejores monedas y el resto en lista */
+.coin-sum { display: flex; flex-wrap: wrap; gap: 8px 28px; padding: 12px 16px; margin: 12px 0; background: var(--panel2); border: 1px solid var(--border); border-radius: var(--r-card, 10px); }
+.coin-sum div { display: grid; gap: 2px; }
+.coin-sum small { color: var(--muted); font-size: 12px; }
+.coin-sum b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.coin-sum b.g { color: #3fcf6a; }
+.coin-pod { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.coin-card { position: relative; display: grid; gap: 10px; align-content: start; padding: 16px; background: var(--panel2); border: 1px solid var(--border); border-radius: var(--r-card, 10px); overflow: hidden; }
+.coin-card.first { border-color: var(--accent); box-shadow: 0 10px 30px -18px var(--accent); }
+.cp-rk { font-size: 12px; font-weight: 700; letter-spacing: .06em; color: var(--accent); }
+.cp-big { font-size: 28px; line-height: 1; font-weight: 700; color: #3fcf6a; font-variant-numeric: tabular-nums; }
+.cp-big .meta { font-size: 13px; font-weight: 500; }
+.coin-card .coin-item { min-width: 0; background: transparent; border: 0; padding: 0; }
+.coin-card .coin-boss { margin: 0; }
+.coin-list { display: grid; gap: 2px; padding: 6px; border: 1px solid var(--border); border-radius: var(--r-card, 10px); }
+.coin-line { display: grid; grid-template-columns: 30px minmax(0, 1.3fr) minmax(0, 1.2fr) auto; gap: 14px; align-items: center; padding: 7px 10px; border-radius: 8px; }
+.coin-line:hover { background: var(--panel2); }
+.coin-line .coin-rank { font-size: 15px; text-align: left; }
+.coin-line .coin-item { min-width: 0; background: transparent; border: 0; padding: 0; }
+.coin-line .coin-item img { width: 30px; height: 30px; }
+.coin-line .cl-boss .coin-boss.has-ic { grid-template-columns: 30px 1fr; }
+.coin-line .cl-boss .boss-ic { width: 30px; height: 30px; }
+.coin-line .cl-boss .meta { display: none; }
+.coin-line .cl-gain { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+@media (max-width: 760px) {
+  .coin-pod { grid-template-columns: 1fr; }
+  .coin-line { grid-template-columns: 26px minmax(0, 1fr) auto; }
+  .coin-line .cl-boss { display: none; }
+}
+:root[data-theme="light"] .coin-sum b.g, :root[data-theme="light"] .cp-big { color: #1a8f43; }

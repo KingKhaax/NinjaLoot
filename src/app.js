@@ -613,12 +613,29 @@
     const pick = `<label class="coin-count">${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
     const srcSeg = `<div class="seg">${[['all', t.coinSrcAll], ['raid', t.coinSrcRaid], ['dungeon', t.coinSrcDungeon]].map(([k, l]) => `<button data-coin-src="${k}" class="${src === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
-    rows.forEach(({ it }, i) => {
-      const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
-      const cat = catOfSrc(srcOf(it)), ic = cat === 'dungeon' ? nameImg(st.name, 36) : cat === 'raid' ? bossImg(srcOf(it).encounter, 36) : '';
-      body += `<div class="coin-row"><div class="coin-rank">${i + 1}</div><div class="coin-boss${ic ? ' has-ic' : ''}">${ic}<div class="cb-tx"><span class="coin-cat cat-${catOfSrc(srcOf(it))}">${esc(catName(catOfSrc(srcOf(it))))}</span><b>${esc(st.name)}</b>${st.sub && st.sub !== catName(catOfSrc(srcOf(it))) ? `<div class="meta">${esc(st.sub)}</div>` : ""}</div></div><div class="coin-items">`
-        + `<div class="coin-item" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><div class="coin-gain">+${nf().format(it.gain)} <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div></div></div></div>`;
-    });
+    const pct = S().unit === 'pct';
+    // Resumen del plan, podio con las tres mejores monedas y el resto en lista
+    const totalGain = rows.reduce((x, r) => x + r.it.gain, 0), totalPct = rows.reduce((x, r) => x + r.it.pct, 0);
+    const sources = new Set(rows.map(r => srcText(r.it).name)).size;
+    const gainTxt = it => (pct ? `+${it.pct.toFixed(2)}%` : `+${nf().format(it.gain)}`);
+    const pctTxt = it => (pct ? '' : ` <span class="meta">(${it.pct.toFixed(2)}%)</span>`);
+    const itemChip = (it, cls = '') => {
+      const info = itemInfo(it); state.shown.add(it.id);
+      return `<div class="coin-item cp-item ${cls}" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span></div></div>`;
+    };
+    const bossBlock = it => {
+      const st = srcText(it), c = catOfSrc(srcOf(it));
+      const ic = c === 'dungeon' ? nameImg(st.name, 36) : c === 'raid' ? bossImg(srcOf(it).encounter, 36) : '';
+      const sub = st.sub && st.sub !== catName(c) ? `<div class="meta">${esc(st.sub)}</div>` : '';
+      return `<div class="coin-boss${ic ? ' has-ic' : ''}">${ic}<div class="cb-tx"><span class="coin-cat cat-${c}">${esc(catName(c))}</span><b>${esc(st.name)}</b>${sub}</div></div>`;
+    };
+    if (rows.length) {
+      body += `<div class="coin-sum"><div><small>${esc(t.coinSumCoins)}</small><b>${rows.length}</b></div><div><small>${esc(t.coinSumGain)}</small><b class="g">+${nf().format(totalGain)}</b></div><div><small>${esc(t.coinSumPct)}</small><b class="g">+${totalPct.toFixed(2)}%</b></div><div><small>${esc(t.coinSumBosses)}</small><b>${sources}</b></div></div>`;
+      body += '<div class="coin-pod">' + rows.slice(0, 3).map(({ it }, i) => `<article class="coin-card${i === 0 ? ' first' : ''}"><span class="cp-rk">${esc(t.coinNum(i + 1))}</span>${itemChip(it)}<div class="cp-big">${gainTxt(it)}${pctTxt(it)}</div>${bossBlock(it)}</article>`).join('') + '</div>';
+      if (rows.length > 3) {
+        body += '<div class="coin-list">' + rows.slice(3).map(({ it }, i) => `<div class="coin-line"><span class="coin-rank">${i + 4}</span>${itemChip(it, 'cl-item')}<div class="cl-boss">${bossBlock(it)}</div><div class="cl-gain"><span class="coin-gain">${gainTxt(it)}</span>${pctTxt(it)}</div></div>`).join('') + '</div>';
+      }
+    }
     return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
