@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.7.1', 'Los iconos del equipo de la cabecera que no cargaban ya salen: si falla uno se prueba con el CDN de iconos de Blizzard, después con el icono que da Wowhead y, si nada sirve, con un signo de interrogación (nunca más un icono roto). También se quitan los iconos de jefe que fallen.'],
     ['1.7.0', 'Todas las piezas, selector de orden: ahora Valor esperado y Prioridad funcionan como los de Raidbots. Valor esperado es el DPS medio de todas las piezas del jefe (las que no mejoran cuentan 0) y Prioridad agrupa los jefes con un valor esperado parecido (a menos de 0,2 %) y pone primero el que más probabilidad tiene de darte una mejora. Además, la cabecera nueva se ha probado también con Quick Sim y Top Gear.'],
     ['1.6.9', 'Las simulaciones guardadas antes de la cabecera nueva (sin raza, reino, iconos del equipo ni SimC) se actualizan solas al abrir NinjaLoot: se vuelven a pedir a Raidbots una vez, en silencio, y se quedan completas. Si una ya caducó en Raidbots, se queda como estaba.'],
     ['1.6.8', 'La barra superior de NinjaLoot se queda fija arriba al bajar con la rueda en las pantallas largas (antes desaparecía al pasar de la primera pantalla).'],
@@ -81,6 +82,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.7.1', 'The header gear icons that failed to load now show: if one fails, the Blizzard icon CDN is tried, then the icon Wowhead gives and, if nothing works, a question mark (never a broken icon again). Boss icons that fail are also removed.'],
     ['1.7.0', 'All pieces, sort selector: Expected Value and Priority now work like Raidbots. Expected Value is the average DPS of all the boss pieces (non-upgrades count 0) and Priority groups bosses with a similar expected value (within 0.2%) and puts first the one with the best chance of an upgrade. The new header has also been tested with Quick Sim and Top Gear.'],
     ['1.6.9', 'Simulations saved before the new header (without race, realm, gear icons or SimC) update themselves when NinjaLoot opens: they are requested again from Raidbots once, silently, and end up complete. If one has already expired on Raidbots, it stays as it was.'],
     ['1.6.8', 'The NinjaLoot top bar now stays pinned at the top when scrolling down on long screens (it used to disappear after the first screen).'],

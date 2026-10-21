@@ -818,6 +818,20 @@
     const bn = t.bibelotName;
     return `<div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(bn)}</b> <span>${esc(t.bibelotNote)}</span></div>`;
   }
+  // Iconos que no cargan: primero el CDN de iconos de Blizzard, luego el icono que da Wowhead para esa pieza y, si nada sirve, el signo de interrogación.
+  // Los iconos de jefe que fallan se quitan. (Un controlador onerror en línea no vale con la política de seguridad de la web.)
+  document.addEventListener('error', e => {
+    const im = e.target;
+    if (!im || im.tagName !== 'IMG') return;
+    if (im.classList.contains('boss-ic')) { im.remove(); return; }
+    if (!im.classList.contains('sh-img')) return;
+    const step = Number(im.dataset.fb || 0);
+    im.dataset.fb = step + 1;
+    const id = Number(im.parentElement && im.parentElement.dataset.item), ic = im.dataset.ic;
+    if (step === 0 && ic) im.src = `https://render.worldofwarcraft.com/eu/icons/56/${ic}.jpg`;
+    else if (step <= 1 && id) { const alt = itemInfo({ id }).icon; im.src = alt && alt !== im.src ? alt : WEB_ICON('inv_misc_questionmark'); }
+    else im.src = WEB_ICON('inv_misc_questionmark');
+  }, true);
   // Retrato 3D del personaje: se pide una vez a Blizzard y se recuerda
   const portraits = load('ninjaloot.portraits', {}), portraitReq = new Set();
   const trackColor = tr => (/myth/i.test(tr) ? '#ff8000' : /hero/i.test(tr) ? '#a335ee' : /champion/i.test(tr) ? '#0070ff' : /veteran/i.test(tr) ? '#1eff00' : tr ? '#9d9d9d' : '');
@@ -852,7 +866,7 @@
       const info = itemInfo({ id: it.id, name: it.name }); state.shown.add(it.id);
       const src = it.icon ? WEB_ICON(it.icon) : info.icon, q = QUALITY_COLORS[it.quality == null ? info.quality : it.quality] || QUALITY_COLORS[4];
       const tc = trackColor(it.track) || ilvlColor(it.ilvl);
-      return `<span class="sh-slot" data-item="${it.id}" data-ilvl="${it.ilvl || ''}" title="${esc(it.name || info.name)}${it.track ? ' · ' + esc(it.track) : ''}"><b class="sh-il"${tc ? ` style="color:${tc}"` : ''}>${it.ilvl || ''}</b><img src="${src}" alt="" style="border-color:${q}"></span>`;
+      return `<span class="sh-slot" data-item="${it.id}" data-ilvl="${it.ilvl || ''}" title="${esc(it.name || info.name)}${it.track ? ' · ' + esc(it.track) : ''}"><b class="sh-il"${tc ? ` style="color:${tc}"` : ''}>${it.ilvl || ''}</b><img class="sh-img" data-ic="${esc(it.icon || '')}" src="${src}" alt="" style="border-color:${q}"></span>`;
     }).join('');
     const spec = specIcon(sim), portrait = portraitOf(sim);
     return `<div class="sim-hdr" style="--cc:${col}${compact ? '' : ''}"><div class="sh-top"><div class="sh-tt"><h2 class="sh-title">${esc(title)}</h2>${h.subtitle || sim.title ? `<div class="sh-sub">${esc(h.subtitle || sim.title)}</div>` : ''}</div>`
