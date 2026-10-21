@@ -104,6 +104,28 @@ test('Discord: el interruptor «Leer el canal automáticamente» se activa, se q
   noErrors(p);
 });
 
+test('Discord: «Sims que recoge» empieza en el reinicio semanal y permite de 1 a 6 días', async () => {
+  const p = await newPage(browser);
+  const calls = [];
+  await p.route(/ninjaloot-relay/, (r) => { calls.push(r.request().url()); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ channel: 'sims', lastId: '5', sims: [] }) }).catch(() => {}); });
+  await p.goto(url, { waitUntil: 'load' }); await p.waitForTimeout(1000);
+  await p.click('#btnSettings'); await p.click('[data-tab="discord"]'); await p.waitForSelector('#dcDays');
+  const opts = await p.$$eval('#dcDays option', (e) => e.map((x) => [x.value, x.textContent]));
+  assert.deepEqual(opts.map((o) => o[0]), ['0', '1', '2', '3', '4', '5', '6']);
+  assert.match(opts[0][1], /reinicio semanal/);
+  assert.equal(opts[1][1], 'Cada 1 día');
+  assert.equal(opts[6][1], 'Cada 6 días');
+  assert.equal(await p.$eval('#dcDays', (e) => e.value), '0', 'por defecto: reinicio semanal');
+  await p.fill('#dcChannel', '123456789012345678'); await p.click('[data-dc-save]'); await p.waitForTimeout(500);
+  await p.click('#dcEnabled'); await p.waitForTimeout(900);
+  await p.selectOption('#dcDays', '3'); await p.waitForTimeout(1200);
+  assert.equal(await p.$eval('#dcDays', (e) => e.value), '3', 'la opción se queda elegida');
+  const since = calls.filter((u) => /op=history/.test(u)).map((u) => Number(/since=(\d+)/.exec(u)[1])).pop();
+  const expected = Date.now() - 3 * 864e5;
+  assert.ok(Math.abs(since - expected) < 60000, 'pide las sims de los últimos 3 días');
+  noErrors(p);
+});
+
 test('pulsar el nombre de Discord o Battle.net lo copia y avisa en medio de la pantalla', async () => {
   const p = await open();
   await p.click('#verBadge'); await p.waitForSelector('.about-friend');

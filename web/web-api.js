@@ -132,7 +132,8 @@
 
   // --- Discord (NinjaBot, mismo servidor intermedio que el programa) ---
   const dcListeners = { sims: [], status: [] };
-  let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '', region: 'eu' }), dcTimer = null, dcStatus = { state: 'off' };
+  let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '', region: 'eu', windowDays: 0 }), dcTimer = null, dcStatus = { state: 'off' };
+  const dcSince = () => (dc.windowDays ? Date.now() - dc.windowDays * 864e5 : weeklyReset(dc.region));
   // Último reinicio semanal de WoW: miércoles 04:00 UTC en Europa, martes 15:00 UTC en América
   function weeklyReset(region) {
     const now = new Date(), [day, hour] = region === 'us' ? [2, 15] : [3, 4];
@@ -152,7 +153,7 @@
     if (!dc.enabled || !dc.channelId) return dcEmit({ state: 'off' });
     let wait = 6000;
     try {
-      if (!dc.lastId) { const r = await relay(`op=history&channel=${dc.channelId}&since=${weeklyReset(dc.region)}`); dc.channelName = r.channel || dc.channelId; dc.lastId = r.lastId || '0'; save('ninjaloot.web.discord', dc); if (r.sims && r.sims.length) dcListeners.sims.forEach(f => f(r.sims)); dcEmit({ state: 'ok', channel: dc.channelName }); }
+      if (!dc.lastId) { const r = await relay(`op=history&channel=${dc.channelId}&since=${dcSince()}`); dc.channelName = r.channel || dc.channelId; dc.lastId = r.lastId || '0'; save('ninjaloot.web.discord', dc); if (r.sims && r.sims.length) dcListeners.sims.forEach(f => f(r.sims)); dcEmit({ state: 'ok', channel: dc.channelName }); }
       else {
         const r = await relay(`channel=${dc.channelId}&after=${dc.lastId}`);
         if (r.lastId && r.lastId !== dc.lastId) { dc.lastId = r.lastId; save('ninjaloot.web.discord', dc); }
@@ -206,7 +207,7 @@
     checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
     installUpdate: async () => ({ ok: false }),
     onUpdateProgress: () => {},
-    discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, channelName: dc.channelName, region: dc.region || 'eu', reset: weeklyReset(dc.region), status: dcStatus }),
+    discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, channelName: dc.channelName, region: dc.region || 'eu', windowDays: dc.windowDays || 0, reset: dcSince(), status: dcStatus }),
     rosterGuild: async (region, realm, name) => {
       if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
       try {
@@ -218,6 +219,7 @@
       if (o.channelId !== undefined) { const id = (String(o.channelId).trim().match(/(\d{15,25})\/?$/) || [])[1] || ''; if (id !== dc.channelId) { dc.lastId = ''; dc.channelName = ''; } dc.channelId = id; }
       if (o.enabled !== undefined) { if (o.enabled && !dc.enabled) dc.lastId = ''; dc.enabled = !!o.enabled; }
       if (o.region !== undefined) dc.region = o.region === 'us' ? 'us' : 'eu';
+      if (o.windowDays !== undefined) { const d = Math.min(6, Math.max(0, Math.floor(Number(o.windowDays) || 0))); if (d !== (dc.windowDays || 0)) dc.lastId = ''; dc.windowDays = d; }
       save('ninjaloot.web.discord', dc); dcRestart();
       return { ok: true, channelId: dc.channelId };
     },

@@ -268,7 +268,7 @@ ipcMain.handle('app:open', (_e, url) => { if (/^https:\/\//.test(url)) shell.ope
 const RELAY = 'https://ninjaloot-relay.vercel.app/api/discord';
 const discordFile = () => path.join(userData(), 'discord.json');
 let dc = null, dcTimer = null, dcStatus = { state: 'off' };
-const dcLoad = () => (dc ??= (() => { const c = readJSON(discordFile(), {}); return { enabled: !!c.enabled, channelId: c.channelId || '', channelName: c.channelName || '', lastId: c.lastId || '', region: c.region === 'us' ? 'us' : 'eu' }; })());
+const dcLoad = () => (dc ??= (() => { const c = readJSON(discordFile(), {}); return { enabled: !!c.enabled, channelId: c.channelId || '', channelName: c.channelName || '', lastId: c.lastId || '', region: c.region === 'us' ? 'us' : 'eu', windowDays: Math.min(6, Math.max(0, Number(c.windowDays) || 0)) }; })());
 // Último reinicio semanal de WoW: miércoles 04:00 UTC en Europa, martes 15:00 UTC en América
 function weeklyReset(region) {
   const now = new Date(), [day, hour] = region === 'us' ? [2, 15] : [3, 4];
@@ -277,6 +277,7 @@ function weeklyReset(region) {
   if (d > now) d.setUTCDate(d.getUTCDate() - 7);
   return d.getTime();
 }
+const dcSince = c => (c.windowDays ? Date.now() - c.windowDays * 864e5 : weeklyReset(c.region));
 const dcSave = () => { try { fs.writeFileSync(discordFile(), JSON.stringify(dc)); } catch {} };
 const dcEmit = status => { dcStatus = status; for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:status', status); };
 async function relay(query, init) {
@@ -292,7 +293,7 @@ async function dcTick() {
   let wait = 6000;
   try {
     if (!c.lastId) { // al conectar: las sims publicadas desde el último reinicio semanal (las de semanas anteriores no)
-      const r = await relay(`op=history&channel=${c.channelId}&since=${weeklyReset(c.region)}`);
+      const r = await relay(`op=history&channel=${c.channelId}&since=${dcSince(c)}`);
       c.channelName = r.channel || c.channelId; c.lastId = r.lastId || '0'; dcSave();
       if (r.sims && r.sims.length) for (const w of BrowserWindow.getAllWindows()) w.webContents.send('discord:sims', r.sims);
       dcEmit({ state: 'ok', channel: c.channelName });
@@ -310,7 +311,7 @@ async function dcTick() {
   dcTimer = setTimeout(dcTick, wait);
 }
 function dcRestart() { if (dcTimer) clearTimeout(dcTimer); dcTimer = null; dcTick(); }
-ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, channelName: c.channelName, region: c.region, reset: weeklyReset(c.region), status: dcStatus }; });
+ipcMain.handle('discord:get', () => { const c = dcLoad(); return { enabled: c.enabled, channelId: c.channelId, channelName: c.channelName, region: c.region, windowDays: c.windowDays, reset: dcSince(c), status: dcStatus }; });
 // Miembros de una guild (Raider.IO) para el roster
 ipcMain.handle('roster:guild', async (_e, region, realm, name) => {
   if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
@@ -336,6 +337,7 @@ ipcMain.handle('discord:set', (_e, o = {}) => {
   }
   if (o.enabled !== undefined) { if (o.enabled && !c.enabled) c.lastId = ''; c.enabled = !!o.enabled; }
   if (o.region !== undefined) c.region = o.region === 'us' ? 'us' : 'eu';
+  if (o.windowDays !== undefined) { const d = Math.min(6, Math.max(0, Math.floor(Number(o.windowDays) || 0))); if (d !== c.windowDays) c.lastId = ''; c.windowDays = d; }
   dcSave(); dcRestart();
   return { ok: true, channelId: c.channelId };
 });

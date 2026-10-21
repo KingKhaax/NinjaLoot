@@ -1375,17 +1375,19 @@
       + `<div class="card-tools" style="margin:6px 0 14px"><button class="btn primary" data-dc-invite>${esc(t.dcInvite)}</button></div>`
       + `<label class="switch-row" style="flex-direction:row;align-items:center"><input type="checkbox" class="switch" id="dcEnabled" ${c.enabled ? 'checked' : ''}> ${esc(t.dcEnable)}</label>`
       + `<div class="row"><label for="dcChannel">${esc(t.dcChannel)}</label><input id="dcChannel" class="txt" spellcheck="false" value="${esc(c.channelId)}" placeholder="${esc(t.dcChannelPh)}" style="max-width:340px"></div>`
+      + `<div class="row"><label for="dcDays">${esc(t.dcWindow)}<small class="meta" style="display:block">${esc(t.dcWindowHint)}</small></label><select id="dcDays">${[0, 1, 2, 3, 4, 5, 6].map(d => `<option value="${d}"${(c.windowDays || 0) === d ? ' selected' : ''}>${esc(d ? t.dcWindowDays(d) : t.dcWindowWeek)}</option>`).join('')}</select></div>`
       + `<div class="card-tools" style="margin:12px 0"><button class="btn" data-dc-save>${esc(t.dcSave)}</button>${c.channelId ? ` <button class="btn danger" data-dc-clear>${esc(t.dcDisconnect)}</button>` : ''}</div>`
       + `<div class="status" id="dcStatus">${dcStatusText(c.status)}</div>`
       + `<h3>${esc(t.dcHelpTitle)}</h3><ol class="steps">${t.dcSteps.map(x => `<li>${esc(x)}</li>`).join('')}</ol>`;
     // el interruptor se guarda solo al cambiarlo (antes había que pulsar también «Guardar y conectar»)
     box.querySelector('#dcEnabled').addEventListener('change', () => saveDiscord(box, true));
+    box.querySelector('#dcDays').addEventListener('change', () => saveDiscord(box, true));
   }
   async function saveDiscord(box, quiet = false) {
     const btn = box.querySelector('[data-dc-save]');
     if (btn) btn.disabled = true;
     const ch = box.querySelector('#dcChannel').value.trim(), en = box.querySelector('#dcEnabled').checked;
-    const r = await window.api.discordSet({ channelId: ch, enabled: en });
+    const r = await window.api.discordSet({ channelId: ch, enabled: en, windowDays: Number(box.querySelector('#dcDays').value) || 0 });
     if (ch && !r.channelId) toast(T().dcBadChannel, true);
     else if (!quiet) toast(T().dcSaved);
     drawDiscord(box);

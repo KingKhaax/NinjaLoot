@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.6', 'Ajustes → Discord: nuevo selector «Sims que recoge» para elegir cada cuánto toma NinjaBot las simulaciones del canal. Por defecto «En cada reinicio semanal»; también «Cada 1 día», «Cada 2 días» y así hasta «Cada 6 días» (solo se añaden las sims pegadas dentro de ese periodo).'],
     ['1.8.5', 'El icono del filtro DPS pasa a ser una espada.'],
     ['1.8.4', 'Roster y NinjaBot: cada jugador que ya subió su sim muestra de dónde viene: «Vía NinjaBot» (con quién la pegó en Discord) si llegó sola por el bot, o «A mano» si la añadiste tú en Gráficas. Los textos de Ajustes → Discord explican que las sims aparecen en Gráficas y en Roster.'],
     ['1.8.3', 'Arreglado el interruptor «Leer el canal automáticamente» de Discord (y cualquier casilla de Ajustes), que no se dejaba activar. NinjaBot solo añade las sims posteriores al último reinicio semanal: las de días anteriores, aunque se vuelvan a pegar, se ignoran.'],
@@ -91,6 +92,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.6', 'Settings → Discord: new “Sims it picks up” selector to choose how far back NinjaBot takes the channel’s simulations. Default “Each weekly reset”; also “Every 1 day”, “Every 2 days” and so on up to “Every 6 days” (only sims posted within that period are added).'],
     ['1.8.5', 'The DPS filter icon is now a sword.'],
     ['1.8.4', 'Roster and NinjaBot: each player who already uploaded a sim shows where it came from: “Via NinjaBot” (with who posted it in Discord) if it arrived by itself through the bot, or “By hand” if you added it in Charts. The Settings → Discord texts explain that sims appear in Charts and in Roster.'],
     ['1.8.3', 'Fixed the Discord “Read the channel automatically” switch (and any Settings checkbox), which could not be turned on. NinjaBot only adds sims from after the latest weekly reset: older ones are ignored even if pasted again.'],
