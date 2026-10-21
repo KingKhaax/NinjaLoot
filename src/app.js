@@ -656,7 +656,7 @@
     const pctTxt = it => (pct ? '' : ` <span class="meta">(${it.pct.toFixed(2)}%)</span>`);
     const itemChip = (it, cls = '') => {
       const info = itemInfo(it); state.shown.add(it.id);
-      return `<div class="coin-item cp-item ${cls}" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span></div></div>`;
+      return `<div class="coin-item cp-item ${cls}" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><small class="cp-sl">${esc(capFirst(T().slots[it.slot] || it.slot || ''))}</small></div></div>`;
     };
     const bossBlock = it => {
       const st = srcText(it), c = catOfSrc(srcOf(it));
