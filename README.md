@@ -49,9 +49,17 @@ En Releases solo está la última versión. Los ejecutables no llevan firma digi
 
 El historial de versiones está en el propio programa (Ajustes → Versión) y en [Releases](https://github.com/KingKhaax/NinjaLoot/releases) (solo se conserva la última).
 
-## <img src="docs/icons/inv_misc_horn_02.jpg" width="28" height="28" alt="" align="absmiddle"> Servidor del bot de Discord (opcional)
+## <img src="docs/icons/inv_misc_horn_02.jpg" width="28" height="28" alt="" align="absmiddle"> NinjaBot, el bot de Discord
 
-El bot compartido de NinjaLoot se ejecuta como una función de Vercel en [`server/`](server/) y lee los enlaces de Raidbots que se pegan en un canal. Para desplegar el tuyo:
+**NinjaLoot** es la aplicación y la web; **NinjaBot** es su bot de Discord. NinjaBot lee los enlaces de Raidbots que tu raid pega en un canal y NinjaLoot los añade solos a Gráficas.
+
+1. [Invita NinjaBot a tu servidor](https://discord.com/oauth2/authorize?client_id=1558852544527081596&scope=bot&permissions=66560) (necesitas el permiso «Gestionar servidor»).
+2. Si el canal de sims es privado, en Discord ve a *Editar canal → Permisos* y dale a NinjaBot «Ver canal» y «Leer el historial de mensajes».
+3. En NinjaLoot abre *Ajustes → Discord*, pega el enlace del canal, activa «Leer el canal automáticamente» y pulsa «Guardar y conectar».
+
+### Servidor de NinjaBot (opcional)
+
+NinjaBot se ejecuta como una función de Vercel en [`server/`](server/). Para desplegar el tuyo:
 
 ```
 cd server
@@ -86,7 +94,7 @@ NinjaLoot does not collect, store or send personal data or telemetry. To work, i
 | [Raidbots](https://www.raidbots.com/) | When you add a Raidbots report, and at startup | Download the reports you add and the current season's boss list |
 | [Wowhead](https://www.wowhead.com/) / zamimg.com | When item names, tooltips or icons are shown | Localized item names, tooltips and icons |
 | [GitHub](https://github.com/) | At startup, and when you click update | Check for a new version and download the installer |
-| NinjaLoot Discord bot (server on [Vercel](https://vercel.com/)) | Only if you turn on Settings → Discord | The channel ID you choose; the bot server reads new messages there and returns only the codes of Raidbots links. Nothing else is stored |
+| NinjaBot, the NinjaLoot Discord bot (server on [Vercel](https://vercel.com/)) | Only if you turn on Settings → Discord | The channel ID you choose; the bot server reads new messages there and returns only the codes of Raidbots links. Nothing else is stored |
 
 Their privacy policies: [Raidbots](https://www.raidbots.com/privacy), [Wowhead](https://www.wowhead.com/privacy), [GitHub](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement), [Discord](https://discord.com/privacy).
 

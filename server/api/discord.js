@@ -1,4 +1,4 @@
-// Servidor intermedio del bot compartido de NinjaLoot (Vercel, plan Hobby, gratis).
+// Servidor intermedio de NinjaBot, el bot de Discord de NinjaLoot (Vercel, plan Hobby, gratis).
 // El token del bot vive aquí como variable de entorno (DISCORD_BOT_TOKEN) y nunca viaja en la aplicación.
 // Solo devuelve los códigos de los enlaces de Raidbots que se pegan en un canal (y quién los pegó); no guarda nada.
 //   GET  /api/discord?op=info                              -> { clientId, ready }

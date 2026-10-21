@@ -130,7 +130,7 @@
     return out.runs || out.raid ? out : { ok: false, error: 'NOT_FOUND' };
   }
 
-  // --- Discord (bot compartido, mismo servidor intermedio que el programa) ---
+  // --- Discord (NinjaBot, mismo servidor intermedio que el programa) ---
   const dcListeners = { sims: [], status: [] };
   let dc = load('ninjaloot.web.discord', { enabled: false, channelId: '', channelName: '', lastId: '', region: 'eu' }), dcTimer = null, dcStatus = { state: 'off' };
   // Último reinicio semanal de WoW: miércoles 04:00 UTC en Europa, martes 15:00 UTC en América

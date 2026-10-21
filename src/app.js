@@ -4,6 +4,7 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const FONT = "'Noto Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
   const WEB_ICON = n => `https://wow.zamimg.com/images/wow/icons/large/${n}.jpg`;
+  const DISCORD_INVITE = 'https://discord.com/oauth2/authorize?client_id=1558852544527081596&scope=bot&permissions=66560';
   const IS_VERCEL = /(^|\.)vercel\.app$/i.test(location.hostname);
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
   const EMPTY_ART = {
@@ -1394,8 +1395,7 @@
     drawDiscord(box);
   }
   async function inviteDiscord() {
-    const url = await window.api.discordInvite();
-    if (url) window.api.openExternal(url); else toast(T().dcNoInvite, true);
+    window.api.openExternal(DISCORD_INVITE);
   }
   window.api.onDiscordStatus?.(st => { const el = document.getElementById('dcStatus'); if (el) el.innerHTML = dcStatusText(st); });
   // Enlaces nuevos en el canal: se añaden solos a Gráficas (los repetidos se ignoran sin avisar)
