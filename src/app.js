@@ -193,7 +193,7 @@
   const catOfSrc = s => s ? catOfType(((state.bosses.inst || {})[s.instance] || {}).t || '') : 'other';
   // Nombres en español de las bandas y jefes de la temporada actual (con la web en español); lo que no esté aquí se deja como llega de Raidbots
   const ES_NAMES = {
-    'The Venomous Abyss': 'Abismo Venenoso', 'The Tidebound Grotto': 'La Gruta de las Mareas', "The Unbinding of Kith'ix": "La liberación de Kith'ix",
+    'The Venomous Abyss': 'Abismo Venenoso', 'The Tidebound Grotto': 'La Gruta Mareal', "The Unbinding of Kith'ix": "La liberación de Kith'ix",
     "Nek'zali the Soulcoiler": "Nek'zali la Volutadora de Almas", 'Entombed Sentinels': 'Centinelas Sepultados', 'The Lost Explorers': 'Los exploradores perdidos',
     'Vashnik the Malignant': 'Vashnik el Maligno', 'Sszorak': 'Sszorak', 'The Twin Fangs': 'Los colmillos gemelos', 'The Coiled Altar': 'El Altar en Espiral',
     "Ula'tek": "Ula'tek", 'Nymrissa Wavecaller': 'Nymrissa Clamaolas', "Kith'ix": "Kith'ix"
