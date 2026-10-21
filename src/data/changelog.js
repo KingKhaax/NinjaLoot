@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.3', 'Arreglado el interruptor «Leer el canal automáticamente» de Discord (y cualquier casilla de Ajustes), que no se dejaba activar. NinjaBot solo añade las sims posteriores al último reinicio semanal: las de días anteriores, aunque se vuelvan a pegar, se ignoran.'],
     ['1.8.2', 'El bot de Discord pasa a llamarse NinjaBot en toda la aplicación. El botón se llama «Invitar NinjaBot a tu servidor» y abre siempre su enlace de invitación público, para que cualquiera pueda añadirlo a su servidor, y los pasos para conectarlo están mejor ordenados.'],
     ['1.8.1', 'En la web de Vercel ya no sale el botón «Buscar e instalar actualización» (se actualiza sola al recargar). La pestaña Personal vuelve a poner su nombre en el título de la página.'],
     ['1.8.0', 'Pulido visual: la barra superior lleva iconos que siguen el color del tema y un indicador que se desliza bajo la sección activa; cifras clave sobre las gráficas (simulaciones, personajes, piezas y mejor mejora); líneas de la cuadrícula punteadas y barras con esquinas suaves; tarjeta del personaje en Personal; cabecera de cada clase en Tiers con la imagen del jefe y borde de calidad en las piezas; pasos numerados en Inicio; estados vacíos con ilustración; filtros, iconos de clase y acciones al pasar el ratón en Roster; transición suave entre secciones.'],
@@ -88,6 +89,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.3', 'Fixed the Discord “Read the channel automatically” switch (and any Settings checkbox), which could not be turned on. NinjaBot only adds sims from after the latest weekly reset: older ones are ignored even if pasted again.'],
     ['1.8.2', 'The Discord bot is now called NinjaBot across the app. The button reads “Invite NinjaBot to your server” and always opens its public invite link, so anyone can add it to their server, and the connection steps are better organized.'],
     ['1.8.1', 'The Vercel web no longer shows the “Check and install update” button (it updates itself on reload). The Personal tab sets its name in the page title again.'],
     ['1.8.0', 'Visual polish: the top bar has theme-colored icons and a sliding indicator under the active section; key figures above the charts (simulations, characters, items and best upgrade); dotted chart gridlines and softly rounded bars; character card in Personal; each class header in Tiers shows the boss art and item pieces get a quality-colored edge; numbered steps on Home; illustrated empty states; filters, class icons and hover actions in Roster; smooth transition between sections.'],

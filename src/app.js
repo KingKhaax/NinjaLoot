@@ -1000,7 +1000,8 @@
     state.loading.delete(id);
     if (!r.ok) { renderChips(); if (state.view === 'charts') { state.animateNext = false; render(); } if (!opts.silentErr) toast(`${id}: ${errText(r)}`, true); return 'err'; }
     const when = x => x.simDate || x.fetchedAt || 0;
-    if (opts.minDate && r.report.simDate && r.report.simDate < opts.minDate) { renderChips(); return 'old'; }
+    const simAt = r.report.simDate || opts.postedAt || 0;
+    if (opts.minDate && simAt && simAt < opts.minDate) { renderChips(); return 'old'; }
     if (opts.newestOnly) {
       const same = state.sims.find(x => sameChar(x, r.report) && x.difficulty === r.report.difficulty);
       if (same && when(same) >= when(r.report)) { renderChips(); return 'older'; }
@@ -1403,7 +1404,8 @@
     const info = await window.api.discordGet();
     for (const x of list) {
       const it = typeof x === 'string' ? { id: x } : x;
-      if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, newestOnly: true }) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`);
+      if (it.at && it.at < info.reset) continue;
+      if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, postedAt: it.at || 0, newestOnly: true }) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`);
     }
     if (state.view === 'roster') render();
   });
@@ -1582,7 +1584,7 @@
       back.innerHTML = `<div class="panel modal settings" role="dialog" aria-modal="true"><aside class="side"><h2>${esc(t.settingsTitle)}</h2>`
         + `<nav>${tabs.map(([k, l]) => `<button class="side-tab${k === view ? ' on' : ''}" data-tab="${k}">${esc(l)}</button>`).join('')}</nav>`
         + `<button class="btn side-close" data-close>${esc(t.close)}</button></aside><section class="pane">${views[view]()}</section></div>`;
-      back.dataset.view = view;
+      back.dataset.pane = view;
       if (view === 'update') runUpdateCheck(back.querySelector('#updBox'), back.querySelector('#chlogBox'));
       if (view === 'discord') drawDiscord(back.querySelector('#dcBox'));
     };
@@ -1616,7 +1618,7 @@
       if (key === 'checkGear') refreshGear();
       if (['animations', 'font', 'fontScale', 'density'].includes(key)) applyTheme();
       state.animateNext = false;
-      if (key === 'lang' || key === 'font') draw(back.dataset.view);
+      if (key === 'lang' || key === 'font') draw(back.dataset.pane);
       render();
     });
     draw(tab);

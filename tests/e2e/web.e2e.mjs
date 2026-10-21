@@ -86,6 +86,24 @@ test('pestaña Discord: guarda, avisa, valida y desconecta', async () => {
   noErrors(p);
 });
 
+test('Discord: el interruptor «Leer el canal automáticamente» se activa, se queda activado y consulta el canal; las casillas de Ajustes también funcionan', async () => {
+  const p = await newPage(browser);
+  const calls = [];
+  await p.route(/ninjaloot-relay/, (r) => { calls.push(r.request().url()); return r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ channel: 'sims', lastId: '5', sims: [] }) }).catch(() => {}); });
+  await p.goto(url, { waitUntil: 'load' }); await p.waitForTimeout(1000);
+  await p.click('#btnSettings'); await p.click('[data-tab="discord"]'); await p.waitForSelector('#dcChannel');
+  await p.fill('#dcChannel', '123456789012345678'); await p.click('[data-dc-save]'); await p.waitForTimeout(600);
+  await p.click('#dcEnabled'); await p.waitForTimeout(1200);
+  assert.equal(await p.$eval('#dcEnabled', (e) => e.checked), true, 'el interruptor queda activado');
+  assert.match(await p.$eval('#dcStatus', (e) => e.textContent), /Conectado/, 'el estado dice que está conectado');
+  assert.ok(calls.some((u) => /op=history/.test(u) && /since=\d+/.test(u)), 'al activarlo pide las sims desde el último reinicio');
+  await p.click('[data-tab="general"]'); await p.waitForTimeout(300);
+  const box = await p.$('.pane input[type="checkbox"]:not(#autoUpd)');
+  if (box) { const before = await box.evaluate((e) => e.checked); await box.click(); await p.waitForTimeout(300); assert.notEqual(await p.$eval('.pane input[type="checkbox"]:not(#autoUpd)', (e) => e.checked), before, 'una casilla de Ajustes cambia al pulsarla'); }
+  assert.equal(await p.evaluate(() => document.querySelector('.navbtn.on')?.dataset.view), 'home', 'pulsar dentro de Ajustes no cambia de pantalla');
+  noErrors(p);
+});
+
 test('pulsar el nombre de Discord o Battle.net lo copia y avisa en medio de la pantalla', async () => {
   const p = await open();
   await p.click('#verBadge'); await p.waitForSelector('.about-friend');

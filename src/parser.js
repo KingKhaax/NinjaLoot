@@ -4,6 +4,13 @@
 const CLASS_KEYS = ['deathknight', 'demonhunter', 'druid', 'evoker', 'hunter', 'mage', 'monk', 'paladin', 'priest', 'rogue', 'shaman', 'warlock', 'warrior'];
 const norm = s => String(s || '').toLowerCase().replace(/[^a-z]/g, '');
 
+function toMs(v) {
+  if (v == null || v === '') return null;
+  const n = typeof v === 'number' ? v : /^\d+(\.\d+)?$/.test(String(v).trim()) ? Number(v) : Date.parse(v);
+  if (!isFinite(n) || n <= 0) return null;
+  return n < 1e11 ? n * 1000 : n;
+}
+
 function extractReportId(text) {
   const t = String(text || '').trim();
   const m = t.match(/raidbots\.com\/simbot\/report\/([A-Za-z0-9]+)/i) || t.match(/^([A-Za-z0-9]{16,32})$/);
@@ -157,7 +164,7 @@ function commonOf(json, id, player, raw, sim) {
     id, url: `https://www.raidbots.com/simbot/report/${id}`,
     title: (json.simbot && (json.simbot.publicTitle || json.simbot.title)) || '', fetchedAt: Date.now(),
     character: { name: player.name || character.name || id, realm: character.realm || ident.realm || armory.realm || '', region: ident.region || armory.region || '', cls, spec: detectSpec(player, cls) },
-    simDate: (json.simbot && (json.simbot.date || json.simbot.jobEnqueued)) || null,
+    simDate: toMs(json.simbot && (json.simbot.date || json.simbot.jobEnqueued)),
     baseDps: Math.round(num(cd.dps, 'mean') || 0), dpsStd: Math.round(num(cd.dps, 'mean_std_dev') || 0), hps: Math.round(num(cd.hps, 'mean') || 0), dtps: Math.round(num(cd.dtps, 'mean') || 0),
     fight: {
       style: String((sim.options && sim.options.fight_style) || (raw && raw.fightStyle) || ''),
@@ -240,7 +247,7 @@ function parseReport(json, id) {
     title: (json.simbot && (json.simbot.publicTitle || json.simbot.title)) || '',
     fetchedAt: Date.now(),
     character: { name: player.name || character.name || id, realm: character.realm || ident.realm || armory.realm || '', region: ident.region || armory.region || '', cls, spec: detectSpec(player, cls) },
-    simDate: (json.simbot && (json.simbot.date || json.simbot.jobEnqueued)) || null,
+    simDate: toMs(json.simbot && (json.simbot.date || json.simbot.jobEnqueued)),
     equippedAtSim,
     baseDps: Math.round(base),
     difficulty: detectDifficulty(items, raw),
