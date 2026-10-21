@@ -193,8 +193,11 @@
   const trName = n => (S().lang === 'es' && ES_NAMES[n]) || n;
   const bossLabel = enc => trName((state.bosses.names || {})[enc] || '');
   // Icono del jefe (Warcraft Logs) a partir de su nombre en inglés; si no se conoce o no carga, no se muestra nada
-  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
-  const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? `<img class="boss-ic" src="https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg" width="${sz}" height="${sz}" alt="" onerror="this.remove()">` : ''; };
+  // Iconos de jefes y mazmorras: van dentro de la app (assets/bosses, ver tools/build-icons.mjs); solo si faltara alguno se pide al CDN de Warcraft Logs y, si tampoco, se quita
+  const bossIcSrc = id => (typeof LOCAL_BOSS !== 'undefined' && LOCAL_BOSS[id] ? `assets/bosses/${id}.${LOCAL_BOSS[id]}` : `https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg`);
+  const bossImgTag = (id, sz) => `<img class="boss-ic" data-bid="${id}" src="${bossIcSrc(id)}" width="${sz}" height="${sz}" alt="">`;
+  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? bossImgTag(id, sz) : ''; };
+  const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? bossImgTag(id, sz) : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
   const instName = id =>((state.bosses.inst || {})[id] || {}).n || '';
@@ -823,7 +826,7 @@
   document.addEventListener('error', e => {
     const im = e.target;
     if (!im || im.tagName !== 'IMG') return;
-    if (im.classList.contains('boss-ic')) { im.remove(); return; }
+    if (im.classList.contains('boss-ic')) { if (!im.dataset.cdn && im.dataset.bid) { im.dataset.cdn = '1'; im.src = `https://assets.rpglogs.com/img/warcraft/bosses/${im.dataset.bid}-icon.jpg`; } else im.remove(); return; }
     if (!im.classList.contains('sh-img')) return;
     const step = Number(im.dataset.fb || 0);
     im.dataset.fb = step + 1;

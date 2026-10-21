@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.7.3', 'Los iconos de jefes y mazmorras (142) ya van dentro de la app, así que salen siempre y también sin conexión. Las mazmorras que no tenían icono (Ruby Life Pools, Algeth’ar Academy, Operation: Floodgate, Priory of the Sacred Flame, Tazavesh, Mechagon…) ya lo tienen. Si alguno faltara, se pide al servidor y, si tampoco, se quita en vez de dejar un icono roto.'],
     ['1.7.2', 'Anillos y abalorios: ahora se indica para qué hueco exacto es la mejora (anillo 1 o anillo 2, abalorio 1 o abalorio 2), en Todas las piezas y también en Dónde tirar moneda, donde antes no salía la ranura. En las sims ya guardadas se ve tras actualizarse solas.'],
     ['1.7.1', 'Los iconos del equipo de la cabecera que no cargaban ya salen: si falla uno se prueba con el CDN de iconos de Blizzard, después con el icono que da Wowhead y, si nada sirve, con un signo de interrogación (nunca más un icono roto). También se quitan los iconos de jefe que fallen.'],
     ['1.7.0', 'Todas las piezas, selector de orden: ahora Valor esperado y Prioridad funcionan como los de Raidbots. Valor esperado es el DPS medio de todas las piezas del jefe (las que no mejoran cuentan 0) y Prioridad agrupa los jefes con un valor esperado parecido (a menos de 0,2 %) y pone primero el que más probabilidad tiene de darte una mejora. Además, la cabecera nueva se ha probado también con Quick Sim y Top Gear.'],
@@ -83,6 +84,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.7.3', 'Boss and dungeon icons (142) now ship inside the app, so they always show, even offline. The dungeons that had no icon (Ruby Life Pools, Algeth’ar Academy, Operation: Floodgate, Priory of the Sacred Flame, Tazavesh, Mechagon…) now have one. If one were missing, it is requested from the server and, failing that, removed instead of leaving a broken icon.'],
     ['1.7.2', 'Rings and trinkets: the exact slot the upgrade is for is now shown (ring 1 or ring 2, trinket 1 or trinket 2), in All pieces and also in Where to use a coin, where the slot was not shown before.'],
     ['1.7.1', 'The header gear icons that failed to load now show: if one fails, the Blizzard icon CDN is tried, then the icon Wowhead gives and, if nothing works, a question mark (never a broken icon again). Boss icons that fail are also removed.'],
     ['1.7.0', 'All pieces, sort selector: Expected Value and Priority now work like Raidbots. Expected Value is the average DPS of all the boss pieces (non-upgrades count 0) and Priority groups bosses with a similar expected value (within 0.2%) and puts first the one with the best chance of an upgrade. The new header has also been tested with Quick Sim and Top Gear.'],
