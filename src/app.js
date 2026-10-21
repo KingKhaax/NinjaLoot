@@ -196,7 +196,8 @@
   // Iconos de jefes y mazmorras: van dentro de la app (assets/bosses, ver tools/build-icons.mjs); solo si faltara alguno se pide al CDN de Warcraft Logs y, si tampoco, se quita
   const bossIcSrc = id => (typeof LOCAL_BOSS !== 'undefined' && LOCAL_BOSS[id] ? `assets/bosses/${id}.${LOCAL_BOSS[id]}` : `https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg`);
   const bossImgTag = (id, sz) => `<img class="boss-ic" data-bid="${id}" src="${bossIcSrc(id)}" width="${sz}" height="${sz}" alt="">`;
-  const bossImg = (enc, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? bossImgTag(id, sz) : ''; };
+  // «Trash Drop» (botín de bichos de la banda) no es un jefe: lleva una calavera propia, guardada en local
+  const bossImg = (enc, sz = 28) => { if (Number(enc) === -97) return `<img class="boss-ic" src="assets/ui/trash.jpg" width="${sz}" height="${sz}" alt="">`; const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? bossImgTag(id, sz) : ''; };
   const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? bossImgTag(id, sz) : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
