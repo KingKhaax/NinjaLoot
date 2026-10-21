@@ -144,6 +144,18 @@ test('Gráficas por jugador: con más objetos de los que caben salen flechas par
   noErrors(p);
 });
 
+test('Móvil (390 px): la navegación va abajo y ninguna sección se sale por los lados', async () => {
+  const p = await newPage(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await p.goto(url, { waitUntil: 'load' }); await p.waitForTimeout(900);
+  for (const h of ['', '#/tiers', '#/personal', '#/charts', '#/rotations', '#/roster']) {
+    await p.goto(url + h, { waitUntil: 'load' }); await p.waitForTimeout(500);
+    const m = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, vw: document.documentElement.clientWidth, nav: (() => { const b = document.querySelector('.nav').getBoundingClientRect(); return [Math.round(b.bottom), innerHeight, getComputedStyle(document.querySelector('.nav')).position]; })() }));
+    assert.equal(m.sw, m.vw, `la pantalla ${h || 'inicio'} no debe desbordar: ${m.sw} > ${m.vw}`);
+    assert.deepEqual(m.nav, [844, 844, 'fixed'], 'la barra de pestañas está pegada abajo');
+  }
+  noErrors(p);
+});
+
 test('pulsar el nombre de Discord o Battle.net lo copia y avisa en medio de la pantalla', async () => {
   const p = await open();
   await p.click('#verBadge'); await p.waitForSelector('.about-friend');
