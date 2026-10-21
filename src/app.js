@@ -4,6 +4,7 @@
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const FONT = "'Noto Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
   const WEB_ICON = n => `https://wow.zamimg.com/images/wow/icons/large/${n}.jpg`;
+  const IS_VERCEL = /(^|\.)vercel\.app$/i.test(location.hostname);
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
   const EMPTY_ART = {
     charts: '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 82h72"/><rect x="18" y="52" width="14" height="30" rx="3" fill="currentColor" fill-opacity=".18"/><rect x="41" y="30" width="14" height="52" rx="3" fill="currentColor" fill-opacity=".3"/><rect x="64" y="42" width="14" height="40" rx="3" fill="currentColor" fill-opacity=".18"/><path d="m22 36 20-14 16 8 18-16"/></svg>',
@@ -1144,7 +1145,7 @@
   function syncRoute() {
     const want = routeHash();
     const t = T();
-    const label = { home: t.navHome, tiers: t.navTiers, personal: t.navPers, charts: t.navCharts, rotations: t.navRotations, roster: t.navRoster }[state.view];
+    const label = { home: t.navHome, tiers: t.navTiers, personal: t.navPersonal, charts: t.navCharts, rotations: t.navRotations, roster: t.navRoster }[state.view];
     document.title = label && state.view !== 'home' ? `NinjaLoot · ${label}` : 'NinjaLoot'; // la portada se llama solo «NinjaLoot», como «WipeTime» en la otra web
     if (location.hash === want) { routed = true; return; } // la portada es la dirección limpia (sin «#/»), como en WipeTime; un enlace antiguo con «#/» se limpia solo
     try { history[routed ? 'pushState' : 'replaceState'](null, '', location.pathname + location.search + want); } catch { /* sin historial */ }
@@ -1824,7 +1825,7 @@
     const t = T(), cur = state.info.version;
     const log = (CHANGELOG[S().lang] || CHANGELOG.en || CHANGELOG.es);
     box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(cur)}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
-      + `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`
+      + (IS_VERCEL ? '' : `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`)
       + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
       ;
     if (histBox) histBox.innerHTML = `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>${log.length > 10 ? `<button class="btn small" id="chlogMore" data-chlog-more></button>` : ''}`;
@@ -1848,7 +1849,7 @@
       return { r, outdated };
     };
     check();
-    box.querySelector('[data-upd-go]').addEventListener('click', async e => {
+    box.querySelector('[data-upd-go]')?.addEventListener('click', async e => {
       const btn = e.currentTarget;
       btn.disabled = true; note(t.checking);
       const c = await check();

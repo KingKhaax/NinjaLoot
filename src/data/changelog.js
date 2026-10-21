@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.1', 'En la web de Vercel ya no sale el botón «Buscar e instalar actualización» (se actualiza sola al recargar). La pestaña Personal vuelve a poner su nombre en el título de la página.'],
     ['1.8.0', 'Pulido visual: la barra superior lleva iconos que siguen el color del tema y un indicador que se desliza bajo la sección activa; cifras clave sobre las gráficas (simulaciones, personajes, piezas y mejor mejora); líneas de la cuadrícula punteadas y barras con esquinas suaves; tarjeta del personaje en Personal; cabecera de cada clase en Tiers con la imagen del jefe y borde de calidad en las piezas; pasos numerados en Inicio; estados vacíos con ilustración; filtros, iconos de clase y acciones al pasar el ratón en Roster; transición suave entre secciones.'],
     ['1.7.4', 'Iconos de la web más robustos: los iconos de objetos se guardan por nombre en una caché propia que no se borra al actualizar (una vez vistos salen siempre, también sin conexión), si un servidor de iconos falla se prueba el CDN de Blizzard y, si ninguno sirve, sale un signo de interrogación guardado dentro de la app en vez de un icono roto.'],
     ['1.7.3', 'Los iconos de jefes y mazmorras (142) ya van dentro de la app, así que salen siempre y también sin conexión. Las mazmorras que no tenían icono (Ruby Life Pools, Algeth’ar Academy, Operation: Floodgate, Priory of the Sacred Flame, Tazavesh, Mechagon…) ya lo tienen. Si alguno faltara, se pide al servidor y, si tampoco, se quita en vez de dejar un icono roto.'],
@@ -86,6 +87,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.1', 'The Vercel web no longer shows the “Check and install update” button (it updates itself on reload). The Personal tab sets its name in the page title again.'],
     ['1.8.0', 'Visual polish: the top bar has theme-colored icons and a sliding indicator under the active section; key figures above the charts (simulations, characters, items and best upgrade); dotted chart gridlines and softly rounded bars; character card in Personal; each class header in Tiers shows the boss art and item pieces get a quality-colored edge; numbered steps on Home; illustrated empty states; filters, class icons and hover actions in Roster; smooth transition between sections.'],
     ['1.7.4', 'More robust web icons: item icons are saved by name in their own cache that is not wiped on updates (once seen they always show, even offline), if an icon server fails the Blizzard CDN is tried and, if none works, a question mark saved inside the app shows instead of a broken icon.'],
     ['1.7.3', 'Boss and dungeon icons (142) now ship inside the app, so they always show, even offline. The dungeons that had no icon (Ruby Life Pools, Algeth’ar Academy, Operation: Floodgate, Priory of the Sacred Flame, Tazavesh, Mechagon…) now have one. If one were missing, it is requested from the server and, failing that, removed instead of leaving a broken icon.'],
