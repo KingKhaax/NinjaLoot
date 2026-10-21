@@ -870,3 +870,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+.ro-src { display: inline-flex; align-items: center; margin-right: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; border: 1px solid var(--border); color: var(--muted); }
+.ro-src.bot { color: #8b9cff; border-color: color-mix(in srgb, #5865f2 55%, var(--border)); background: color-mix(in srgb, #5865f2 14%, transparent); }
+:root[data-theme="light"] .ro-src.bot { color: #3c47c4; }
+

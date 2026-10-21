@@ -1405,12 +1405,13 @@
     for (const x of list) {
       const it = typeof x === 'string' ? { id: x } : x;
       if (it.at && it.at < info.reset) continue;
-      if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, postedAt: it.at || 0, newestOnly: true }) === 'ok') toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`);
+      if (!state.sims.some(s => s.id === it.id) && await addSim(it.id, false, true, { minDate: info.reset, postedAt: it.at || 0, newestOnly: true }) === 'ok') { state.dcSims[it.id] = { by: (it.author && it.author.name) || '', at: it.at || Date.now() }; save('ninjaloot.dcSims', state.dcSims); toast(`${T().dcAdded}: ${state.sims.find(s => s.id === it.id)?.character.name || it.id}`); }
     }
     if (state.view === 'roster') render();
   });
 
   // ---------- Roster: quién ha subido su sim esta semana y recordatorio por mensaje privado ----------
+  state.dcSims = load('ninjaloot.dcSims', {});
   state.roster = load('ninjaloot.roster', []);       // [{ name, realm, cls }]
   const charKey = (name, realm) => `${normName(name)}-${normName(realm || '')}`;
   const rosterKey = m => charKey(m.name, m.realm);
@@ -1489,7 +1490,8 @@
       + shownRows.map(({ m, sim, ok, manual, when }) => {
         const col = m.cls ? (CLASS_COLORS[m.cls] || CLASS_COLORS[String(m.cls).toLowerCase().replace(/ /g, '')] || '') : (sim ? clsColor(sim) : '');
         const k = rosterKey(m);
-        const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (when ? `<span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '') : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
+        const via = sim && state.dcSims[sim.id], src = sim ? (via ? `<span class="ro-src bot" title="${esc(via.by ? t.roViaBotBy(via.by) : t.roViaBot)}">${esc(t.roViaBot)}${via.by ? ` · ${esc(via.by)}` : ''}</span>` : `<span class="ro-src hand">${esc(t.roViaHand)}</span>`) : '';
+        const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (src + (when ? ` <span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '')) : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
         const ck = m.cls || (sim && sim.character.cls) || '', av = CLASS_COLORS[ck] ? `<img class="ro-av" src="assets/classes/${ck}.png" alt="" style="--cc:${CLASS_COLORS[ck]}">` : '<span class="ro-av ph"></span>';
         return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><span class="ro-who">${av}<span><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></span></span></td>`
           + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '✗'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`

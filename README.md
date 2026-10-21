@@ -56,6 +56,7 @@ El historial de versiones está en el propio programa (Ajustes → Versión) y e
 1. [Invita NinjaBot a tu servidor](https://discord.com/oauth2/authorize?client_id=1558852544527081596&scope=bot&permissions=66560) (necesitas el permiso «Gestionar servidor»).
 2. Si el canal de sims es privado, en Discord ve a *Editar canal → Permisos* y dale a NinjaBot «Ver canal» y «Leer el historial de mensajes».
 3. En NinjaLoot abre *Ajustes → Discord*, pega el enlace del canal, activa «Leer el canal automáticamente» y pulsa «Guardar y conectar».
+4. Cada enlace de Raidbots que se pegue en el canal se añade solo en **Gráficas** y en **Roster**, donde el jugador sale como «Subida · Vía NinjaBot» (las sims que añades tú salen como «A mano»).
 
 ### Servidor de NinjaBot (opcional)
 
