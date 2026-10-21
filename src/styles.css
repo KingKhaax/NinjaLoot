@@ -843,7 +843,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .pc-g { color: var(--good); }
 .seg button { transition: color .15s, background .15s, box-shadow .15s; }
 
-.rtable .grp { text-align: left; padding-left: 12px; border-left: 2px solid color-mix(in srgb, var(--accent) 38%, var(--border)); }
+.rtable .grp { text-align: center; padding-left: 12px; padding-right: 12px; border-left: 2px solid color-mix(in srgb, var(--accent) 38%, var(--border)); }
 .rtable tbody tr:hover th.who, .rtable tbody tr:hover td { background: color-mix(in srgb, var(--accent) 7%, var(--panel2)); }
 .cell, .cs { transition: filter .15s, transform .15s var(--ease), box-shadow .15s; }
 .cell:hover { transform: translateY(-1px); box-shadow: 0 6px 14px -8px currentColor; }
