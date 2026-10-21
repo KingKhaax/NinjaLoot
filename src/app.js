@@ -840,10 +840,16 @@
   // Cabecera de una simulación al estilo de Raidbots: tipo de sim, DPS, opciones, personaje, equipo y exportación de SimC
   // Piezas de Ula'tek pasadas a catalizador: si la pieza de origen tiene una sola estadística y una pasiva, la de tier conserva las dos cosas
   const BIBELOT = { id: 270909, icon: 'rogue_paralytic_poison' };
-  const ULATEK_ENC = 2895;
+  const ULATEK_ENC = 2895, KITHIX_ENC = 2896;
   function catNote(it) {
     const t = T(), cf = it.catFrom, enc = it.source && it.source.encounter;
-    if (!it.tier || enc !== ULATEK_ENC) return '';
+    if (!it.tier || (enc !== ULATEK_ENC && enc !== KITHIX_ENC)) return '';
+    if (enc === KITHIX_ENC) {
+      if (!(cf && cf.stats && cf.stats.length && cf.same)) return '';
+      state.shown.add(cf.from);
+      const nm = itemInfo({ id: cf.from, name: cf.name }).name;
+      return `<div class="cat-note">${esc(t.catKeepAll(cf.stats.map(x => t.statNames[x] || x).join(' + '), nm))}</div>`;
+    }
     if (cf && cf.stats && cf.stats.length === 1 && cf.same) {
       state.shown.add(cf.from);
       const nm = itemInfo({ id: cf.from, name: cf.name }).name;
