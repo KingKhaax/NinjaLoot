@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.5', 'El icono del filtro DPS pasa a ser una espada.'],
     ['1.8.4', 'Roster y NinjaBot: cada jugador que ya subió su sim muestra de dónde viene: «Vía NinjaBot» (con quién la pegó en Discord) si llegó sola por el bot, o «A mano» si la añadiste tú en Gráficas. Los textos de Ajustes → Discord explican que las sims aparecen en Gráficas y en Roster.'],
     ['1.8.3', 'Arreglado el interruptor «Leer el canal automáticamente» de Discord (y cualquier casilla de Ajustes), que no se dejaba activar. NinjaBot solo añade las sims posteriores al último reinicio semanal: las de días anteriores, aunque se vuelvan a pegar, se ignoran.'],
     ['1.8.2', 'El bot de Discord pasa a llamarse NinjaBot en toda la aplicación. El botón se llama «Invitar NinjaBot a tu servidor» y abre siempre su enlace de invitación público, para que cualquiera pueda añadirlo a su servidor, y los pasos para conectarlo están mejor ordenados.'],
@@ -90,6 +91,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.5', 'The DPS filter icon is now a sword.'],
     ['1.8.4', 'Roster and NinjaBot: each player who already uploaded a sim shows where it came from: “Via NinjaBot” (with who posted it in Discord) if it arrived by itself through the bot, or “By hand” if you added it in Charts. The Settings → Discord texts explain that sims appear in Charts and in Roster.'],
     ['1.8.3', 'Fixed the Discord “Read the channel automatically” switch (and any Settings checkbox), which could not be turned on. NinjaBot only adds sims from after the latest weekly reset: older ones are ignored even if pasted again.'],
     ['1.8.2', 'The Discord bot is now called NinjaBot across the app. The button reads “Invite NinjaBot to your server” and always opens its public invite link, so anyone can add it to their server, and the connection steps are better organized.'],
