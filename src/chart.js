@@ -57,7 +57,7 @@ const Chart = (() => {
 
     for (let v = 0; v <= yMax + step / 2; v += step) {
       const y = yOf(v);
-      grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="${v === 0 ? 1.5 : 1}"/>`;
+      grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="${v === 0 ? 1.5 : 1}"${v === 0 ? '' : ' stroke-dasharray="2 5"'}/>`;
       grid += `<text x="${left - 10}" y="${y + 4}" text-anchor="end" font-size="13" fill="${colors.muted}" font-family="${FONT}">${esc(opts.tickFmt ? opts.tickFmt(v) : fmtNum(v, compact))}</text>`;
     }
     grid += `<line x1="${left}" x2="${left}" y1="${top}" y2="${top + plotH}" stroke="${colors.axis}" stroke-width="1.5"/>`;
@@ -75,9 +75,9 @@ const Chart = (() => {
       const onBar = e.itemId && !e.tipIcon;
       bars += `<g class="bar${animate ? ' grow' : ''}${e.owned ? ' owned' : ''}" data-id="${esc(e.id ?? i)}"${onBar ? itemAttrs : e.tip ? ` data-bartip="${esc(e.tip)}"` : ''}${delay}${e.onclick ? ' tabindex="0" role="button"' : ''}>`
         + (onBar || e.tip ? '' : `<title>${esc(e.title || e.label)}</title>`)
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#${gid})"/>`
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="url(#${gid}v)"/>`
-        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid})"/>`
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="url(#${gid}v)"/>`
+        + `<rect x="${x}" y="${y}" width="${barW}" height="${h}" rx="3" fill="none" stroke="${shade(base, -0.55)}" stroke-opacity="0.7"/>`;
       const ty = y - 8;
       bars += '</g>';
       if (showIcons && e.icon) {
@@ -133,7 +133,7 @@ const Chart = (() => {
     const uid = 'm' + Math.random().toString(36).slice(2, 7);
     for (let v = 0; v <= yMax + step / 2; v += step) {
       const y = yOf(v);
-      grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="1"/>`
+      grid += `<line x1="${left}" x2="${W - right}" y1="${y}" y2="${y}" stroke="${v === 0 ? colors.axis : colors.grid}" stroke-width="1"${v === 0 ? '' : ' stroke-dasharray="2 5"'}/>`
         + `<text x="${left - 8}" y="${y + 4}" text-anchor="end" font-size="11" fill="${colors.muted}" font-family="${FONT}">${esc(opts.tickFmt ? opts.tickFmt(v) : fmtNum(v, compact))}</text>`;
     }
     entries.forEach((e, i) => {

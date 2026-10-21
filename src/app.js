@@ -5,6 +5,12 @@
   const FONT = "'Noto Sans', 'Segoe UI Variable Text', 'Segoe UI', system-ui, sans-serif";
   const WEB_ICON = n => `https://wow.zamimg.com/images/wow/icons/large/${n}.jpg`;
   const ui = (n, c = '') => `<img class="uiicon ${c}" src="assets/ui/${n}.png" alt="">`;
+  const EMPTY_ART = {
+    charts: '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 82h72"/><rect x="18" y="52" width="14" height="30" rx="3" fill="currentColor" fill-opacity=".18"/><rect x="41" y="30" width="14" height="52" rx="3" fill="currentColor" fill-opacity=".3"/><rect x="64" y="42" width="14" height="40" rx="3" fill="currentColor" fill-opacity=".18"/><path d="m22 36 20-14 16 8 18-16"/></svg>',
+    personal: '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="48" cy="34" r="15" fill="currentColor" fill-opacity=".18"/><path d="M18 82c2-16 14-25 30-25s28 9 30 25"/><path d="m74 18 3 7 7 3-7 3-3 7-3-7-7-3 7-3z" fill="currentColor" fill-opacity=".35"/></svg>',
+    roster: '<svg viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="36" cy="36" r="12" fill="currentColor" fill-opacity=".18"/><path d="M12 78c1.5-13 10-20 24-20s22.5 7 24 20"/><circle cx="66" cy="32" r="9" fill="currentColor" fill-opacity=".3"/><path d="M62 54c12 0 19 6 22 18"/></svg>'
+  };
+  const emptyArt = k => `<div class="empty-art">${EMPTY_ART[k]}</div>`;
 
   // ---------- Estado y ajustes ----------
   const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
@@ -197,6 +203,7 @@
   const bossIcSrc = id => (typeof LOCAL_BOSS !== 'undefined' && LOCAL_BOSS[id] ? `assets/bosses/${id}.${LOCAL_BOSS[id]}` : `https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg`);
   const bossImgTag = (id, sz) => `<img class="boss-ic" data-bid="${id}" src="${bossIcSrc(id)}" width="${sz}" height="${sz}" alt="">`;
   // «Trash Drop» (botín de bichos de la banda) no es un jefe: lleva una calavera propia, guardada en local
+  const bossSrcOf = enc => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? bossIcSrc(id) : ''; };
   const bossImg = (enc, sz = 28) => { if (Number(enc) === -97) return `<img class="boss-ic" src="assets/ui/trash.jpg" width="${sz}" height="${sz}" alt="">`; const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[(state.bosses.names || {})[enc] || '']; return id ? bossImgTag(id, sz) : ''; };
   const nameImg = (name, sz = 28) => { const id = typeof BOSS_ICONS !== 'undefined' && BOSS_ICONS[name]; return id ? bossImgTag(id, sz) : ''; };
   // Tipo de armadura del objeto (del informe o de data/armor.js); cuellos, anillos, abalorios, capas y armas valen para cualquiera
@@ -314,6 +321,19 @@
         + `<button class="btn small" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.resim)}</button></div>`
         + (c => c.length ? `<ul class="stale-changes">${c.map(({ slot, from, to }) => { const a = piece(from), b = piece(to);
           return `<li><span class="sc-slot">${esc(t.slots[slot] || slot)}</span>${from.id === to.id ? t.gearUpgraded(a.html, from.ilvl, to.ilvl) : t.gearSwapped(a.html, from.ilvl, b.html, to.ilvl)}<button class="btn small sc-ok" data-gear-ok="${esc(changeKey(s, slot, to))}" title="${esc(t.gearOkTip)}">${esc(t.gearOk)}</button></li>`; }).join('')}</ul><div class="small-note" style="margin:-4px 0 10px 36px">${esc(t.gearSrc(crawlTxt(s)))}</div>` : '')(gearChanges(s))).join('') + '</section>';
+  }
+  function statTiles(act) {
+    if (!act.length) return '';
+    const t = T(), min = Number(S().minGain) || 0, ids = new Set(), chars = new Set();
+    let best = null, bestSim = null;
+    for (const sim of act) {
+      chars.add(sim.character.name);
+      for (const it of sim.items) { if (it.gain < min) continue; ids.add(it.id); if (!best || it.gain > best.gain) { best = it; bestSim = sim; } }
+    }
+    const tile = (k, v, sub, extra = '') => `<div class="stat-tile${extra}"><small>${esc(k)}</small><b>${v}</b>${sub ? `<span class="meta">${sub}</span>` : ''}</div>`;
+    const info = best ? itemInfo(best) : null;
+    return '<div class="stat-tiles">' + tile(t.statSims, act.length) + tile(t.statChars, chars.size) + tile(t.statItems, ids.size)
+      + (best ? tile(t.statBest, esc(valueText(best, bestSim)), `<span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> · ${esc(bestSim.character.name)}`, ' best') : '') + '</div>';
   }
   function toolbarHtml() {
     const t = T(), p = presentDiffs(), eff = effectiveDiff(), mode = S().chartMode;
@@ -439,7 +459,7 @@
     return `<section class="panel home-hero"><img src="assets/logo.png" alt="" width="128" height="128"><div><h2>${esc(t.homeWelcome)}</h2><p>${esc(t.homeIntro)}</p>`
       + `<div class="home-actions"><a class="btn primary" href="#/charts" data-view="charts">${esc(t.homeStart)}</a><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div></section>`
       + `<div class="feats">${feats.map(([ic, k]) => `<div class="feat"><img src="assets/ui/${ic}.png" alt=""><div><b>${esc(t[k + 't'])}</b><p>${esc(t[k + 'd'])}</p></div></div>`).join('')}</div>`
-      + `<section class="panel card"><div class="card-head"><h2>${esc(t.homeHow)}</h2></div><ol class="steps">${t.homeSteps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`
+      + `<section class="panel card"><div class="card-head"><h2>${esc(t.homeHow)}</h2></div><ol class="steps home-steps">${t.homeSteps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`
       + `<footer class="made-by">${esc(t.madeBy)} <b>Drakko</b><svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 2.8 4.5 6.3 4.5c2 0 3.6 1.1 4.4 2.6l1.3 2.2 1.3-2.2c.8-1.5 2.4-2.6 4.4-2.6 3.5 0 5.4 3.7 3.9 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></footer>`;
   }
 
@@ -520,6 +540,14 @@
   }
 
   // ---------- Simulación personal: cada pieza exacta, su DPS y de qué jefe sale ----------
+  function persCard(p) {
+    const t = T(), col = clsColor(p), min = Number(S().minGain) || 0, items = p.items.filter(i => i.gain >= min);
+    const best = items.reduce((a, i) => (!a || i.gain > a.gain ? i : a), null), srcs = new Set(items.map(i => catOfSrc(srcOf(i)))), spec = specIcon(p);
+    const stat = (k, v) => `<div class="pc-stat"><small>${esc(k)}</small><b>${v}</b></div>`;
+    return `<section class="panel pers-char" style="--cc:${col}">${spec ? `<img class="pch-ic" src="${spec}" alt="">` : ''}`
+      + `<div class="pch-id"><h2 style="color:${readable(col)}">${esc(p.character.name)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}</div></div>`
+      + `<div class="pch-stats">${p.head && p.head.avgIlvl ? stat(t.shAvgIlvl, p.head.avgIlvl) : ''}${stat(t.baseDps, nf().format(p.baseDps))}${stat(t.persSumItems, items.length)}${stat(t.persSumSources, srcs.size)}${best ? stat(t.persSumTop, `<span class="pc-g">+${nf().format(best.gain)}</span>`) : ''}</div></section>`;
+  }
   function personalView() {
     const t = T(), p = state.personal, list = state.personalList, multi = list.length > 1;
     const simOf = it => list[it.sim || 0] || list[0];
@@ -534,8 +562,9 @@
       + `</div>`
       + slotsHTML(list)
       + `</section>`;
-    if (!p) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
+    if (!p) return html + `<div class="empty">${emptyArt('personal')}<h2>${esc(t.persEmptyTitle)}</h2><p>${esc(t.persEmptyText)}</p></div>`;
     const col = clsColor(p), max = p.items[0]?.gain || 1, min = Number(S().minGain) || 0;
+    html += persCard(p);
     // Fuentes presentes (raid, mazmorras...) y filtro elegido
     const cats = {}; for (const it of p.items) { const c = catOfSrc(srcOf(it)); cats[c] = (cats[c] || 0) + 1; }
     const catKeys = ['raid', 'dungeon', 'delve', 'prey', 'catalyst', 'craft', 'pvp', 'bonus', 'other'].filter(k => cats[k]);
@@ -785,14 +814,14 @@
     if (!state.sims.length && state.loading.size) { content.innerHTML = skeletonHtml(Math.max(2, state.loading.size)); return; }
     if (!state.sims.length && state.extra.length) { content.innerHTML = extraSection(); if (S().animations) enterAnim(content); ensureNames(); return; }
     if (!state.sims.length) {
-      content.innerHTML = `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.emptyTitle)}</h2><p>${esc(t.emptyText)}</p></div>`;
+      content.innerHTML = `<div class="empty">${emptyArt('charts')}<h2>${esc(t.emptyTitle)}</h2><p>${esc(t.emptyText)}</p></div>`;
       return;
     }
     const colors = themeColors(), animate = state.animateNext && S().animations;
     state.animateNext = false;
     const act = activeSims(), pct = S().unit === 'pct';
     const chartOpts = { hScale: S().chartTall ? 1.3 : 1, colors, animate, showValues: S().showValues, showIcons: S().showIcons, compact: S().compact, yTitle: pct ? t.yAxisPct : t.yAxisDps, tickFmt: pct ? v => `${v.toFixed(v % 1 ? 1 : 0)}%` : null };
-    let html = extraSection() + toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
+    let html = extraSection() + statTiles(act) + toolbarHtml() + (act.length ? '' : `<div class="panel card"><div class="hint">${esc(t.filterNone)}</div></div>`) + stalePanel(act);
     html += `<div class="charts-bar sub"><div class="seg" role="group" aria-label="${esc(t.unitLabel)}"><button data-unit="dps" class="${pct ? '' : 'on'}">${esc(t.unitDps)}</button><button data-unit="pct" class="${pct ? 'on' : ''}">${esc(t.unitPct)}</button></div>`
       + `<button class="btn" data-capture>${ui('export')}${esc(t.captureMode)}</button>`
       + `<div class="seg"><button data-barstyle="simple" class="${detailed() ? '' : 'on'}">${esc(t.barSimple)}</button><button data-barstyle="detailed" class="${detailed() ? 'on' : ''}">${esc(t.barDetailed)}</button></div></div>`;
@@ -1440,6 +1469,8 @@
     const rows = state.roster.map(m => { const sim = rosterSim(m), when = sim ? (sim.simDate || sim.fetchedAt || 0) : 0; const auto = when >= reset, man = manualOf(m, reset); return { m, sim, ok: man === null ? auto : man, auto, manual: man !== null, when }; })
       .sort((a, b) => a.ok - b.ok || a.m.name.localeCompare(b.m.name));
     const missing = rows.filter(r => !r.ok);
+    const rf = ['all', 'missing', 'done'].includes(state.roFilter) ? state.roFilter : 'all';
+    const shownRows = rf === 'missing' ? missing : rf === 'done' ? rows.filter(r => r.ok) : rows;
     const dateTxt = new Date(reset).toLocaleString(S().lang, { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
     let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.roTitle)}</h2></div><div class="hint">${esc(t.roHint(dateTxt))}</div>`
       + `<div class="ro-forms"><div class="ro-form"><b>${esc(t.roAddTitle)}</b><div class="ro-row"><input class="txt" id="roName" placeholder="${esc(t.roName)}" spellcheck="false"><input class="txt" id="roRealm" placeholder="${esc(t.roRealm)}" spellcheck="false"><button class="btn" data-ro="add">${esc(t.roAdd)}</button></div></div>`
@@ -1447,18 +1478,19 @@
       + `<select id="roRegion">${['eu', 'us'].map(r => `<option value="${r}"${r === region ? ' selected' : ''}>${r.toUpperCase()}</option>`).join('')}</select>`
       + `<button type="button" class="btn" data-ro="ranks" id="roRanksBtn" title="${esc(t.roRanksTitle)}">${esc(t.roRanksLabel)}: <b>${esc(rankSummary())}</b> ▾</button>`
       + `<button class="btn" data-ro="import">${esc(t.roImport)}</button></div></div></div></section>`;
-    if (!state.roster.length) return html + `<div class="empty"><img src="assets/logo.png" alt=""><h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;
-    html += `<section class="panel card"><div class="card-head"><h2>${esc(t.roStatus(rows.length - missing.length, rows.length))}</h2><span class="spacer"></span><div class="card-tools">`
+    if (!state.roster.length) return html + `<div class="empty">${emptyArt('roster')}<h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;
+    html += `<section class="panel card"><div class="card-head"><h2>${esc(t.roStatus(rows.length - missing.length, rows.length))}</h2><span class="spacer"></span><div class="card-tools"><div class="seg">${[['all', t.roFilterAll, rows.length], ['missing', t.roFilterMissing, missing.length], ['done', t.roFilterDone, rows.length - missing.length]].map(([k, l, n]) => `<button data-ro="filter" data-f="${k}" class="${rf === k ? 'on' : ''}">${esc(l)} <span class="meta">${n}</span></button>`).join('')}</div>`
       + `<button class="btn danger" data-ro="clear">${esc(t.roClear)}</button></div></div>`
       + `<div class="hint">${esc(t.roHintManual)}</div>`
-      + `<div class="ptable-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th></th></tr></thead><tbody>`
-      + rows.map(({ m, sim, ok, manual, when }) => {
+      + `<div class="ptable-wrap ro-wrap"><table class="ptable ro-table"><thead><tr><th>${esc(t.roColChar)}</th><th>${esc(t.roColSim)}</th><th></th></tr></thead><tbody>`
+      + shownRows.map(({ m, sim, ok, manual, when }) => {
         const col = m.cls ? (CLASS_COLORS[m.cls] || CLASS_COLORS[String(m.cls).toLowerCase().replace(/ /g, '')] || '') : (sim ? clsColor(sim) : '');
         const k = rosterKey(m);
         const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (when ? `<span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '') : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
-        return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></td>`
+        const ck = m.cls || (sim && sim.character.cls) || '', av = CLASS_COLORS[ck] ? `<img class="ro-av" src="assets/classes/${ck}.png" alt="" style="--cc:${CLASS_COLORS[ck]}">` : '<span class="ro-av ph"></span>';
+        return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><span class="ro-who">${av}<span><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></span></span></td>`
           + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '✗'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`
-          + `<td><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
+          + `<td class="ro-act"><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
       }).join('') + `</tbody></table></div></section>`;
     return html;
   }
@@ -1489,6 +1521,8 @@
         state.roster.push({ name: m.name, realm: m.realm, cls: String(m.cls || '').toLowerCase().replace(/ /g, '') }); added++;
       }
       saveRoster(); render(); toast(t.roImported(added, r.guild));
+    } else if (a === 'filter') {
+      state.roFilter = el.dataset.f; render();
     } else if (a === 'ranks') {
       ranksModal();
     } else if (a === 'del') {
@@ -1729,7 +1763,7 @@
       buffs = `<div class="panel card"><div class="card-head"><div><h2>${esc(sel.name)}</h2><div class="meta">${esc(sel.group)} · ${esc(state.bosses.season)}</div></div><span class="spacer"></span>`
         + `<div class="card-tools"><span class="meta">${esc(t.rotColumn)}:</span><button class="btn small" data-col-set="n">${esc(t.stN)}</button><button class="btn small" data-col-set="r">${esc(t.stR)}</button><button class="btn small" data-col-set="p">${esc(t.stP)}</button><button class="btn small" data-roster-copy>${esc(t.rotCopy)}</button></div></div>`
         + `<div class="status ${cls}">${esc(msg)}</div><div class="buffs">${cov.map(({ b, who, status }) => `<div class="buff ${status}"><img src="${buffIcon(b)}" alt="" width="36" height="36">`
-          + `<div class="bi"><b>${esc(buffName(b))}</b> <span class="kind">${esc(kindLabel[b.kind])}</span><div class="be">${esc(buffEffect(b))}</div></div>`
+          + `<div class="bi"><b>${esc(buffName(b))}</b> <span class="kind k-${b.kind}">${esc(kindLabel[b.kind])}</span><div class="be">${esc(buffEffect(b))}</div></div>`
           + `<div class="bs">${status === 'bad' ? `<span class="tag bad">${esc(t.rotMissingTag)}</span><div class="bw">${esc(t.rotProvidedBy)}: ${b.from.map(c => esc(t.classes[c])).join(', ')}</div>`
             : `<span class="tag ${status}">${esc(status === 'ok' ? t.rotCovered : t.rotOnlyRotating)}</span><div class="bw">${who.map(w => esc(w.s.character.name)).join(', ')}</div>`}</div></div>`).join('')}</div></div>`;
     }
@@ -1765,7 +1799,8 @@
     const d = TIERS.classes[sel];
     if (!d) return html;
     const col = CLASS_COLORS[sel];
-    html += `<section class="panel card tier-detail" style="--cc:${col}"><div class="card-head"><img class="cls-icon" src="assets/classes/${sel}.png" alt="" style="border-color:${col}"><div><h2 style="color:${readable(col)}">${esc(t.classes[sel])}</h2><div class="meta">${esc(d.name[l] || d.name.en)}</div></div></div>`
+    const bn = d.items.map(i => bossSrcOf(i.boss)).find(Boolean);
+    html += `<section class="panel card tier-detail" style="--cc:${col}${bn ? `;--bn:url('${bn}')` : ''}"><div class="card-head tier-banner"><img class="cls-icon" src="assets/classes/${sel}.png" alt="" style="border-color:${col}"><div><h2 style="color:${readable(col)}">${esc(t.classes[sel])}</h2><div class="meta">${esc(d.name[l] || d.name.en)}</div></div></div>`
       + `<h3>${esc(t.tierBonus)}</h3><div class="tier-specs">`
       + Object.keys(SPECS[sel]).filter(k => d.bonus[k]).map(k => { const b = d.bonus[k][l] || d.bonus[k].en;
         // cada especialización es un desplegable cerrado: el texto de 2 y 4 piezas solo sale al pulsarla
@@ -1774,7 +1809,7 @@
           + `<div class="ts-body"${open ? '' : ' hidden'}><div class="ts-bonus"><span class="ts-pc">${esc(t.tier2)}</span><p>${esc(b[0] || '')}</p></div><div class="ts-bonus"><span class="ts-pc">${esc(t.tier4)}</span><p>${esc(b[1] || '')}</p></div></div></div>`; }).join('')
       + `</div><h3>${esc(t.tierPieces)}</h3><div class="ptable-wrap"><table class="ptable"><thead><tr><th>${esc(t.colItem)}</th><th>${esc(t.colSlot)}</th><th>${esc(t.statsLabel)}</th><th>${esc(t.colBoss)}</th></tr></thead><tbody>`
       + d.items.map(it => { state.shown.add(it.id); const info = itemInfo({ id: it.id });
-        return `<tr data-item="${it.id}" data-ilvl="" data-tip-trim="set"><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
+        return `<tr class="qrow" style="--q:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="" data-tip-trim="set"><td class="it"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></td>`
           + `<td>${esc(capFirst(t.slots[it.slot] || it.slot))}</td><td class="ts-stats">${it.stats.map(s => `<span class="stat" data-stat="${s}">${esc(t.statNames[s] || s)}</span>`).join(' + ')}</td><td class="tb"><span class="tb-in">${bossImg(it.boss, 24)}<b>${esc(bossLabel(it.boss) || '')}</b></span></td></tr>`; }).join('')
       + `</tbody></table></div><div class="hint">${esc(t.tierAny(bossLabel(TIERS.anyBoss) || "Ula'tek"))}</div><div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(t.bibelotName)}</b> <span>${esc(t.bibelotNote)}</span></div></section>`;
     return html;
