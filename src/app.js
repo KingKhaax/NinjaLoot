@@ -87,7 +87,7 @@
     const icon = loc?.[1] || cached?.[1] || 'inv_misc_questionmark';
     const quality = loc?.[2] ?? cached?.[2] ?? 4;
     const tag = { t: '(tank)', h: '(healer)', th: '(tank/healer)' }[loc?.[5]] || '';
-    const src = loc ? `assets/items/${loc[1]}.png` : WEB_ICON(icon);
+    const src = loc ? `assets/items/${loc[1]}.png` : icon === 'inv_misc_questionmark' ? 'assets/ui/questionmark.jpg' : WEB_ICON(icon);
     return { name, icon: src, quality, tag };
   }
   const pending = new Set();
@@ -832,8 +832,8 @@
     im.dataset.fb = step + 1;
     const id = Number(im.parentElement && im.parentElement.dataset.item), ic = im.dataset.ic;
     if (step === 0 && ic) im.src = `https://render.worldofwarcraft.com/eu/icons/56/${ic}.jpg`;
-    else if (step <= 1 && id) { const alt = itemInfo({ id }).icon; im.src = alt && alt !== im.src ? alt : WEB_ICON('inv_misc_questionmark'); }
-    else im.src = WEB_ICON('inv_misc_questionmark');
+    else if (step <= 1 && id) { const alt = itemInfo({ id }).icon; im.src = alt && alt !== im.src ? alt : 'assets/ui/questionmark.jpg'; }
+    else im.src = 'assets/ui/questionmark.jpg';
   }, true);
   // Retrato 3D del personaje: se pide una vez a Blizzard y se recuerda
   const portraits = load('ninjaloot.portraits', {}), portraitReq = new Set();

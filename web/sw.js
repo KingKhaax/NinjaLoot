@@ -11,9 +11,30 @@ self.addEventListener('activate', (e) => e.waitUntil((async () => {
   for (const k of await caches.keys()) if (k.startsWith('nl-') && k !== CACHE) await caches.delete(k);
   await self.clients.claim();
 })()));
+// Iconos del juego (zamimg y el CDN de iconos de Blizzard): se guardan por nombre en una caché propia que NO se borra al cambiar de versión.
+// Si un CDN falla se prueba el otro, y una vez guardado un icono sale siempre, también sin conexión.
+const ICON_CACHE = 'icons-nl';
+const ICON_RE = /^https:\/\/(?:wow\.zamimg\.com\/images\/wow\/icons\/(?:large|medium|small)\/([^/?#]+)\.jpg|render\.worldofwarcraft\.com\/[a-z]{2}\/icons\/\d+\/([^/?#]+)\.jpg)$/;
+async function iconResponse(req, name) {
+  const cache = await caches.open(ICON_CACHE);
+  const key = '/__icon/' + name;
+  const hit = await cache.match(key);
+  if (hit) return hit;
+  for (const u of [`https://wow.zamimg.com/images/wow/icons/large/${name}.jpg`, `https://render.worldofwarcraft.com/eu/icons/56/${name}.jpg`, `https://render.worldofwarcraft.com/us/icons/56/${name}.jpg`]) {
+    try {
+      const r = await fetch(u, { mode: 'cors' });
+      if (r.ok) { cache.put(key, r.clone()).catch(() => {}); return r; }
+    } catch { /* se prueba el siguiente CDN */ }
+  }
+  return fetch(req);
+}
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   const url = new URL(req.url);
+  if (req.method === 'GET') {
+    const m = ICON_RE.exec(req.url);
+    if (m) { e.respondWith(iconResponse(req, decodeURIComponent(m[1] || m[2]))); return; }
+  }
   if (url.origin !== self.location.origin || req.method !== 'GET' || req.headers.has('range') || /\/sw\.js$/.test(url.pathname)) return;
   const isPage = req.mode === 'navigate' || /\/(index\.html)?$/.test(url.pathname);
   e.respondWith((async () => {
