@@ -21,7 +21,7 @@
   const state = {
     settings: (() => { const st = { ...DEFAULTS, ...load('ninjaloot.settings', {}) }; if (!['es', 'en'].includes(st.lang)) st.lang = 'es'; return st; })(),
     sims: [], loading: new Set(), names: { es: {}, en: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'home', personal: null, personalList: [], gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    view: 'home', page: {}, personal: null, personalList: [], gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
   // Simulación personal: una o varias simulaciones de la misma persona (raid, míticas...) y su versión combinada para compararlas
@@ -425,12 +425,14 @@
         tipIcon: 'top', tip: exactTip(sim.character.name, best.gain, best.pct),
       };
     }).sort((a, b) => b.value - a.value);
-    const draw = (list, big) => detailed() ? Chart.build(list, { ...chartOpts, ...big }) : Chart.mini(list, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate });
+    const draw = (list, big) => detailed() ? Chart.build(list, { ...chartOpts, ...big }) : Chart.mini(list, { colors: chartOpts.colors, compact: chartOpts.compact, tickFmt: chartOpts.tickFmt, animate: chartOpts.animate, maxValue: big && big.maxValue });
     let html = `<section class="panel card" id="overview"><div class="card-head"><h2>${esc(t.overviewTitle)}</h2><span class="spacer"></span>`
       + `<div class="card-tools"><button class="btn small" data-export="overview">${ui('export')}${esc(t.exportPng)}</button></div></div>`
       + `<div class="hint">${esc(t.overviewHint)}</div><div class="chart-wrap${detailed() ? '' : ' simple'}" data-chart="overview">${draw(entries, { slot: 112, height: 300 })}</div></section>`;
     for (const sim of sims) {
-      const col = clsColor(sim), list = visibleItems(sim), total = sim.items.filter(i => i.gain >= (Number(S().minGain) || 0)).length;
+      const col = clsColor(sim), all = sim.items.filter(i => i.gain >= (Number(S().minGain) || 0)), total = all.length, per = S().topN;
+      const paged = per !== 0 && total > per && !state.expanded.has(sim.id), pages = paged ? Math.ceil(total / per) : 1, pg = paged ? Math.min(Math.max(state.page[sim.id] || 0, 0), pages - 1) : 0;
+      const list = paged ? all.slice(pg * per, pg * per + per) : visibleItems(sim), topValue = all.length ? valueOf(all[0], sim) : 0;
       const items = list.map(it => {
         const info = itemInfo(it);
         state.shown.add(it.id);
@@ -438,18 +440,20 @@
           tipIcon: 'bottom', tip: exactTip(sim.character.name, it.gain, it.pct) + (owned(sim, it) ? ` (${t.ownedTag})` : ''), owned: owned(sim, it) };
       });
       const canToggle = S().topN !== 0 && total > S().topN;
+      const arrow = (dir, on, label) => `<button type="button" class="pg-arrow ${dir < 0 ? 'prev' : 'next'}" data-page="${esc(sim.id)}" data-dir="${dir}" aria-label="${esc(label)}" title="${esc(label)}"${on ? '' : ' disabled'}><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${dir < 0 ? 'm15 5-7 7 7 7' : 'm9 5 7 7-7 7'}"/></svg></button>`;
       html += `<section class="panel card" id="sim-${esc(sim.id)}"><div class="card-head">`
         + (specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : '')
         + `<div><h2 style="color:${readable(col)}">${esc(sim.character.name)} ${diffBadge(sim.difficulty)}</h2>`
         + `<div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
         + (best => { const bi = itemInfo(best); state.shown.add(best.id); return `<div class="star-item" style="--q:${QUALITY_COLORS[bi.quality]}" data-item="${best.id}" data-ilvl="${best.ilvl || 0}" data-tip-always title="${esc(t.starItem)}"><img src="${bi.icon}" alt=""><span><small>★ ${esc(t.starItem)}</small><b>${esc(bi.name)}</b><em>${esc(valueText(best, sim))}</em></span></div>`; })(bestOf(sim))
         + `<span class="spacer"></span><div class="card-tools">`
+        + (paged ? `<span class="pg-info">${pg * per + 1}–${Math.min(total, pg * per + per)} ${esc(t.pageOf)} ${total}</span>` : '')
         + (canToggle ? `<button class="btn small" data-toggle="${esc(sim.id)}">${esc(state.expanded.has(sim.id) ? t.showLess : t.showAll)}</button>` : '')
         + `<button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button>`
         + `<button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button>`
         + `<button class="btn small" data-export="${esc(sim.id)}">${ui('export')}${esc(t.exportPng)}</button>`
         + `<button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
-        + `<div class="chart-wrap${detailed() ? '' : ' simple'}" data-chart="${esc(sim.id)}">${draw(items, { slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3 })}</div></section>`;
+        + `<div class="chart-pager${paged ? ' paged' : ''}">${paged ? arrow(-1, pg > 0, t.pagePrev) + arrow(1, pg < pages - 1, t.pageNext) : ''}<div class="chart-wrap${detailed() ? '' : ' simple'}" data-chart="${esc(sim.id)}">${draw(items, { slot: 104, height: 240, bottom: 128, labelSize: 12.5, maxLines: 3, maxValue: paged ? topValue : 0 })}</div></div></section>`;
     }
     return html;
   }
@@ -1975,7 +1979,8 @@
     else if ((el = q('data-coin-src'))) { S().coinSrc = el.dataset.coinSrc; persistSettings(); state.animateNext = false; render(); }
     else if ((el = q('data-open'))) window.api.openExternal(el.dataset.open);
     else if ((el = q('data-export'))) exportChart(el.dataset.export);
-    else if ((el = q('data-toggle'))) { const id = el.dataset.toggle; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); state.animateNext = false; render(); }
+    else if ((el = q('data-toggle'))) { const id = el.dataset.toggle; state.expanded.has(id) ? state.expanded.delete(id) : state.expanded.add(id); delete state.page[id]; state.animateNext = false; render(); }
+    else if ((el = q('data-page'))) { const id = el.dataset.page; if (el.disabled) return; state.page[id] = Math.max(0, (state.page[id] || 0) + Number(el.dataset.dir)); state.animateNext = false; const sy = document.scrollingElement.scrollTop; render(); document.scrollingElement.scrollTop = sy; }
     else if ((el = q('data-barstyle'))) { S()[barKey()] = el.dataset.barstyle; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-raid'))) { S().raidPick = el.dataset.raid === 'all' ? 'all' : Number(el.dataset.raid); S().bossPick = 'all'; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-unit'))) { S().unit = el.dataset.unit; persistSettings(); state.animateNext = true; render(); }

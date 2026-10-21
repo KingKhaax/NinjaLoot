@@ -48,7 +48,7 @@ const Chart = (() => {
     const need = Math.max(56, ...entries.map((e, i) => Math.max(showValues && e.valueText ? e.valueText.length * 14 * 0.6 : 0, ...wrapped[i].map(l => l.length * ls * 0.58), e.sub ? e.sub.length * 11.5 * 0.55 : 0)));
     const slot = Math.round(Math.min(maxSlot, need + 16));
     const W = left + right + Math.max(entries.length, 3) * slot, H = top + plotH + bottom;
-    const max = Math.max(...entries.map(e => e.value), 0);
+    const max = Math.max(opts.maxValue || 0, ...entries.map(e => e.value), 0);
     const { step, top: yMax } = niceScale(max);
     const yOf = v => top + plotH - (v / yMax) * plotH;
     const barW = Math.min(64, slot - 24);
@@ -126,7 +126,7 @@ const Chart = (() => {
     const slot = Math.max(iconLabels || topIcons ? 36 : 30, Math.min(56, 380 / Math.max(entries.length, 1)));
     const is = Math.min(28, slot - 6);
     const W = Math.max(300, left + right + entries.length * slot), H = top + plotH + bottom;
-    const { step, top: yMax } = niceScale(Math.max(...entries.map(e => e.value), 0), 5);
+    const { step, top: yMax } = niceScale(Math.max(opts.maxValue || 0, ...entries.map(e => e.value), 0), 5);
     const yOf = v => top + plotH - (v / yMax) * plotH;
     const barW = Math.min(30, slot * 0.72);
     let grid = '', bars = '', defs = '';

@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.8', 'Gráficas por jugador: cuando un jugador tiene más objetos de los que caben (por ejemplo 20 y se ven 10), salen flechas a los lados para pasar a los siguientes objetos y volver atrás, con el contador «11–20 de 20». La escala se mantiene igual en todas las páginas para poder comparar las barras. «Ver todos» sigue mostrándolos todos a la vez.'],
     ['1.8.7', 'Kith’ix: las piezas pasadas a catalizador cuyo original suelta ese mismo jefe (casi todas llevan una pasiva) indican ahora que conservan la pasiva y las estadísticas de la pieza original, además de contar como pieza de tier. Antes solo pasaba con Ula’tek.'],
     ['1.8.6', 'Ajustes → Discord: nuevo selector «Sims que recoge» para elegir cada cuánto toma NinjaBot las simulaciones del canal. Por defecto «En cada reinicio semanal»; también «Cada 1 día», «Cada 2 días» y así hasta «Cada 6 días» (solo se añaden las sims pegadas dentro de ese periodo).'],
     ['1.8.5', 'El icono del filtro DPS pasa a ser una espada.'],
@@ -93,6 +94,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.8', 'Per-player charts: when a player has more items than fit (for example 20 and 10 are shown), arrows appear on the sides to move to the next items and back, with the counter “11–20 of 20”. The scale stays the same on every page so the bars can be compared. “Show all” still shows them all at once.'],
     ['1.8.7', 'Kith’ix: catalyzed pieces whose original drops from that same boss (almost all carry a passive) now say they keep the passive and the original piece’s stats, besides counting as a tier piece. Before this only happened with Ula’tek.'],
     ['1.8.6', 'Settings → Discord: new “Sims it picks up” selector to choose how far back NinjaBot takes the channel’s simulations. Default “Each weekly reset”; also “Every 1 day”, “Every 2 days” and so on up to “Every 6 days” (only sims posted within that period are added).'],
     ['1.8.5', 'The DPS filter icon is now a sword.'],

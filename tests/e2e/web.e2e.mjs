@@ -126,6 +126,24 @@ test('Discord: «Sims que recoge» empieza en el reinicio semanal y permite de 1
   noErrors(p);
 });
 
+test('Gráficas por jugador: con más objetos de los que caben salen flechas para ver los siguientes y volver', async () => {
+  const sim = { kind: 'drop', id: 'simPg', url: 'x', title: '', fetchedAt: Date.now(), character: { name: 'Okita', realm: 'Zul-jin', region: 'eu', cls: 'monk', spec: 'windwalker' }, baseDps: 208816, difficulty: 'hc', head: {}, lootCounts: {},
+    items: Array.from({ length: 20 }, (_, i) => ({ id: 190000 + i, name: 'Objeto ' + i, ilvl: 270, slot: 'head', gain: 2000 - i * 90, pct: 1, source: { instance: 1, encounter: 1, difficulty: 5 } })) };
+  const p = await newPage(browser);
+  await p.addInitScript((s) => { localStorage.setItem('ninjaloot.sims', JSON.stringify([s])); localStorage.setItem('ninjaloot.settings', JSON.stringify({ chartMode: 'player' })); }, sim);
+  await p.goto(url + '#/charts', { waitUntil: 'load' }); await p.waitForSelector('.pg-arrow.next');
+  const st = () => p.evaluate(() => ({ info: document.querySelector('.pg-info').textContent, prevOff: document.querySelector('.pg-arrow.prev').disabled, nextOff: document.querySelector('.pg-arrow.next').disabled, bars: document.querySelectorAll('#sim-simPg .bar').length }));
+  assert.deepEqual(await st(), { info: '1–10 de 20', prevOff: true, nextOff: false, bars: 10 });
+  await p.click('.pg-arrow.next'); await p.waitForTimeout(300);
+  assert.deepEqual(await st(), { info: '11–20 de 20', prevOff: false, nextOff: true, bars: 10 });
+  await p.click('.pg-arrow.prev'); await p.waitForTimeout(300);
+  assert.equal((await st()).info, '1–10 de 20');
+  await p.click('[data-toggle]'); await p.waitForTimeout(300);
+  assert.equal(await p.$('.pg-arrow'), null, 'con «Ver todos» no hay flechas');
+  assert.equal(await p.$$eval('#sim-simPg .bar', (e) => e.length), 20);
+  noErrors(p);
+});
+
 test('pulsar el nombre de Discord o Battle.net lo copia y avisa en medio de la pantalla', async () => {
   const p = await open();
   await p.click('#verBadge'); await p.waitForSelector('.about-friend');
