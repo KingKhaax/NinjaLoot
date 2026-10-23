@@ -97,19 +97,19 @@
     }
   }
 
-  // --- Retrato 3D del personaje (Blizzard vía el servidor de WipeHub) ---
+  // --- Retrato 3D del personaje (Blizzard vía un servidor propio) ---
   async function fetchPortrait(region, realm, name) {
     if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false };
     const slug = String(realm).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
     const path = `/profile/wow/character/${slug}/${encodeURIComponent(name.toLowerCase())}/character-media?namespace=profile-${region}&locale=en_US`;
     try {
-      const j = await getJSON(`https://wipehub-proxy.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`);
+      const j = await getJSON(`https://ninjaloot-bnet.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`);
       const a = Object.fromEntries((j.assets || []).map(x => [x.key, x.value])), url = a.inset || a['main-raw'] || a.main || a.avatar;
       return url && /^https:\/\/render\.worldofwarcraft\.com\//.test(url) ? { ok: true, url } : { ok: false };
     } catch { return { ok: false }; }
   }
 
-  // --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda desde el reinicio (Blizzard vía el servidor de WipeHub) ---
+  // --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda desde el reinicio (Blizzard vía un servidor propio) ---
   async function fetchVault(region, realm, name) {
     if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false, error: 'BAD_CHAR' };
     const reset = weeklyReset(region), out = { ok: true, reset, runs: null, raid: null, fetched: Date.now() }, RANK = { LFR: 1, NORMAL: 2, HEROIC: 3, MYTHIC: 4 };
@@ -118,7 +118,7 @@
     }).catch(() => {});
     const slug = String(realm).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
     const path = `/profile/wow/character/${slug}/${encodeURIComponent(name.toLowerCase())}/encounters/raids?namespace=profile-${region}&locale=en_US`;
-    const bnet = getJSON(`https://wipehub-proxy.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`).then(j => {
+    const bnet = getJSON(`https://ninjaloot-bnet.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`).then(j => {
       const best = new Map(), ex = (j.expansions || []).find(e => /current season/i.test(e.expansion?.name || '')) || (j.expansions || []).at(-1);
       for (const inst of ex?.instances || []) for (const m of inst.modes || []) for (const e of m.progress?.encounters || []) {
         const d = RANK[m.difficulty?.type] || 0;

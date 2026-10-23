@@ -102,13 +102,13 @@ ipcMain.handle('icon:data', async (_e, href) => {
 });
 
 // --- Jefes de la temporada activa (Raidbots), con caché por si no hay conexión ---
-// --- Retrato 3D del personaje (API de Blizzard vía el servidor de WipeHub): imagen de character-media para la cabecera de la sim ---
+// --- Retrato 3D del personaje (API de Blizzard vía un servidor propio): imagen de character-media para la cabecera de la sim ---
 ipcMain.handle('portrait:fetch', async (_e, region, realm, name) => {
   if (![region, realm, name].every(v => typeof v === 'string' && v && v.length < 64)) return { ok: false };
   try {
     const slug = String(realm).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
     const path = `/profile/wow/character/${slug}/${encodeURIComponent(name.toLowerCase())}/character-media?namespace=profile-${region}&locale=en_US`;
-    const res = await net.fetch(`https://wipehub-proxy.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`);
+    const res = await net.fetch(`https://ninjaloot-bnet.vercel.app/bnet?region=${region}&path=${encodeURIComponent(path)}`);
     if (!res.ok) return { ok: false };
     const j = await res.json(), a = Object.fromEntries((j.assets || []).map(x => [x.key, x.value])), url = a.inset || a['main-raw'] || a.main || a.avatar;
     return url && /^https:\/\/render\.worldofwarcraft\.com\//.test(url) ? { ok: true, url } : { ok: false };
@@ -130,8 +130,8 @@ ipcMain.handle('gear:fetch', async (_e, region, realm, name) => {
   } catch (e) { return { ok: false, error: 'NETWORK', detail: String(e.message || e) }; }
 });
 
-// --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda muertos desde el reinicio (API de Blizzard vía el servidor de WipeHub) ---
-const BNET_PROXY = 'https://wipehub-proxy.vercel.app/bnet';
+// --- Cofre semanal: míticas+ de la semana (Raider.IO) y jefes de banda muertos desde el reinicio (API de Blizzard vía un servidor propio) ---
+const BNET_PROXY = 'https://ninjaloot-bnet.vercel.app/bnet';
 const DIFF_RANK = { LFR: 1, NORMAL: 2, HEROIC: 3, MYTHIC: 4 };
 const realmSlug = r => String(r).toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
 ipcMain.handle('vault:fetch', async (_e, region, realm, name) => {
