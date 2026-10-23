@@ -248,3 +248,8 @@ tr.ro-miss td:first-child { box-shadow: inset 3px 0 0 #ef5350; }
 .rk-n { font-weight: 800; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 .rk-name { width: 100%; }
 #roRanksBtn b { font-weight: 700; }
+.bg-art { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: #07060b url(assets/bg-general.jpg) 50% 30% / cover no-repeat; }
+.bg-dim { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(7, 6, 12, .25); }
+:root[data-theme="light"] .bg-art, :root[data-theme="light"] .bg-dim { display: none; }
+#content:has(.home-hero) .feat, #content:has(.home-hero) .home-hero ~ .panel { background: rgba(14, 12, 22, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+:root[data-theme="light"] #content:has(.home-hero) .feat, :root[data-theme="light"] #content:has(.home-hero) .home-hero ~ .panel { background: var(--panel); backdrop-filter: none; -webkit-backdrop-filter: none; }

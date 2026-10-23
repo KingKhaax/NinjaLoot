@@ -2,6 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
+    ['1.8.18', 'Fondo general: una imagen de Warcraft (Maldición de Ula’tek) ocupa todo el fondo de la aplicación, fija, nítida y poco oscurecida. En Inicio las tarjetas son de cristal para que se vea. En el tema claro no se muestra.'],
     ['1.8.17', 'El mensaje de autor pasa a «Made with ♥ by Drakko», con el corazón que late, tanto en el inicio como en Ajustes > Versión.'],
     ['1.8.16', 'Inicio: la portada de bienvenida tiene ahora un fondo con arte de Warcraft (Alleria y Xal’atath) que se mueve despacio, con un destello cálido que cruza la tarjeta y el borde de luz en tonos índigo y dorado.'],
     ['1.8.14', 'Los datos de Blizzard (retrato del personaje y cofre semanal) se piden ahora a un servidor con dirección propia de NinjaLoot. No cambia nada de lo que ves en la aplicación.'],
@@ -100,6 +101,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
+    ['1.8.18', 'General background: a Warcraft artwork (Curse of Ula’tek) now fills the whole app background, fixed, sharp and lightly dimmed. On Home the cards are glass so it shows through. It is not shown in the light theme.'],
     ['1.8.17', 'The author message is now “Made with ♥ by Drakko”, with the beating heart, both on the home page and in Settings > Version.'],
     ['1.8.16', 'Home: the welcome card now has a Warcraft artwork background (Alleria and Xal’atath) that moves slowly, with a warm light sweep across the card and the light border in indigo and gold tones.'],
     ['1.8.14', 'Blizzard data (character portrait and weekly chest) is now requested from a server with its own NinjaLoot address. Nothing changes in what you see in the app.'],
