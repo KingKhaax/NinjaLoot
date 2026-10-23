@@ -132,13 +132,19 @@
 .feat:hover::after { transition: transform .8s ease; transform: translateX(120%); }
 .feat:hover img { transform: scale(1.08) rotate(-3deg); }
 .feat img { transition: transform .25s; }
+.home-loot { flex: none; margin-left: auto; display: flex; gap: 14px; }
+.home-loot i { display: block; position: relative; overflow: hidden; width: 84px; height: 96px; border-radius: 12px; border: 2px solid var(--rc); background: linear-gradient(160deg, rgba(255, 255, 255, .09), rgba(255, 255, 255, .02)); box-shadow: 0 0 22px -4px var(--rc), inset 0 0 18px -8px var(--rc); animation: nl-bob 4s ease-in-out infinite; animation-delay: calc(var(--i) * -1.1s); }
+.home-loot i::after { content: ''; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%; transform: skewX(-20deg); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .35), transparent); animation: nl-loot-shine 3.2s ease-in-out infinite; animation-delay: calc(var(--i) * .5s); }
+@keyframes nl-bob { 50% { transform: translateY(-6px); } }
+@keyframes nl-loot-shine { from { left: -60%; } to { left: 140%; } }
+@media (max-width: 1000px) { .home-loot { display: none; } }
 @keyframes nl-spin { to { --nl-a: 360deg; } }
 @keyframes nl-aurora { 0% { transform: translate(-4%, -3%) rotate(0deg); } 100% { transform: translate(4%, 3%) rotate(12deg); } }
 @keyframes nl-float { 0%, 100% { transform: translateY(0); filter: drop-shadow(0 0 14px rgba(139, 92, 246, .35)); } 50% { transform: translateY(-6px); filter: drop-shadow(0 0 26px rgba(170, 120, 255, .6)); } }
 @keyframes nl-title { 0%, 35% { background-position: 100% 0; } 65%, 100% { background-position: 0 0; } }
 @keyframes nl-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@media (prefers-reduced-motion: reduce) { .home-hero::before, .home-hero::after, .home-hero > img, .home-hero h2, .feat { animation: none; opacity: 1; } }
-body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .home-hero > img, body.no-anim .home-hero h2, body.no-anim .feat, body.no-anim .vault-slot.on::after { animation: none; opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .home-hero::before, .home-hero::after, .home-hero > img, .home-hero h2, .feat, .home-loot i, .home-loot i::after { animation: none; opacity: 1; } }
+body.no-anim .home-loot i, body.no-anim .home-loot i::after, body.no-anim .home-hero::before, body.no-anim .home-hero::after, body.no-anim .home-hero > img, body.no-anim .home-hero h2, body.no-anim .feat, body.no-anim .vault-slot.on::after { animation: none; opacity: 1; }
 
 /* Al pasar el ratón por una casilla del cofre: el contenido hecho esta semana y lo que cuenta para ella */
 .vault-slot { overflow: visible; cursor: default; }
