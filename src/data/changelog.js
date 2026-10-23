@@ -2,10 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
-    ['1.8.18', 'Fondo general: una imagen de Warcraft (Maldición de Ula’tek) ocupa todo el fondo de la aplicación, fija, nítida y poco oscurecida. En Inicio las tarjetas son de cristal para que se vea. En el tema claro no se muestra.'],
-    ['1.8.17', 'El mensaje de autor pasa a «Made with ♥ by Drakko», con el corazón que late, tanto en el inicio como en Ajustes > Versión.'],
-    ['1.8.16', 'Inicio: la portada de bienvenida tiene ahora un fondo con arte de Warcraft (Alleria y Xal’atath) que se mueve despacio, con un destello cálido que cruza la tarjeta y el borde de luz en tonos índigo y dorado.'],
-    ['1.8.14', 'Los datos de Blizzard (retrato del personaje y cofre semanal) se piden ahora a un servidor con dirección propia de NinjaLoot. No cambia nada de lo que ves en la aplicación.'],
+    ['1.8.14–1.8.19', 'Mejoras menores y ajustes internos.'],
     ['1.8.12', 'Rotaciones: el nombre de la banda sobre las columnas de jefes (por ejemplo «Abismo Venenoso») va centrado.'],
     ['1.8.11', 'Nombres en español corregidos con los archivos del juego en castellano: «Abismo Venenoso», «La Gruta Mareal» y «La liberación de Kith\'ix» (antes salían «El Abismo Venenoso», «La Gruta Ligada a la Marea» y «El Desatamiento de Kith\'ix»). Los nombres de los jefes ya eran correctos.'],
     ['1.8.9', 'Versión móvil: en pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.'],
@@ -101,10 +98,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
-    ['1.8.18', 'General background: a Warcraft artwork (Curse of Ula’tek) now fills the whole app background, fixed, sharp and lightly dimmed. On Home the cards are glass so it shows through. It is not shown in the light theme.'],
-    ['1.8.17', 'The author message is now “Made with ♥ by Drakko”, with the beating heart, both on the home page and in Settings > Version.'],
-    ['1.8.16', 'Home: the welcome card now has a Warcraft artwork background (Alleria and Xal’atath) that moves slowly, with a warm light sweep across the card and the light border in indigo and gold tones.'],
-    ['1.8.14', 'Blizzard data (character portrait and weekly chest) is now requested from a server with its own NinjaLoot address. Nothing changes in what you see in the app.'],
+    ['1.8.14–1.8.19', 'Minor improvements and internal tweaks.'],
     ['1.8.12', 'Rotations: the raid name above the boss columns (for example “Abismo Venenoso”) is now centered.'],
     ['1.8.11', 'Spanish names fixed using the Spanish game files: “Abismo Venenoso”, “La Gruta Mareal” and “La liberación de Kith\'ix” (they used to read “El Abismo Venenoso”, “La Gruta Ligada a la Marea” and “El Desatamiento de Kith\'ix”). Boss names were already correct.'],
     ['1.8.9', 'Mobile version: on small screens the navigation becomes a tab bar at the bottom, the header is compact, buttons and filters fit the finger, settings open as a bottom sheet and no section spills over the sides.'],
