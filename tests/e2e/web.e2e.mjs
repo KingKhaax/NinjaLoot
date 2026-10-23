@@ -37,7 +37,7 @@ test('la portada carga sin errores y la barra son enlaces', async () => {
 
 test('cada pantalla tiene su dirección y Atrás funciona', async () => {
   const p = await open();
-  assert.ok(['', '#/'].includes(await hash(p)), 'la portada es #/ como en WipeTime');
+  assert.ok(['', '#/'].includes(await hash(p)), 'la portada es #/ como en WipeHub');
   await p.click('.navbtn[data-view="tiers"]'); await p.waitForTimeout(400);
   assert.equal(await hash(p), '#/tiers');
   await p.click('.navbtn[data-view="roster"]'); await p.waitForTimeout(400);

@@ -430,7 +430,7 @@ select.txt.small { padding: 4px 8px; font-size: 13px; min-width: 190px; }
 .stale-row img { width: 26px; height: 26px; border-radius: 4px; }
 .stale-row .reasons { flex: 1; color: #ee5a45; font-weight: 700; font-size: 13.5px; }
 
-/* ---------- Ajustes > Versión (como WipeTime) ---------- */
+/* ---------- Ajustes > Versión (como WipeHub) ---------- */
 .ver-card { display: flex; align-items: center; gap: 22px; padding: 18px 22px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--panel2); margin-bottom: 18px; }
 .ver-card .meta { font-size: 12px; color: var(--muted); }
 .ver-big { display: block; font-size: 34px; line-height: 1.1; color: #3fcf6a; }
@@ -457,7 +457,7 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 .coin-count { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--muted); }
 .coin-count select { min-width: 64px; }
 
-/* Inicio: «Hecho por Drakko ♥» (como en WipeTime) */
+/* Inicio: «Hecho por Drakko ♥» (como en WipeHub) */
 .made-by { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 40px 0 8px; color: var(--muted); font-size: 14px; }
 .made-by b { color: var(--text); letter-spacing: .3px; }
 .made-by .heart { color: #ff4f7b; }
@@ -641,7 +641,7 @@ a.navbtn, a.btn { text-decoration: none; }
 .cl-sb li::marker { color: var(--accent, #8b5cf6); }
 @media (prefers-reduced-motion: reduce) { .cl-card { transition: none; } .cl-card:hover { transform: none; } }
 
-/* Aviso de versión nueva de la web (con «Recargar»), como en WipeTime */
+/* Aviso de versión nueva de la web (con «Recargar»), como en WipeHub */
 .newver { position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 9999; display: flex; align-items: center; gap: 10px; padding: 8px 12px; max-width: calc(100vw - 24px); background: var(--panel); border: 1px solid var(--accent); border-radius: 12px; box-shadow: 0 8px 28px #0009; font-size: 14px; color: var(--text); animation: nvIn .35s cubic-bezier(.2, .9, .25, 1.15) both; }
 @keyframes nvIn { from { opacity: 0; transform: translateX(-50%) translateY(14px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
 
