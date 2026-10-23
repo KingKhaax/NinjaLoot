@@ -2,7 +2,7 @@
 // Historial de versiones (Ajustes → Versión). La más reciente arriba.
 const CHANGELOG = {
   es: [
-    ['1.8.14–1.8.20', 'Mejoras menores y ajustes internos.'],
+    ['1.8.14–1.8.21', 'Mejoras menores y ajustes internos.'],
     ['1.8.12', 'Rotaciones: el nombre de la banda sobre las columnas de jefes (por ejemplo «Abismo Venenoso») va centrado.'],
     ['1.8.11', 'Nombres en español corregidos con los archivos del juego en castellano: «Abismo Venenoso», «La Gruta Mareal» y «La liberación de Kith\'ix» (antes salían «El Abismo Venenoso», «La Gruta Ligada a la Marea» y «El Desatamiento de Kith\'ix»). Los nombres de los jefes ya eran correctos.'],
     ['1.8.9', 'Versión móvil: en pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.'],
@@ -98,7 +98,7 @@ const CHANGELOG = {
     ['0.1.0', 'Primera versión: gráficas de mejoras de objetos a partir de simulaciones de Raidbots.'],
   ],
   en: [
-    ['1.8.14–1.8.20', 'Minor improvements and internal tweaks.'],
+    ['1.8.14–1.8.21', 'Minor improvements and internal tweaks.'],
     ['1.8.12', 'Rotations: the raid name above the boss columns (for example “Abismo Venenoso”) is now centered.'],
     ['1.8.11', 'Spanish names fixed using the Spanish game files: “Abismo Venenoso”, “La Gruta Mareal” and “La liberación de Kith\'ix” (they used to read “El Abismo Venenoso”, “La Gruta Ligada a la Marea” and “El Desatamiento de Kith\'ix”). Boss names were already correct.'],
     ['1.8.9', 'Mobile version: on small screens the navigation becomes a tab bar at the bottom, the header is compact, buttons and filters fit the finger, settings open as a bottom sheet and no section spills over the sides.'],
