@@ -462,8 +462,8 @@
   function homeView() {
     const t = T();
     const feats = [['charts', 'f1'], ['personal', 'f2'], ['coin', 'f3'], ['rotations', 'f4'], ['remove', 'f5'], ['lang', 'f6']];
-    return `<section class="panel home-hero"><img src="assets/logo.png" alt="" width="128" height="128"><div><h2>${esc(t.homeWelcome)}</h2><p>${esc(t.homeIntro)}</p>`
-      + `<div class="home-actions"><a class="btn primary" href="#/charts" data-view="charts">${esc(t.homeStart)}</a><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div><div class="home-loot" aria-hidden="true"><i style="--rc:#a335ee;--i:0"></i><i style="--rc:#ff8000;--i:1"></i><i style="--rc:#0070dd;--i:2"></i></div></section>`
+    return `<section class="panel home-hero"><div class="home-bg" aria-hidden="true"></div><div class="home-shade" aria-hidden="true"></div><img src="assets/logo.png" alt="" width="128" height="128"><div><h2>${esc(t.homeWelcome)}</h2><p>${esc(t.homeIntro)}</p>`
+      + `<div class="home-actions"><a class="btn primary" href="#/charts" data-view="charts">${esc(t.homeStart)}</a><button class="btn" data-open="https://www.raidbots.com/simbot/droptimizer">${ui('open')}${esc(t.homeRaidbots)}</button></div></div></section>`
       + `<div class="feats">${feats.map(([ic, k]) => `<div class="feat"><img src="assets/ui/${ic}.png" alt=""><div><b>${esc(t[k + 't'])}</b><p>${esc(t[k + 'd'])}</p></div></div>`).join('')}</div>`
       + `<section class="panel card"><div class="card-head"><h2>${esc(t.homeHow)}</h2></div><ol class="steps home-steps">${t.homeSteps.map(s => `<li>${esc(s)}</li>`).join('')}</ol></section>`
       + `<footer class="made-by">${esc(t.madeBy)} <b>Drakko</b><svg class="heart" viewBox="0 0 24 24" width="16" height="16" aria-label="love"><path d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 2.8 4.5 6.3 4.5c2 0 3.6 1.1 4.4 2.6l1.3 2.2 1.3-2.2c.8-1.5 2.4-2.6 4.4-2.6 3.5 0 5.4 3.7 3.9 7.2C19.5 16.4 12 21 12 21z" fill="currentColor"/></svg></footer>`;

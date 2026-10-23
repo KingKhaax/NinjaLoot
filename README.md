@@ -104,3 +104,7 @@ Full documents: [Privacy Policy](https://kingkhaax.github.io/NinjaLoot/privacy.h
 ## License
 
 [MIT](LICENSE)
+
+## Créditos
+
+La imagen de fondo de la portada es arte oficial de World of Warcraft, © Blizzard Entertainment. NinjaLoot es un proyecto de aficionados, gratuito y sin relación oficial con Blizzard.
