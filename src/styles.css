@@ -460,7 +460,11 @@ input.switch:checked { background: var(--accent); } input.switch:checked::after 
 /* Inicio: «Hecho por Drakko ♥» */
 .made-by { display: flex; align-items: center; justify-content: center; gap: 7px; margin: 40px 0 8px; color: var(--muted); font-size: 14px; }
 .made-by b { color: var(--text); letter-spacing: .3px; }
-.made-by .heart { color: #ff4f7b; }
+.made-by .heart, .made-with .heart { color: #ff4f7b; filter: drop-shadow(0 0 6px #ff4f7b88); animation: nl-beat 1.6s ease-in-out infinite; transform-origin: center; }
+@keyframes nl-beat { 0%, 100% { transform: scale(1); } 14% { transform: scale(1.22); } 28% { transform: scale(1); } 42% { transform: scale(1.14); } 70% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) { .made-by .heart, .made-with .heart { animation: none; } }
+body.no-anim .made-by .heart, body.no-anim .made-with .heart { animation: none; }
+.made-with .heart { display: inline-block; vertical-align: -3px; margin: 0 3px; }
 
 /* ---------- Filtros de rol y clase, sesiones y compartir ---------- */
 .seg button svg { vertical-align: -2px; margin-right: 5px; }
