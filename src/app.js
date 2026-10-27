@@ -15,7 +15,7 @@
   const emptyArt = k => `<div class="empty-art">${EMPTY_ART[k]}</div>`;
 
   // ---------- Estado y ajustes ----------
-  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
+  const DEFAULTS = { lang: 'es', theme: 'dark', colors: null, topN: 10, unit: 'dps', showValues: true, showIcons: true, showPct: false, animations: true, mobileAnim: false, compact: false, persist: true, confirmClear: true, minGain: 0, showCaution: true, cautionGap: 15, chartMode: 'boss', diff: 'auto', srcCat: 'all', persMode: 'all', coinSrc: 'all', checkGear: true, staleDays: 7, coins: 5, font: 'noto', fontScale: 100, density: 'normal', tooltips: true, chartTall: false };
   const load = (k, def) => { try { return JSON.parse(localStorage.getItem(k)) ?? def; } catch { return def; } };
   const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
   const state = {
@@ -73,6 +73,7 @@
     const c = S().colors;
     if (c) for (const k of ['bg', 'panel', 'accent', 'text']) if (hex(c[k])) root.style.setProperty(`--${k}`, c[k]);
     document.body.classList.toggle('no-anim', !S().animations);
+    document.body.classList.toggle('mobile-anim', !!S().mobileAnim);
     root.style.setProperty('--font', (FONTS[S().font] || FONTS.noto)[1]);
     document.body.classList.toggle('compact', S().density === 'compact');
     window.api.setZoom((Number(S().fontScale) || 100) / 100);
@@ -1588,7 +1589,7 @@
           + (s.font === 'expressway' && !fontInstalled('Expressway') ? `<div class="small-note warn">${esc(t.fontMissing)}</div>` : '')
           + `<div class="row"><label>${esc(t.fontScale)}</label><span class="range-row"><input type="range" min="90" max="130" step="5" data-key="fontScale" value="${Number(s.fontScale) || 100}"><output>${Number(s.fontScale) || 100} %</output></span></div>`
           + `<div class="row"><label>${esc(t.density)}</label><select data-key="density"><option value="normal" ${s.density !== 'compact' ? 'selected' : ''}>${esc(t.densityNormal)}</option><option value="compact" ${s.density === 'compact' ? 'selected' : ''}>${esc(t.densityCompact)}</option></select></div>`
-          + `<h3>${esc(t.groupDisplay)}</h3>` + check('showValues', t.showValues) + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact) + check('chartTall', t.chartTall) + check('tooltips', t.tooltips) + check('animations', t.animations)
+          + `<h3>${esc(t.groupDisplay)}</h3>` + check('showValues', t.showValues) + check('showIcons', t.showIcons) + check('showPct', t.showPct) + check('compact', t.compact) + check('chartTall', t.chartTall) + check('tooltips', t.tooltips) + check('animations', t.animations) + check('mobileAnim', t.mobileAnim)
           + `<h3>${esc(t.customColors)}</h3><div class="colors">`
           + [['bg', t.colorBg], ['panel', t.colorPanel], ['accent', t.colorAccent], ['text', t.colorText]].map(([k, l]) => `<label>${esc(l)}<input type="color" data-color="${k}" value="${cur(k)}"></label>`).join('')
           + `</div><button class="btn small" data-reset-colors>${esc(t.resetColors)}</button>`,
@@ -1630,7 +1631,7 @@
       persistSettings();
       if (key === 'persist') persistSims();
       if (key === 'checkGear') refreshGear();
-      if (['animations', 'font', 'fontScale', 'density'].includes(key)) applyTheme();
+      if (['animations', 'mobileAnim', 'font', 'fontScale', 'density'].includes(key)) applyTheme();
       state.animateNext = false;
       if (key === 'lang' || key === 'font') draw(back.dataset.pane);
       render();

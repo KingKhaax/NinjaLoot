@@ -261,3 +261,15 @@ body.no-anim .home-actions .btn:not(.primary) { animation: none; }
 
 /* Fondos más ligeros en pantallas pequeñas */
 @media (max-width: 900px) { .home-bg { background-image: url(assets/hero-bg-m.webp); } .bg-art { background-image: url(assets/bg-general-m.webp); } }
+
+/* En pantallas táctiles pequeñas las animaciones continuas se quedan quietas (ahorran batería y dibujo); lo que reacciona al tocar y los indicadores de carga siguen igual.
+   Se vuelven a activar en Ajustes → Apariencia → «Animaciones continuas en el móvil». */
+@media (hover: none) and (max-width: 760px) {
+body:not(.mobile-anim) .home-hero::before,
+body:not(.mobile-anim) .home-hero::after,
+body:not(.mobile-anim) .home-hero > img,
+body:not(.mobile-anim) .home-hero h2,
+body:not(.mobile-anim) .home-bg,
+body:not(.mobile-anim) .home-bg::after,
+body:not(.mobile-anim) .home-actions .btn:not(.primary) { animation: none !important; }
+}

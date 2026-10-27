@@ -146,6 +146,19 @@ test('Gráficas por jugador: con más objetos de los que caben salen flechas par
   noErrors(p);
 });
 
+test('Móvil: las animaciones continuas están quietas por defecto, se activan con el ajuste y en escritorio siguen', async () => {
+  const probe = async (p) => p.evaluate(() => getComputedStyle(document.querySelector('.home-bg'), null).animationName);
+  const m = await newPage(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  await m.goto(url, { waitUntil: 'load' }); await m.waitForTimeout(500);
+  assert.equal(await probe(m), 'none', 'en el móvil la portada no tiene animaciones continuas');
+  await m.evaluate(() => localStorage.setItem('ninjaloot.settings', JSON.stringify({ mobileAnim: true })));
+  await m.reload({ waitUntil: 'load' }); await m.waitForTimeout(500);
+  assert.notEqual(await probe(m), 'none', 'con el ajuste activado vuelven');
+  const d = await open();
+  assert.notEqual(await probe(d), 'none', 'en escritorio siguen animadas');
+  noErrors(m);
+});
+
 test('Móvil (390 px): la navegación va abajo y ninguna sección se sale por los lados', async () => {
   const p = await newPage(browser, { viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   await p.goto(url, { waitUntil: 'load' }); await p.waitForTimeout(900);

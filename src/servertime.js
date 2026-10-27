@@ -156,7 +156,7 @@ const ServerClock = (() => {
 .sc-time b { min-width: 2ch; font-weight: 700; }
 .sc-time em { color: color-mix(in srgb, var(--accent) 62%, #fff); }
 .sc-s.sc-tick, .sc-s.tick { animation: none; }
-.sc-reg { padding: 0; background: none; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: .5px; color: color-mix(in srgb, var(--accent) 75%, #05080c); }
+.sc-reg { padding: 0; background: none; font-family: ui-monospace, 'Cascadia Mono', 'Noto Sans Mono', Consolas, monospace; font-size: 11px; font-weight: 700; letter-spacing: .5px; color: color-mix(in srgb, var(--accent) 92%, #fff); }
 @media (prefers-reduced-motion: reduce) { .sc::before, .sc-time em, .sc-s.tick, .sc-tip { animation: none !important; } }
 `;
 

@@ -5,7 +5,7 @@
 // Se numera con la última versión del grupo. Los cambios que solo tocan colores, tamaños o ajustes internos no se cuentan.
 // Estructura: { v, date, es: { intro, sections: [[icono, título, [viñetas]]] }, en: { ... } }
 const RELEASES = [
-  { v: '1.8.25', date: '2026-10-27',
+  { v: '1.8.26', date: '2026-10-27',
     es: { intro: 'Versión móvil, NinjaBot con elección de cada cuánto recoge las sims, gráficas paginadas y un pulido visual de toda la aplicación.', sections: [
       ['inv_misc_net_01', 'Versión móvil', ['En pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.']],
       ['inv_misc_horn_02', 'NinjaBot y Discord', [
@@ -17,7 +17,7 @@ const RELEASES = [
       ['inv_chest_plate04', 'Piezas de tier de Kith’ix', ['Las piezas pasadas a catalizador cuyo original suelta ese mismo jefe indican que conservan la pasiva y las estadísticas de la pieza original, además de contar como pieza de tier.']],
       ['inv_gizmo_02', 'Apariencia', ['Barra superior con iconos que siguen el color del tema y un indicador bajo la sección activa, cifras clave sobre las gráficas, tarjeta del personaje en Personal, cabecera de cada clase en Tiers con la imagen del jefe, pasos numerados en Inicio y estados vacíos con ilustración.']],
       ['inv_misc_book_11', 'Nombres en español', ['Nombres corregidos con los archivos del juego en castellano («Abismo Venenoso», «La Gruta Mareal», «La liberación de Kith’ix») y el nombre de la banda centrado sobre las columnas de jefes en Rotaciones.']],
-      ['inv_shield_04', 'Rendimiento y accesibilidad', ['Carga más rápida, sobre todo en el móvil: los fondos pesan hasta un 85 % menos sin cambiar su aspecto, el de la portada se pide antes y la web guarda mejor sus archivos para que las visitas siguientes vayan casi al instante.', 'Mejor accesibilidad y búsqueda: selector de región del Roster y botón de idioma con nombre para lectores de pantalla y descripción de la web para los buscadores.']],
+      ['inv_shield_04', 'Rendimiento y accesibilidad', ['Carga más rápida, sobre todo en el móvil: los fondos pesan hasta un 85 % menos sin cambiar su aspecto, el de la portada se pide antes y la web guarda mejor sus archivos para que las visitas siguientes vayan casi al instante.', 'Mejor accesibilidad y búsqueda: selector de región del Roster y botón de idioma con nombre para lectores de pantalla y descripción de la web para los buscadores.', 'En el móvil, las animaciones continuas (fondo en movimiento, logo que flota y halos) se quedan quietas para ahorrar batería y hacer más fluido el desplazamiento. Se pueden reactivar en Ajustes → Apariencia → «Animaciones continuas en el móvil».', 'Las letras de la región (EU, US…) del reloj del servidor se leen mejor sobre el fondo oscuro.']],
     ] },
     en: { intro: 'A mobile version, NinjaBot with a choice of how often it picks up sims, paged charts and a visual polish across the whole app.', sections: [
       ['inv_misc_net_01', 'Mobile version', ['On small screens navigation moves to a bottom tab bar, the header compacts, buttons and filters fit a finger, settings open as a sheet from the bottom and no section overflows the sides.']],
@@ -30,7 +30,7 @@ const RELEASES = [
       ['inv_chest_plate04', 'Kith’ix tier pieces', ['Pieces converted at the Catalyst whose original drops from that same boss now say they keep the original piece’s passive and stats, besides counting as a tier piece.']],
       ['inv_gizmo_02', 'Appearance', ['Top bar with icons that follow the theme color and an indicator under the active section, key figures above the charts, the character card in Personal, each class header in Tiers with the boss image, numbered steps on Home and illustrated empty states.']],
       ['inv_misc_book_11', 'Spanish names', ['Names corrected with the Spanish game files (“Abismo Venenoso”, “La Gruta Mareal”, “La liberación de Kith’ix”) and the raid name centered above the boss columns in Rotations.']],
-      ['inv_shield_04', 'Performance and accessibility', ['Faster loading, especially on mobile: backgrounds weigh up to 85% less without changing their look, the home one is requested earlier and the web caches its files better so repeat visits are almost instant.', 'Better accessibility and search: the Roster region selector and the language button now have names for screen readers and the site has a description for search engines.']],
+      ['inv_shield_04', 'Performance and accessibility', ['Faster loading, especially on mobile: backgrounds weigh up to 85% less without changing their look, the home one is requested earlier and the web caches its files better so repeat visits are almost instant.', 'Better accessibility and search: the Roster region selector and the language button now have names for screen readers and the site has a description for search engines.', 'On phones, ambient animations (moving background, floating logo and halos) stay still to save battery and scroll more smoothly. They can be turned back on in Settings → Appearance → “Ambient animations on phones”.', 'The region letters (EU, US…) of the server clock are easier to read on the dark background.']],
     ] } },
 
   { v: '1.7.4', date: '2026-10-21',
