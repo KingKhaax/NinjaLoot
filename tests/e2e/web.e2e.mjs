@@ -63,10 +63,11 @@ test('Ajustes: pestañas, tamaño con deslizador, restablecer con confirmación 
   assert.equal(await size(), 100, 'el segundo clic restablece');
   // versión + acerca de, historial recortado
   await p.click('[data-tab="update"]'); await p.waitForSelector('.cl-card');
-  assert.equal(await p.$$eval('.cl-card', (e) => e.length), 10);
-  assert.equal(await p.$$eval('.cl-card.open', (e) => e.length), 1, 'solo la última versión viene desplegada');
+  const cards = await p.$$eval('.cl-card', (e) => e.length);
+  assert.ok(cards >= 10, 'el historial agrupado tiene todas las versiones');
+  assert.equal(await p.$$eval('.cl-card.open', (e) => e.length), cards, 'todas vienen desplegadas');
   await p.click('.cl-card:nth-child(2) .cl-head'); await p.waitForTimeout(100);
-  assert.equal(await p.$$eval('.cl-card.open', (e) => e.length), 2, 'al pulsar una versión se despliega');
+  assert.equal(await p.$$eval('.cl-card.open', (e) => e.length), cards - 1, 'al pulsar la cabecera se pliega');
   assert.ok((await p.$$eval('.cl-card .cl-sic', (e) => e.length)) >= 6, 'secciones con iconos de WoW');
   assert.ok(await p.$('.about-friend'), 'acerca de dentro de la pestaña');
   assert.ok(!/España/.test(await p.$eval('.about-es', (e) => e.innerText)), 'bandera sin texto');

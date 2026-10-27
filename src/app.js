@@ -1844,11 +1844,11 @@
       + (IS_VERCEL ? '' : `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`)
       + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
       ;
-    if (histBox) histBox.innerHTML = `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>${log.length > 10 ? `<button class="btn small" id="chlogMore" data-chlog-more></button>` : ''}`;
+    if (histBox) histBox.innerHTML = `<h3 class="chlog-title">${esc(t.updHistory)}</h3><div class="chlog" id="chlog"></div>`;
     let all = false;
     const paintLog = () => {
       if (!histBox) return;
-      histBox.querySelector('#chlog').innerHTML = changelogCards(all ? log : log.slice(0, 10), S().lang, t.latestVersion);
+      histBox.querySelector('#chlog').innerHTML = changelogCards(log, S().lang, t.latestVersion);
       const m = histBox.querySelector('#chlogMore'); if (m) m.textContent = all ? t.showLess : t.showMore(log.length - 10);
     };
     paintLog();
