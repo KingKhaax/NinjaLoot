@@ -5,6 +5,13 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data: https://wow.zamimg.com https://assets.rpglogs.com https://render.worldofwarcraft.com; style-src 'self' 'unsafe-inline'; script-src 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NinjaLoot</title>
+<meta name="description" content="NinjaLoot convierte tus simulaciones de Raidbots en gráficas de mejoras por jefe y jugador, dónde gastar tus monedas, tiers, rotaciones y roster. Gratis y sin instalar nada.">
+<meta name="theme-color" content="#0b0a12">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NinjaLoot">
+<meta property="og:description" content="Gráficas de mejoras de objetos a partir de simulaciones de Raidbots, dónde gastar tus monedas, tiers, rotaciones y roster.">
+<link rel="preload" as="image" href="assets/hero-bg.webp" media="(min-width: 901px)" fetchpriority="high">
+<link rel="preload" as="image" href="assets/hero-bg-m.webp" media="(max-width: 900px)" fetchpriority="high">
 <link rel="icon" href="assets/logo.png">
 <link rel="stylesheet" href="fonts.css">
 <link rel="stylesheet" href="styles.css">
@@ -26,7 +33,7 @@
     <a class="navbtn" href="#/roster" data-view="roster"><svg class="navic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3 19.5c.5-3.4 3-5.3 6-5.3s5.5 1.9 6 5.3"/><path d="M16 5.6a3.2 3.2 0 0 1 0 5.8"/><path d="M18 14.6c1.8.6 3 2.1 3.3 4.9"/></svg><span id="navRoster"></span></a>
   </nav>
   <div class="top-actions">
-    <div class="langwrap"><button id="btnLang" class="btn ghost" aria-label="Languages" aria-haspopup="true"><svg class="navic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg><span id="langLabel"></span></button><div id="langMenu" class="langmenu" hidden></div></div>
+    <div class="langwrap"><button id="btnLang" class="btn ghost" aria-haspopup="true"><svg class="navic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.6 3.8 5.6 3.8 9s-1.3 6.4-3.8 9c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></svg><span id="langLabel"></span></button><div id="langMenu" class="langmenu" hidden></div></div>
     <button id="verBadge" class="verbadge na" hidden></button>
     <button id="btnSettings" class="btn ghost" aria-label="Settings"><svg class="navic" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/></svg></button>
   </div>

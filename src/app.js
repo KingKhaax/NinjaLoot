@@ -1491,7 +1491,7 @@
     let html = `<section class="panel card"><div class="card-head"><h2>${esc(t.roTitle)}</h2></div><div class="hint">${esc(t.roHint(dateTxt))}</div>`
       + `<div class="ro-forms"><div class="ro-form"><b>${esc(t.roAddTitle)}</b><div class="ro-row"><input class="txt" id="roName" placeholder="${esc(t.roName)}" spellcheck="false"><input class="txt" id="roRealm" placeholder="${esc(t.roRealm)}" spellcheck="false"><button class="btn" data-ro="add">${esc(t.roAdd)}</button></div></div>`
       + `<div class="ro-form"><b>${esc(t.roImportTitle)}</b><div class="ro-row"><input class="txt" id="roGuild" placeholder="${esc(t.roGuild)}" spellcheck="false" value="${esc(S().rosterGuild || '')}"><input class="txt" id="roGRealm" placeholder="${esc(t.roRealm)}" spellcheck="false" value="${esc(S().rosterRealm || '')}">`
-      + `<select id="roRegion">${['eu', 'us'].map(r => `<option value="${r}"${r === region ? ' selected' : ''}>${r.toUpperCase()}</option>`).join('')}</select>`
+      + `<select id="roRegion" aria-label="Región / Region">${['eu', 'us'].map(r => `<option value="${r}"${r === region ? ' selected' : ''}>${r.toUpperCase()}</option>`).join('')}</select>`
       + `<button type="button" class="btn" data-ro="ranks" id="roRanksBtn" title="${esc(t.roRanksTitle)}">${esc(t.roRanksLabel)}: <b>${esc(rankSummary())}</b> ▾</button>`
       + `<button class="btn" data-ro="import">${esc(t.roImport)}</button></div></div></div></section>`;
     if (!state.roster.length) return html + `<div class="empty">${emptyArt('roster')}<h2>${esc(t.roEmptyTitle)}</h2><p>${esc(t.roEmptyText)}</p></div>`;

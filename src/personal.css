@@ -133,7 +133,7 @@
 .feat:hover img { transform: scale(1.08) rotate(-3deg); }
 .feat img { transition: transform .25s; }
 .home-hero { color: #f1eef9; }
-.home-bg { position: absolute; inset: -4%; z-index: -3; background: url(assets/hero-bg.jpg) 50% 38% / cover no-repeat; animation: nl-pan 24s ease-in-out infinite alternate; }
+.home-bg { position: absolute; inset: -4%; z-index: -3; background: url(assets/hero-bg.webp) 50% 38% / cover no-repeat; animation: nl-pan 24s ease-in-out infinite alternate; }
 .home-bg::after { content: ''; position: absolute; right: 12%; top: 14%; width: 240px; height: 200px; border-radius: 50%; background: #f59e0b; filter: blur(40px); mix-blend-mode: screen; opacity: .35; animation: nl-gpulse 5s ease-in-out infinite; }
 .home-shade { position: absolute; inset: 0; z-index: -2; background: linear-gradient(90deg, rgba(5, 4, 10, .86), rgba(5, 4, 10, .6) 45%, rgba(5, 4, 10, .12) 78%), linear-gradient(0deg, rgba(5, 4, 10, .35), transparent 40%); }
 .home-hero::before { inset: 0 auto 0 -40%; width: 22%; opacity: 1; transform: skewX(-20deg); background: linear-gradient(90deg, transparent, rgba(255, 235, 170, .22), transparent); animation: nl-band 7s ease-in-out infinite; z-index: -1; }
@@ -248,7 +248,7 @@ tr.ro-miss td:first-child { box-shadow: inset 3px 0 0 #ef5350; }
 .rk-n { font-weight: 800; color: var(--muted); text-align: center; font-variant-numeric: tabular-nums; }
 .rk-name { width: 100%; }
 #roRanksBtn b { font-weight: 700; }
-.bg-art { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: #07060b url(assets/bg-general.jpg) 50% 30% / cover no-repeat; }
+.bg-art { position: fixed; inset: 0; z-index: -2; pointer-events: none; background: #07060b url(assets/bg-general.webp) 50% 30% / cover no-repeat; }
 .bg-dim { position: fixed; inset: 0; z-index: -1; pointer-events: none; background: rgba(7, 6, 12, .25); }
 :root[data-theme="light"] .bg-art, :root[data-theme="light"] .bg-dim { display: none; }
 #content:has(.home-hero) .feat, #content:has(.home-hero) .home-hero ~ .panel { background: rgba(14, 12, 22, .55); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
@@ -258,3 +258,6 @@ tr.ro-miss td:first-child { box-shadow: inset 3px 0 0 #ef5350; }
 @keyframes nl-halo { 50% { box-shadow: 0 0 26px -2px #8b5cf6, 0 0 0 1px rgba(139, 92, 246, .6); } }
 @media (prefers-reduced-motion: reduce) { .home-actions .btn:not(.primary) { animation: none; } }
 body.no-anim .home-actions .btn:not(.primary) { animation: none; }
+
+/* Fondos más ligeros en pantallas pequeñas */
+@media (max-width: 900px) { .home-bg { background-image: url(assets/hero-bg-m.webp); } .bg-art { background-image: url(assets/bg-general-m.webp); } }

@@ -70,4 +70,6 @@ if (esbuild) {
   fs.writeFileSync(path.join(out, 'index.html'), html);
   console.log(`optimizada: ${files.length} scripts → app.bundle.js (${(bundle.length / 1024).toFixed(0)} KB), ${cssFiles.length} CSS → app.css`);
 }
+// robots.txt: la web se puede indexar entera
+fs.writeFileSync(path.join(out, 'robots.txt'), 'User-agent: *\nAllow: /\n');
 console.log(`_site listo (v${pkg.version})`);
