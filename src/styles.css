@@ -991,3 +991,14 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 @media (max-width: 560px) { .topbar .sc { display: none; } }
 @media (min-width: 561px) and (max-width: 760px) { .topbar .sc { transform: scale(.85); transform-origin: left center; margin-right: -14px; } }
 
+
+/* Historial de versiones: cada versión es una tarjeta con fecha que se despliega al pulsar su cabecera */
+.cl-head { cursor: pointer; }
+.cl-head:focus-visible { outline: 2px solid var(--accent, #8b5cf6); outline-offset: 4px; border-radius: 10px; }
+.cl-ht { flex: 1; min-width: 0; }
+.cl-date { flex-basis: 100%; margin-top: -4px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.cl-chev { flex: none; width: 10px; height: 10px; margin: 0 4px; border-right: 2px solid var(--muted); border-bottom: 2px solid var(--muted); transform: rotate(45deg); transition: transform .2s ease; }
+.cl-card.open .cl-chev { transform: rotate(225deg); }
+.cl-body { display: none; }
+.cl-card.open .cl-body { display: block; }
+.cl-sec + .cl-sec { margin-top: 14px; }
