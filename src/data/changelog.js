@@ -5,7 +5,7 @@
 // Se numera con la última versión del grupo. Los cambios que solo tocan colores, tamaños o ajustes internos no se cuentan.
 // Estructura: { v, date, es: { intro, sections: [[icono, título, [viñetas]]] }, en: { ... } }
 const RELEASES = [
-  { v: '1.8.23', date: '2026-10-27',
+  { v: '1.8.24', date: '2026-10-27',
     es: { intro: 'Versión móvil, NinjaBot con elección de cada cuánto recoge las sims, gráficas paginadas y un pulido visual de toda la aplicación.', sections: [
       ['inv_misc_net_01', 'Versión móvil', ['En pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.']],
       ['inv_misc_horn_02', 'NinjaBot y Discord', [
@@ -17,7 +17,6 @@ const RELEASES = [
       ['inv_chest_plate04', 'Piezas de tier de Kith’ix', ['Las piezas pasadas a catalizador cuyo original suelta ese mismo jefe indican que conservan la pasiva y las estadísticas de la pieza original, además de contar como pieza de tier.']],
       ['inv_gizmo_02', 'Apariencia', ['Barra superior con iconos que siguen el color del tema y un indicador bajo la sección activa, cifras clave sobre las gráficas, tarjeta del personaje en Personal, cabecera de cada clase en Tiers con la imagen del jefe, pasos numerados en Inicio y estados vacíos con ilustración.']],
       ['inv_misc_book_11', 'Nombres en español', ['Nombres corregidos con los archivos del juego en castellano («Abismo Venenoso», «La Gruta Mareal», «La liberación de Kith’ix») y el nombre de la banda centrado sobre las columnas de jefes en Rotaciones.']],
-      ['inv_misc_note_06', 'Historial de versiones', ['Las más de 90 versiones pequeñas se agrupan en 10 versiones con resumen, fecha y sus cambios por secciones. Se ve el historial completo, con todas las versiones desplegadas, y cada cabecera las pliega.']],
     ] },
     en: { intro: 'A mobile version, NinjaBot with a choice of how often it picks up sims, paged charts and a visual polish across the whole app.', sections: [
       ['inv_misc_net_01', 'Mobile version', ['On small screens navigation moves to a bottom tab bar, the header compacts, buttons and filters fit a finger, settings open as a sheet from the bottom and no section overflows the sides.']],
@@ -30,7 +29,6 @@ const RELEASES = [
       ['inv_chest_plate04', 'Kith’ix tier pieces', ['Pieces converted at the Catalyst whose original drops from that same boss now say they keep the original piece’s passive and stats, besides counting as a tier piece.']],
       ['inv_gizmo_02', 'Appearance', ['Top bar with icons that follow the theme color and an indicator under the active section, key figures above the charts, the character card in Personal, each class header in Tiers with the boss image, numbered steps on Home and illustrated empty states.']],
       ['inv_misc_book_11', 'Spanish names', ['Names corrected with the Spanish game files (“Abismo Venenoso”, “La Gruta Mareal”, “La liberación de Kith’ix”) and the raid name centered above the boss columns in Rotations.']],
-      ['inv_misc_note_06', 'Version history', ['The 90+ small versions are grouped into 10 versions with a summary, a date and their changes by section. The full history is shown, with every version unfolded, and each header collapses it.']],
     ] } },
 
   { v: '1.7.4', date: '2026-10-21',
