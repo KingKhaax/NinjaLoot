@@ -690,9 +690,11 @@ a.navbtn, a.btn { text-decoration: none; }
 .lg-head .lg-t b { display: block; font-size: 14px; }
 .lg-head .lg-tot { margin-left: auto; text-align: right; white-space: nowrap; }
 .lg-head .lg-tot b { display: block; color: #3fcf6a; font-variant-numeric: tabular-nums; }
-.lg-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--border); transition: background .15s ease; }
-.lg-row:last-child { border-bottom: 0; }
-.lg-row:hover { background: color-mix(in srgb, var(--accent) 10%, transparent); }
+/* Cada objeto es un bloque propio: aire entre ellos, borde visible y una marca a la izquierda, para que no se peguen aunque salgan muchos */
+.lg-boss { display: flex; flex-direction: column; }
+.lg-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin: 10px 12px 0; padding: 12px 12px 12px 10px; border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--panel) 80%, var(--text) 6%); transition: background .15s ease, border-color .15s ease; }
+.lg-row:last-child { margin-bottom: 12px; }
+.lg-row:hover { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
 .lg-row.owned-row { opacity: .55; }
 .lg-row img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid; }
 .lg-row .lg-n { min-width: 0; font-size: 13px; }
