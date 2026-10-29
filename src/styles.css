@@ -682,16 +682,18 @@ a.navbtn, a.btn { text-decoration: none; }
 
 /* Todas las piezas: botín por jefe. Una columna por jefe o mazmorra con sus piezas y lo que suman */
 .loot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-top: 6px; }
-.lg-boss { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--r-card, 10px); background: var(--panel2); padding: 12px; }
-.lg-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
-.lg-head .boss-ic, .lg-head .lg-ph { width: 34px; height: 34px; flex: none; border-radius: var(--r-icon, 6px); border: 1px solid var(--border); }
+.lg-boss { display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--r-card, 10px); background: var(--panel2); box-shadow: 0 10px 28px -20px var(--accent); }
+.lg-head { display: flex; gap: 12px; align-items: center; padding: 14px 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, var(--panel)), var(--panel) 75%); border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.lg-head .boss-ic, .lg-head .lg-ph { width: 46px; height: 46px; flex: none; border-radius: var(--r-icon, 6px); border: 2px solid color-mix(in srgb, var(--accent) 60%, var(--border)); box-shadow: 0 4px 12px -4px #000a; }
 .lg-head .lg-ph { background: var(--panel); }
 .lg-head .lg-t { min-width: 0; }
-.lg-head .lg-t b { display: block; font-size: 14px; }
+.lg-head .lg-t b { display: block; font-size: 16px; letter-spacing: .01em; }
 .lg-head .lg-tot { margin-left: auto; text-align: right; white-space: nowrap; }
-.lg-head .lg-tot b { color: #3fcf6a; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lg-head .lg-tot b { display: block; color: #3fcf6a; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 /* Cada objeto es un bloque propio con una franja del color de su calidad (épico, raro...), borde marcado y aire entre ellos, para que no se peguen aunque salgan muchos */
-.lg-row { --qc: var(--accent); display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--panel); border-left: 4px solid var(--qc); box-shadow: 0 1px 0 var(--border) inset, 0 0 0 1px var(--border); transition: background .15s ease; }
+.lg-row { --qc: var(--accent); display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin: 8px 12px 0; padding: 10px 12px; border-radius: 8px; background: var(--panel); border-left: 4px solid var(--qc); box-shadow: 0 1px 0 var(--border) inset, 0 0 0 1px var(--border); transition: background .15s ease; }
+.lg-head + .lg-row { margin-top: 12px; }
+.lg-row:last-child { margin-bottom: 12px; }
 .lg-row:hover { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
 .lg-row.owned-row { opacity: .55; }
 .lg-row img { width: 34px; height: 34px; border-radius: 6px; border: 2px solid; }

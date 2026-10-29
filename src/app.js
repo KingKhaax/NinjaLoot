@@ -620,7 +620,7 @@
           + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
       }).join('');
       return `<section class="lg-boss"><header class="lg-head">${ic || '<span class="lg-ph"></span>'}<div class="lg-t"><b>${esc(st ? st.name : t.persNoBoss)}</b>${st && st.sub ? `<span class="meta">${esc(st.sub)}</span>` : ''}</div>`
-        + `<div class="lg-tot"><b>+${nf().format(g.total)}</b></div></header>${rowsHTML}</section>`;
+        + `<div class="lg-tot"><b>+${nf().format(g.total)}</b><span class="meta">${g.items.length} ${esc(t.items)}</span></div></header>${rowsHTML}</section>`;
     }).join('');
     html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
     html += vaultPanel(list[0]);
