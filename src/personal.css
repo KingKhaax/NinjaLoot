@@ -273,3 +273,7 @@ body:not(.mobile-anim) .home-bg,
 body:not(.mobile-anim) .home-bg::after,
 body:not(.mobile-anim) .home-actions .btn:not(.primary) { animation: none !important; }
 }
+
+/* El fondo ilustrado solo se ve en Inicio */
+.bg-art, .bg-dim { transition: opacity .3s ease; }
+body:not(:has(.home-hero)) .bg-art, body:not(:has(.home-hero)) .bg-dim { opacity: 0; }
