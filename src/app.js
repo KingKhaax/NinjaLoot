@@ -614,13 +614,13 @@
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = g.items.map(it => {
         const info = itemInfo(it);
-        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
+        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
           + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}`
           + `<small>${multi ? `<span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>` : ''}${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
           + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
       }).join('');
       return `<section class="lg-boss"><header class="lg-head">${ic || '<span class="lg-ph"></span>'}<div class="lg-t"><b>${esc(st ? st.name : t.persNoBoss)}</b>${st && st.sub ? `<span class="meta">${esc(st.sub)}</span>` : ''}</div>`
-        + `<div class="lg-tot"><b>+${nf().format(g.total)}</b><span class="meta">${g.items.length} ${esc(t.items)}</span></div></header>${rowsHTML}</section>`;
+        + `<div class="lg-tot"><b>+${nf().format(g.total)}</b></div></header>${rowsHTML}</section>`;
     }).join('');
     html += stalePanel(list.map(r => ({ ...r, gearId: list[0].id, character: { ...r.character, name: multi ? `${r.character.name} · ${simLabel(r)}` : r.character.name } })));
     html += vaultPanel(list[0]);

@@ -682,21 +682,19 @@ a.navbtn, a.btn { text-decoration: none; }
 
 /* Todas las piezas: botín por jefe. Una columna por jefe o mazmorra con sus piezas y lo que suman */
 .loot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; padding-top: 6px; }
-.lg-boss { border: 1px solid var(--border); border-radius: var(--r-card, 10px); overflow: hidden; background: var(--panel2); }
-.lg-head { display: flex; gap: 10px; align-items: center; padding: 12px 14px; border-bottom: 1px solid var(--border); }
-.lg-head .boss-ic { width: 36px; height: 36px; flex: none; border-radius: var(--r-icon, 6px); }
-.lg-head .lg-ph { width: 36px; height: 36px; flex: none; border-radius: var(--r-icon, 6px); background: var(--panel); border: 1px solid var(--border); }
+.lg-boss { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: var(--r-card, 10px); background: var(--panel2); padding: 12px; }
+.lg-head { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+.lg-head .boss-ic, .lg-head .lg-ph { width: 34px; height: 34px; flex: none; border-radius: var(--r-icon, 6px); border: 1px solid var(--border); }
+.lg-head .lg-ph { background: var(--panel); }
 .lg-head .lg-t { min-width: 0; }
 .lg-head .lg-t b { display: block; font-size: 14px; }
 .lg-head .lg-tot { margin-left: auto; text-align: right; white-space: nowrap; }
-.lg-head .lg-tot b { display: block; color: #3fcf6a; font-variant-numeric: tabular-nums; }
-/* Cada objeto es un bloque propio: aire entre ellos, borde visible y una marca a la izquierda, para que no se peguen aunque salgan muchos */
-.lg-boss { display: flex; flex-direction: column; }
-.lg-row { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin: 10px 12px 0; padding: 12px 12px 12px 10px; border: 1px solid color-mix(in srgb, var(--text) 16%, transparent); border-left: 3px solid color-mix(in srgb, var(--accent) 55%, transparent); border-radius: 8px; background: color-mix(in srgb, var(--panel) 80%, var(--text) 6%); transition: background .15s ease, border-color .15s ease; }
-.lg-row:last-child { margin-bottom: 12px; }
-.lg-row:hover { background: color-mix(in srgb, var(--accent) 14%, var(--panel)); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.lg-head .lg-tot b { color: #3fcf6a; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Cada objeto es un bloque propio con una franja del color de su calidad (épico, raro...), borde marcado y aire entre ellos, para que no se peguen aunque salgan muchos */
+.lg-row { --qc: var(--accent); display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; margin-top: 8px; padding: 10px 12px; border-radius: 8px; background: var(--panel); border-left: 4px solid var(--qc); box-shadow: 0 1px 0 var(--border) inset, 0 0 0 1px var(--border); transition: background .15s ease; }
+.lg-row:hover { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
 .lg-row.owned-row { opacity: .55; }
-.lg-row img { width: 30px; height: 30px; border-radius: 6px; border: 1px solid; }
+.lg-row img { width: 34px; height: 34px; border-radius: 6px; border: 2px solid; }
 .lg-row .lg-n { min-width: 0; font-size: 13px; }
 .lg-row .lg-n small { display: block; color: var(--muted); font-size: 11.5px; }
 .lg-row .lg-g { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -760,15 +758,6 @@ a.navbtn, a.btn { text-decoration: none; }
 .cat-note.bib b { color: #c58bff; font-weight: 600; }
 .lg-row .cat-note { grid-column: 2 / -1; }
 
-/* Todas las piezas: la cabecera del jefe se distingue claramente de las piezas */
-.lg-boss { border-top: 3px solid var(--accent); box-shadow: 0 10px 28px -20px var(--accent); }
-.lg-head { padding: 14px 16px; gap: 12px; background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 24%, var(--panel)), var(--panel) 75%); border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); }
-.lg-head .boss-ic, .lg-head .lg-ph { width: 46px; height: 46px; border: 2px solid color-mix(in srgb, var(--accent) 60%, var(--border)); box-shadow: 0 4px 12px -4px #000a; }
-.lg-head .lg-t b { font-size: 16px; letter-spacing: .01em; }
-.lg-head .lg-tot b { font-size: 18px; }
-.lg-row { padding: 9px 16px; }
-.lg-row img { width: 28px; height: 28px; }
-.lg-row .lg-n > span:first-child { font-size: 13px; font-weight: 500; }
 
 /* Quick Sim y Top Gear: la cabecera nueva ya lleva el icono y el nombre, la cabecera antigua queda solo con los botones */
 .xsim .xs-head > .cls-icon { display: none; }
