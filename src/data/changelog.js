@@ -5,7 +5,7 @@
 // Se numera con la última versión del grupo. Los cambios que solo tocan colores, tamaños o ajustes internos no se cuentan.
 // Estructura: { v, date, es: { intro, sections: [[icono, título, [viñetas]]] }, en: { ... } }
 const RELEASES = [
-  { v: '1.8.51', date: '2026-10-29',
+  { v: '1.9.0', date: '2026-10-29',
     es: { intro: 'Versión móvil, NinjaBot con elección de cada cuánto recoge las sims, gráficas paginadas y un pulido visual de toda la aplicación.', sections: [
       ['inv_misc_net_01', 'Versión móvil', ['En pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.']],
       ['inv_misc_horn_02', 'NinjaBot y Discord', [
@@ -209,7 +209,7 @@ function changelogCards(list, lang, latestLabel) {
     const latest = i === 0;
     const date = rel.date ? new Date(`${rel.date}T12:00:00`).toLocaleDateString(es ? 'es-ES' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : '';
     return `<article class="cl-card${latest ? ' latest' : ''} open"><header class="cl-head" data-cl-toggle role="button" tabindex="0" aria-expanded="true"><img class="cl-ic" src="${logIconUrl(r.sections[0] ? r.sections[0][0] : 'inv_scroll_02')}" width="40" height="40" alt="" loading="lazy">`
-      + `<div class="cl-ht"><b class="cl-ver">v${logEsc(v)} · ${es ? 'Novedades' : 'What’s new'}</b>${latest ? `<span class="cl-tag">${logEsc(latestLabel)}</span>` : ''}${date ? `<small class="cl-date">${logEsc(date)}</small>` : ''}</div><span class="cl-chev" aria-hidden="true"></span></header>`
+      + `<div class="cl-ht"><b class="cl-ver">v${logEsc(String(v).replace(/\.0$/, ''))} · ${es ? 'Novedades' : 'What’s new'}</b>${latest ? `<span class="cl-tag">${logEsc(latestLabel)}</span>` : ''}${date ? `<small class="cl-date">${logEsc(date)}</small>` : ''}</div><span class="cl-chev" aria-hidden="true"></span></header>`
       + `<p class="cl-intro">${logEsc(r.intro)}</p>`
       + '<div class="cl-body">' + r.sections.map(([ic, title, items]) => `<section class="cl-sec">${ic ? `<img class="cl-sic" src="${logIconUrl(ic)}" width="26" height="26" alt="" loading="lazy">` : ''}<div class="cl-sb">${title ? `<h4>${logEsc(title)}</h4>` : ''}<ul>${items.map(it => `<li>${logEsc(it)}</li>`).join('')}</ul></div></section>`).join('') + '</div>'
       + '</article>';

@@ -2077,7 +2077,7 @@
   async function runUpdateCheck(box, histBox) {
     const t = T(), cur = state.info.version;
     const log = (CHANGELOG[S().lang] || CHANGELOG.en || CHANGELOG.es);
-    box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(cur)}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
+    box.innerHTML = `<div class="ver-card"><div><div class="meta">${esc(t.updYours)}</div><b class="ver-big">v${esc(sv(cur))}</b></div><span class="ver-status na" id="verStatus">${esc(t.checking)}</span></div>`
       + (IS_VERCEL ? '' : `<button class="btn grad" data-upd-go>${esc(t.updGo)}</button><div class="small-note" id="updNote"></div>`)
       + `<label class="switch-row"><input type="checkbox" class="switch" id="autoUpd" ${S().autoUpdateCheck !== false ? 'checked' : ''}><span>${esc(t.updAuto)}</span></label>`
       ;
@@ -2115,6 +2115,7 @@
   }
 
   // Versión junto a los ajustes: verde si es la más actual, rojo si no. Se comprueba en vivo (cada 2 min y al volver a la ventana).
+  const sv = v => String(v).replace(/\.0$/, '');
   function setBadge(r) {
     const b = $('#verBadge'), cur = (r && r.current) || state.info.version;
     if (!cur) return;
@@ -2123,9 +2124,9 @@
     b.hidden = false;
     const outdated = latest && isNewer(latest, cur);
     b.className = `verbadge ${!latest ? 'na' : outdated ? 'bad' : 'ok'}`;
-    b.innerHTML = `<span class="vl">v${cur}</span>` + (latest ? `<span class="vr">${outdated ? T().verUpdate : T().verOk}</span>` : '');
-    b.title = latest ? `${T().updRelease}: v${latest}` : '';
-    if (outdated && state.notified !== latest) { state.notified = latest; toast(`${T().updOutdated}: v${latest}`, true); }
+    b.innerHTML = `<span class="vl">v${sv(cur)}</span>` + (latest ? `<span class="vr">${outdated ? T().verUpdate : T().verOk}</span>` : '');
+    b.title = latest ? `${T().updRelease}: v${sv(latest)}` : '';
+    if (outdated && state.notified !== latest) { state.notified = latest; toast(`${T().updOutdated}: v${sv(latest)}`, true); }
   }
   let lastCheck = 0;
   async function trackVersion(force = false) {
