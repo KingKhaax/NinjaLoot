@@ -5,7 +5,7 @@
 // Se numera con la última versión del grupo. Los cambios que solo tocan colores, tamaños o ajustes internos no se cuentan.
 // Estructura: { v, date, es: { intro, sections: [[icono, título, [viñetas]]] }, en: { ... } }
 const RELEASES = [
-  { v: '1.8.49', date: '2026-10-29',
+  { v: '1.8.50', date: '2026-10-29',
     es: { intro: 'Versión móvil, NinjaBot con elección de cada cuánto recoge las sims, gráficas paginadas y un pulido visual de toda la aplicación.', sections: [
       ['inv_misc_net_01', 'Versión móvil', ['En pantallas pequeñas la navegación pasa a una barra de pestañas abajo, la cabecera se compacta, los botones y filtros se adaptan al dedo, los ajustes se abren como una hoja desde abajo y ninguna sección se sale por los lados.']],
       ['inv_misc_horn_02', 'NinjaBot y Discord', [

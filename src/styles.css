@@ -1045,3 +1045,7 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 :root:not([data-theme="light"]) .lg-row .lg-n small, :root:not([data-theme="light"]) .cg-nm small { color: #fff; }
 .shot-only { display: none; }
 #langLabel { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+#btnLang svg path { transform-box: fill-box; transform-origin: center; transition: transform .5s cubic-bezier(.3, 1.4, .4, 1); }
+#btnLang:hover svg { filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent)); }
+#btnLang:hover .tl1 { transform: translateX(2.5px) scale(1.08); } #btnLang:hover .tl2 { transform: translateX(-2.5px) scale(1.08); }
+@media (prefers-reduced-motion: reduce) { #btnLang svg path { transition: none; } #btnLang:hover .tl1, #btnLang:hover .tl2 { transform: none; } }
