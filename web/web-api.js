@@ -204,8 +204,8 @@
   window.api = {
     fetchReport, fetchPortrait, parseLoot: async text => { try { return { ok: true, rows: parseLootHistory(String(text || '').slice(0, 5e6)) }; } catch (e) { return { ok: false, error: String(e.message || e) }; } }, lookupItems, iconData, itemTooltip, getBosses, fetchGear, fetchVault,
     // En la web siempre se usa la última versión publicada: no hay nada que actualizar
-    checkUpdate: async () => ({ ok: true, current: VERSION, main: VERSION, release: { version: VERSION, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: null }, web: true }),
-    installUpdate: async () => ({ ok: false }),
+    checkUpdate: async () => { const latest = (await fetchLatest()) || VERSION; return { ok: true, current: VERSION, main: latest, release: { version: latest, url: 'https://github.com/KingKhaax/NinjaLoot/releases/latest', asset: 'web' }, web: true }; },
+    installUpdate: async () => { await hardReload(); return { ok: true }; },
     onUpdateProgress: () => {},
     discordGet: async () => ({ enabled: dc.enabled, channelId: dc.channelId, channelName: dc.channelName, region: dc.region || 'eu', windowDays: dc.windowDays || 0, reset: dcSince(), status: dcStatus }),
     rosterGuild: async (region, realm, name) => {
