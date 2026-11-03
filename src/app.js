@@ -1711,7 +1711,7 @@
         const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (src + (when ? ` <span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '')) : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
         const ck = m.cls || (sim && sim.character.cls) || '', av = CLASS_COLORS[ck] ? `<img class="ro-av" src="assets/classes/${ck}.png" alt="" style="--cc:${CLASS_COLORS[ck]}">` : '<span class="ro-av ph"></span>';
         return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><span class="ro-who">${av}<span><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(realmLabel(m.realm))}</span></span></span></td>`
-          + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '✗'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`
+          + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '!'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`
           + `<td class="ro-act"><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
       }).join('') + `</tbody></table></div></section>`;
     return html;
