@@ -2120,9 +2120,10 @@
     if (!cur) return;
     const latest = r && r.ok ? (r.release?.version || r.main || null) : (state.latest || null);
     if (r && r.ok) state.latest = latest;
-    b.hidden = false; b.textContent = `v${cur}`;
+    b.hidden = false;
     const outdated = latest && isNewer(latest, cur);
     b.className = `verbadge ${!latest ? 'na' : outdated ? 'bad' : 'ok'}`;
+    b.innerHTML = `<span class="vl">v${cur}</span>` + (latest ? `<span class="vr">${outdated ? T().verUpdate : T().verOk}</span>` : '');
     b.title = latest ? `${T().updRelease}: v${latest}` : '';
     if (outdated && state.notified !== latest) { state.notified = latest; toast(`${T().updOutdated}: v${latest}`, true); }
   }
