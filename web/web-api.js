@@ -60,8 +60,8 @@
   // --- Iconos como data URL (para exportar gráficas a PNG) ---
   async function iconData(href) {
     try {
-      if (!/^(?:\.\/)?(?:assets\/(?:items|classes)\/[\w.\-]+\.png|assets\/bosses\/[\w.\-]+\.(?:jpg|png)|assets\/ui\/[\w.\-]+\.(?:jpg|png)|fonts\/[\w.\-]+\.woff2)$/.test(href) && !/^https:\/\/wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg$/.test(href)) return null;
-      const r = await fetch(href);
+      if (!/^(?:\.\/)?(?:assets\/(?:items|classes)\/[\w.\-]+\.png|assets\/bosses\/[\w.\-]+\.(?:jpg|png)|assets\/ui\/[\w.\-]+\.(?:jpg|png)|fonts\/[\w.\-]+\.woff2)$/.test(href) && !/^https:\/\/(?:wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg|render\.worldofwarcraft\.com\/[\w\/.\-]+\.(?:png|jpg))$/.test(href)) return null;
+      const r = await fetch(href, /^https:/.test(href) ? { cache: 'reload' } : undefined); // «reload»: si el navegador ya guardó la imagen sin permiso CORS (al mostrarla), esa copia no sirve
       if (!r.ok) return null;
       const blob = await r.blob();
       return await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.onerror = () => res(null); fr.readAsDataURL(blob); });

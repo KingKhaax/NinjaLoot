@@ -93,11 +93,11 @@ ipcMain.handle('icon:data', async (_e, href) => {
   try {
     const m = String(href).match(/^(?:\.\/)?((?:assets\/(?:items|classes)\/[\w.\-]+\.png)|(?:assets\/bosses\/[\w.\-]+\.(?:jpg|png))|(?:assets\/ui\/[\w.\-]+\.(?:jpg|png))|(?:fonts\/[\w.\-]+\.woff2))$/);
     if (m) { const mime = { png: 'image/png', jpg: 'image/jpeg', woff2: 'font/woff2' }[m[1].split('.').pop()]; return `data:${mime};base64,${fs.readFileSync(path.join(__dirname, 'src', m[1])).toString('base64')}`; }
-    const r = String(href).match(/^https:\/\/wow\.zamimg\.com\/images\/wow\/icons\/\w+\/([\w.\-]+)\.jpg$/);
+    const r = String(href).match(/^https:\/\/(?:wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg|render\.worldofwarcraft\.com\/[\w\/.\-]+\.(?:png|jpg))$/);
     if (!r) return null;
     const res = await net.fetch(href, { headers: UA });
     if (!res.ok) return null;
-    return `data:image/jpeg;base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`;
+    return `data:${/\.png$/.test(href) ? 'image/png' : 'image/jpeg'};base64,${Buffer.from(await res.arrayBuffer()).toString('base64')}`;
   } catch { return null; }
 });
 

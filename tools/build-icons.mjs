@@ -14,6 +14,9 @@ const ACH = {
   'Ruby Life Pools': 'achievement_dungeon_lifepools', "Algeth'ar Academy": 'achievement_dungeon_dragonacademy', 'Operation: Floodgate': 'inv_achievement_dungeon_waterworks',
   'Priory of the Sacred Flame': 'inv_achievement_dungeon_prioryofthesacredflame', "Tazavesh: So'leah's Gambit": 'achievement_dungeon_brokerdungeon', 'Tazavesh: Streets of Wonder': 'achievement_dungeon_brokerdungeon',
   'Operation: Mechagon - Workshop': 'achievement_boss_mechagon',
+  'Seat of the Triumvirate': 'achievement_boss_triumvirate_darknaaru', 'Skyreach': 'achievement_dungeon_arakkoaspires', 'The MOTHERLODE!!': 'achievement_dungeon_kezan',
+  "Kings' Rest": 'achievement_dungeon_kingsrest', 'Temple of Sethraliss': 'achievement_dungeon_templeofsethraliss', 'Halls of Atonement': 'achievement_dungeon_hallsofattonement',
+  'Theater of Pain': 'achievement_dungeon_theatreofpain', 'Ara-Kara, City of Echoes': 'inv_achievement_dungeon_arak-ara', 'The Dawnbreaker': 'inv_achievement_dungeon_dawnbreaker',
 };
 const slug = (n) => n.toLowerCase().replace(/[^a-z0-9]/g, '');
 const get = async (url) => { try { const r = await fetch(url, { headers: { 'user-agent': 'Mozilla/5.0' } }); if (!r.ok) return null; const b = Buffer.from(await r.arrayBuffer()); return b.length > 300 ? b : null; } catch { return null; } };
@@ -21,7 +24,7 @@ const map = {};
 for (const [name, id] of Object.entries(BOSS_ICONS)) {
   if (map[id]) continue;
   let buf = await get(`https://assets.rpglogs.com/img/warcraft/bosses/${id}-icon.jpg`), ext = 'jpg';
-  if (!buf) {
+  if (!buf && !ACH[name]) {
     for (const s of [slug(name), slug(name.replace(/^The /, '')), slug(name.split(':')[0]), slug(name.split(',')[0])]) { buf = await get(`https://wow.zamimg.com/images/wow/journal/ui-ej-dungeonbutton-${s}.png`); if (buf) { ext = 'png'; break; } }
   }
   if (!buf && ACH[name]) { buf = await get(`https://wow.zamimg.com/images/wow/icons/large/${ACH[name]}.jpg`); ext = 'jpg'; }

@@ -738,7 +738,7 @@
         return `<section class="cg-grp"><header class="cg-h">${ic}<div class="cg-t"><b>${esc(st.name)}</b>${sub}</div><div class="cg-tot"><b>${pct ? `+${totalPct.toFixed(2)}%` : `+${nf().format(total)} <span class="cg-pc">(${totalPct.toFixed(2)}%)</span>`}</b><span class="meta">${g.list.length} ${esc(g.list.length === 1 ? t.coinUnit1 : t.coinUnitN)}</span></div></header>${rowsHTML}</section>`;
       }).join('');
     }
-    return `<section class="panel card no-copy"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span><button class="btn small" data-shot data-no-shot>${ui('export')}${esc(t.shotCopy)}</button>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
+    return `<section class="panel card no-copy"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span><button class="btn small" data-shot data-no-shot>${ui('export')}${esc(t.shotCopy)}</button>${srcSeg}${pick}</div><div class="hint" data-no-shot>${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
   // Combina las simulaciones de una misma persona en una sola lista de objetos, de más a menos DPS (cada uno recuerda de qué sim viene)
@@ -1354,6 +1354,16 @@
         if (el.getBoundingClientRect().height <= lh * 1.5 + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)) css += 'white-space:nowrap;';
       }
       c.setAttribute('style', css);
+      const bgi = cs.backgroundImage;
+      if (bgi && bgi.includes('url(')) jobs.push((async () => {
+        let o = bgi;
+        for (const m of bgi.matchAll(/url\(["']?([^"')]+)["']?\)/g)) {
+          if (m[1].startsWith('data:')) continue;
+          const d = await shotData(m[1]);
+          o = o.replace(m[0], d ? `url("${d}")` : 'url("data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=")');
+        }
+        c.style.backgroundImage = o;
+      })());
       if (c.tagName === 'IMG') jobs.push((async () => { const d = (await shotData(el.getAttribute('src'))) || shotCanvasData(el); if (d) c.setAttribute('src', d); else c.remove(); })());
     });
     clone.querySelectorAll('[data-no-shot],script,style').forEach(n => n.remove());
@@ -1361,11 +1371,15 @@
     return clone;
   }
   async function shotRender(el) {
-    const w = Math.ceil(el.getBoundingClientRect().width), h = Math.ceil(el.scrollHeight), pad = 16;
+    const w = Math.ceil(el.getBoundingClientRect().width), pad = 16;
     const clone = await shotClone(el);
+    clone.style.cssText += `;width:${w}px;margin:0;box-sizing:border-box;`;
+    const probe = document.createElement('div'); probe.style.cssText = `position:fixed;left:-20000px;top:0;width:${w}px;visibility:hidden;pointer-events:none`;
+    probe.appendChild(clone); document.body.appendChild(probe);
+    const h = Math.ceil(clone.getBoundingClientRect().height);
+    probe.remove();
     const bg = getComputedStyle(document.body).backgroundColor;
     clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-    clone.style.cssText += `;width:${w}px;margin:0;box-sizing:border-box;`;
     const fonts = (await Promise.all(SHOT_FONTS.map(async wt => { const d = await shotData(`fonts/noto-sans-latin-${wt}-normal.woff2`); return d ? `@font-face{font-family:'Noto Sans';font-weight:${wt};font-style:normal;src:url(${d}) format('woff2')}` : ''; }))).join('');
     const W = w + pad * 2, H = h + pad * 2;
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><style>${fonts}</style><foreignObject x="${pad}" y="${pad}" width="${w}" height="${h}">${new XMLSerializer().serializeToString(clone)}</foreignObject></svg>`;
