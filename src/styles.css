@@ -1002,3 +1002,22 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .lg-row.lg-cat { margin-left: 34px; position: relative; }
 .lg-row.lg-cat::before { content: "↳"; position: absolute; left: -22px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 17px; }
 .lg-cat-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); vertical-align: 1px; }
+/* Dónde tirar moneda: una tarjeta por jefe con sus monedas dentro */
+.cg-grp { display: flex; flex-direction: column; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--border); border-top: 3px solid var(--accent); border-radius: var(--r-card, 10px); background: var(--panel2); }
+.cg-h { display: flex; gap: 12px; align-items: center; padding: 12px 16px; border-bottom: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 22%, var(--panel)), var(--panel) 75%); }
+.cg-h .boss-ic { width: 44px; height: 44px; border-radius: var(--r-icon, 6px); }
+.cg-t { flex: 1; min-width: 0; display: grid; }
+.cg-t b { font-size: 15px; }
+.cg-tot { text-align: right; display: grid; }
+.cg-tot b { color: #3fcf6a; font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.cg-row { --qc: var(--accent); display: grid; grid-template-columns: 26px 34px minmax(0, 1fr) auto; gap: 12px; align-items: center; margin: 8px 12px 0; padding: 10px 12px; border-radius: 8px; background: var(--panel); border-left: 4px solid var(--qc); box-shadow: 0 0 0 1px var(--border); }
+.cg-row:last-child { margin-bottom: 12px; }
+.cg-row:hover { background: color-mix(in srgb, var(--accent) 10%, var(--panel)); }
+.cg-row img { width: 34px; height: 34px; border-radius: 6px; border: 2px solid; }
+.cg-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: var(--accent); background: var(--accent-soft); }
+.cg-nm { min-width: 0; font-size: 13px; }
+.cg-nm small { display: block; color: var(--muted); font-size: 11.5px; }
+.cg-g { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.cg-g b { color: #3fcf6a; }
+:root[data-theme="light"] .cg-tot b, :root[data-theme="light"] .cg-g b { color: #1a8f43; }
+@media (max-width: 700px) { .cg-row { grid-template-columns: 26px 34px minmax(0, 1fr); } .cg-g { grid-column: 2 / -1; text-align: left; } }
