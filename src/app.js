@@ -1194,11 +1194,37 @@
   // se abren en otra ventana con Mayús + clic (o en otra pestaña con Ctrl + clic / clic central), como en cualquier web.
   const VIEWS = ['home', 'tiers', 'personal', 'charts', 'rotations', 'roster'];
   // La portada es la dirección limpia, sin «#/»; «#/», «#/home» y los enlaces antiguos siguen valiendo
-  const routeHash = () => state.view === 'home' ? '' : `#/${state.view}${state.view === 'rotations' && state.bossSel != null ? `/${state.bossSel}` : ''}`;
+  // Opciones de cada pantalla en la dirección: #/personal?pm=coin&pc=raid (solo las que no son el valor por defecto)
+  const SUBS = {
+    pm: { get: () => S().persMode, set: v => { S().persMode = v; } },
+    pc: { get: () => S().persCat, set: v => { S().persCat = v; } },
+    cs: { get: () => S().coinSrc, set: v => { S().coinSrc = v; } },
+    cm: { get: () => S().chartMode, set: v => { S().chartMode = v; } },
+    sc: { get: () => S().srcCat, set: v => { S().srcCat = v; } },
+    rf: { get: () => S().roleFilter, set: v => { S().roleFilter = v; } },
+    cf: { get: () => S().classFilter, set: v => { S().classFilter = v; } },
+    df: { get: () => S().diff, set: v => { S().diff = v; } },
+    rp: { get: () => S().raidPick, set: v => { S().raidPick = v === 'all' ? 'all' : Number(v); S().bossPick = 'all'; } },
+    tc: { get: () => state.tierCls || '', set: v => { state.tierCls = v === '' || v === 'none' ? null : v; } },
+  };
+  const VIEW_KEYS = { personal: ['pm', 'pc', 'cs'], charts: ['cm', 'sc', 'rf', 'cf', 'df', 'rp'], tiers: ['tc'] };
+  const SUB_DEF = { cm: 'boss', df: 'auto', tc: '' };
+  const subDef = k => (k in SUB_DEF ? SUB_DEF[k] : 'all');
+  const curSub = () => Object.fromEntries(Object.keys(SUBS).map(k => [k, String(SUBS[k].get() ?? subDef(k))]));
+  function hashFor(view, sub, boss) {
+    if (view === 'home') return '';
+    const q = (VIEW_KEYS[view] || []).filter(k => sub[k] != null && sub[k] !== subDef(k)).map(k => `${k}=${encodeURIComponent(sub[k] === '' ? 'none' : sub[k])}`).join('&');
+    return `#/${view}${view === 'rotations' && boss != null ? `/${boss}` : ''}${q ? `?${q}` : ''}`;
+  }
+  // La portada es la dirección limpia, sin «#/»; «#/», «#/home» y los enlaces antiguos siguen valiendo
+  const routeHash = () => hashFor(state.view, curSub(), state.bossSel);
   function parseRoute(h) {
-    if (!h || /^#\/?$/.test(h)) return { view: 'home', boss: null };
-    const m = /^#\/([a-z]+)(?:\/(\d+))?\/?$/.exec(h || '');
-    return m && VIEWS.includes(m[1]) ? { view: m[1], boss: m[2] != null ? Number(m[2]) : null } : null;
+    if (!h || /^#\/?$/.test(h)) return { view: 'home', boss: null, sub: {} };
+    const m = /^#\/([a-z]+)(?:\/(\d+))?\/?(?:\?([^#]*))?$/.exec(h || '');
+    if (!m || !VIEWS.includes(m[1])) return null;
+    const sub = {};
+    for (const kv of (m[3] || '').split('&')) { const [k, v] = kv.split('='); if (SUBS[k] && /^[A-Za-z0-9_\-]{1,40}$/.test(v || '')) sub[k] = v; }
+    return { view: m[1], boss: m[2] != null ? Number(m[2]) : null, sub };
   }
   let routed = false;
   // Lleva la URL a donde está la pantalla: la primera vez la sustituye (no deja entrada extra) y después añade una entrada al historial
@@ -1215,10 +1241,12 @@
   function applyRoute() {
     const r = parseRoute(location.hash);
     if (!r) return false;
-    const changed = r.view !== state.view || (r.boss != null && r.boss !== state.bossSel);
+    const before = routeHash();
     state.view = r.view;
     if (r.boss != null) state.bossSel = r.boss;
-    return changed;
+    for (const k of VIEW_KEYS[r.view] || []) SUBS[k].set(r.sub[k] != null ? (r.sub[k] === 'none' ? '' : r.sub[k]) : subDef(k));
+    persistSettings();
+    return routeHash() !== before;
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
   // Pulsar un objeto (su cuadrado, su icono o su nombre) abre su página de Wowhead en el idioma de la app
@@ -1279,6 +1307,43 @@
   });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
   applyRoute();
+
+  // Mayús + clic (otra ventana), Ctrl/Cmd + clic o botón central (otra pestaña) en las opciones que cambian lo que se ve, como en un enlace
+  const NAVS = { 'data-pmode': 'pm', 'data-pcat': 'pc', 'data-coin-src': 'cs', 'data-mode': 'cm', 'data-cat': 'sc', 'data-role': 'rf', 'data-clsf': 'cf', 'data-diff': 'df', 'data-raid': 'rp', 'data-tier-cls': 'tc' };
+  const NAV_SEL = Object.keys(NAVS).map(a => `[${a}]`).join(',');
+  const isWeb = /^https?:$/.test(location.protocol);
+  function navHref(el) {
+    for (const [attr, k] of Object.entries(NAVS)) {
+      if (!el.hasAttribute(attr)) continue;
+      const v = el.getAttribute(attr), sub = curSub();
+      sub[k] = k === 'tc' && sub.tc === v ? '' : v;
+      return hashFor(state.view, sub, state.bossSel);
+    }
+    return null;
+  }
+  function openNav(href, newWindow) {
+    const u = location.pathname + location.search + href;
+    try { if (newWindow) window.open(u, '_blank', 'popup=yes,width=1280,height=860'); else window.open(u, '_blank'); } catch { /* bloqueado por el navegador */ }
+  }
+  document.addEventListener('click', e => {
+    if (!isWeb || e.button !== 0 || plainClick(e)) return;
+    const el = e.target.closest(NAV_SEL);
+    if (!el || el.tagName === 'A') return;
+    const h = navHref(el);
+    if (h == null) return;
+    e.preventDefault(); e.stopPropagation();
+    openNav(h, e.shiftKey);
+  }, true);
+  document.addEventListener('mousedown', e => { if (isWeb && e.button === 1 && e.target.closest(NAV_SEL)) e.preventDefault(); });
+  document.addEventListener('auxclick', e => {
+    if (!isWeb || e.button !== 1) return;
+    const el = e.target.closest(NAV_SEL);
+    if (!el || el.tagName === 'A') return;
+    const h = navHref(el);
+    if (h == null) return;
+    e.preventDefault();
+    openNav(h, false);
+  });
 
   // Al abrir la web con un enlace de NinjaLoot (#sims=id1,id2…) se cargan sus simulaciones
   (function loadFromHash() {
