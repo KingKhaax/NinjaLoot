@@ -71,5 +71,20 @@ if (esbuild) {
   console.log(`optimizada: ${files.length} scripts → app.bundle.js (${(bundle.length / 1024).toFixed(0)} KB), ${cssFiles.length} CSS → app.css`);
 }
 // robots.txt: la web se puede indexar entera
-fs.writeFileSync(path.join(out, 'robots.txt'), 'User-agent: *\nAllow: /\n');
+// Mapa del sitio, robots.txt y dirección canónica. Cada alojamiento publica su propia copia: WEB_BASE es la dirección de esta copia
+// (por defecto la oficial, https://ninjaloot.vercel.app/) y la dirección canónica es siempre la oficial. Verificación de Google Search Console:
+// una etiqueta por línea en tools/gsc.txt (el contenido de la etiqueta «google-site-verification» que da Search Console).
+const CANON = 'https://ninjaloot.vercel.app/';
+const BASE = (process.env.WEB_BASE || CANON).replace(/\/?$/, '/');
+const SITE_PAGES = ['', ...'privacy.html,terms.html'.split(',').filter(Boolean).filter((f) => fs.existsSync(path.join(out, f)))];
+const today = new Date().toISOString().slice(0, 10);
+fs.writeFileSync(path.join(out, 'sitemap.xml'), `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${SITE_PAGES.map((p) => `  <url><loc>${BASE}${p}</loc><lastmod>${today}</lastmod></url>`).join('\n')}\n</urlset>\n`);
+fs.writeFileSync(path.join(out, 'robots.txt'), `User-agent: *\nAllow: /\n\nSitemap: ${BASE}sitemap.xml\n`);
+{
+  const gscFile = path.join(root, 'tools', 'gsc.txt');
+  const tokens = fs.existsSync(gscFile) ? fs.readFileSync(gscFile, 'utf8').split(/\r?\n/).map((s) => s.trim()).filter((s) => /^[A-Za-z0-9_\-]{20,100}$/.test(s)) : [];
+  const idx = path.join(out, 'index.html');
+  const tags = [`<link rel="canonical" href="${CANON}">`, ...tokens.map((k) => `<meta name="google-site-verification" content="${k}">`)].join('\n  ');
+  fs.writeFileSync(idx, fs.readFileSync(idx, 'utf8').replace('</head>', `  ${tags}\n</head>`));
+}
 console.log(`_site listo (v${pkg.version})`);
