@@ -665,8 +665,8 @@
           + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
           + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
     }
-    html += `<section class="panel card no-copy">${multi ? '' : simHeader(p)}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
-      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta card-sub">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
+    html += `<section class="panel card no-copy">${multi ? '' : simHeader(p).replace('<div class="sim-hdr"', '<div class="sim-hdr" data-no-shot')}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
+      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta card-sub" data-no-shot>${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div><div class="card-sub shot-only" data-shot-only>${esc(`${p.character.name}${(p.head && p.head.realmName) || p.character.realm ? '-' + ((p.head && p.head.realmName) || p.character.realm) : ''} ${[clsName(p), specName(p)].filter(Boolean).join(' ')} - ${S().lang === 'es' ? 'DPS Base' : 'Base DPS'}: ${nf().format(p.baseDps)}`)}</div></div>`
       + `<span class="spacer"></span><div class="card-tools" data-no-shot><button class="btn small" data-shot>${ui('export')}${esc(t.shotCopy)}</button>${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
       + (groupsHTML ? `${sortBar}<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
@@ -1353,6 +1353,7 @@
         const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35;
         if (el.getBoundingClientRect().height <= lh * 1.5 + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)) css += 'white-space:nowrap;';
       }
+      if (el.hasAttribute('data-shot-only')) css += 'display:block;';
       c.setAttribute('style', css);
       const bgi = cs.backgroundImage;
       if (bgi && bgi.includes('url(')) jobs.push((async () => {
@@ -1366,6 +1367,9 @@
       })());
       if (c.tagName === 'IMG') jobs.push((async () => { const d = (await shotData(el.getAttribute('src'))) || shotCanvasData(el); if (d) c.setAttribute('src', d); else c.remove(); })());
     });
+    // lo que se quita o se añade cambia el alto de sus contenedores: dejan de llevar el alto de la pantalla y se ajustan solos
+    clone.querySelectorAll('[data-no-shot],[data-shot-only]').forEach(n => { for (let a = n.parentElement; a; a = a.parentElement) for (const k of ['height', 'block-size', 'min-height', 'min-block-size']) a.style.setProperty(k, 'auto'); });
+    for (const k of ['height', 'block-size', 'min-height', 'min-block-size']) clone.style.setProperty(k, 'auto');
     clone.querySelectorAll('[data-no-shot],script,style').forEach(n => n.remove());
     await Promise.all(jobs);
     return clone;

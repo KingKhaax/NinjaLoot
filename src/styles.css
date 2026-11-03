@@ -1033,3 +1033,4 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 /* Ranura donde se equipa la pieza (Cuello, Anillo…): en blanco, no en gris */
 .lg-row .lg-n small, .cg-nm small { color: var(--text); font-weight: 500; }
 :root:not([data-theme="light"]) .lg-row .lg-n small, :root:not([data-theme="light"]) .cg-nm small { color: #fff; }
+.shot-only { display: none; }
