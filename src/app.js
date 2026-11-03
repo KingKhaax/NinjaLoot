@@ -197,7 +197,9 @@
     'The Venomous Abyss': 'Abismo Venenoso', 'The Tidebound Grotto': 'La Gruta Mareal', "The Unbinding of Kith'ix": "La liberación de Kith'ix",
     "Nek'zali the Soulcoiler": "Nek'zali la Volutadora de Almas", 'Entombed Sentinels': 'Centinelas Sepultados', 'The Lost Explorers': 'Los exploradores perdidos',
     'Vashnik the Malignant': 'Vashnik el Maligno', 'Sszorak': 'Sszorak', 'The Twin Fangs': 'Los colmillos gemelos', 'The Coiled Altar': 'El Altar en Espiral',
-    "Ula'tek": "Ula'tek", 'Nymrissa Wavecaller': 'Nymrissa Clamaolas', "Kith'ix": "Kith'ix"
+    "Ula'tek": "Ula'tek", 'Nymrissa Wavecaller': 'Nymrissa Clamaolas', "Kith'ix": "Kith'ix",
+    // Mazmorras y bandas: nombres oficiales del juego en castellano
+    'Temple of Sethraliss': 'Templo de Sethraliss', 'Kings\' Rest': 'Reposo de los Reyes', 'Ruby Life Pools': 'Estanques de Vida Rubí', 'Windrunner Spire': 'Aguja Brisaveloz', 'Magisters\' Terrace': 'Bancal del Magister', 'Murder Row': 'Frontal de la Muerte', 'The Blinding Vale': 'El Valle Cegador', 'Den of Nalorakk': 'Guarida de Nalorakk', 'Voidscar Arena': 'Arena Lacravacua', 'Maisara Caverns': 'Cavernas de Maisara', 'Nexus-Point Xenas': 'Punto de Nexo: Xenas', 'Altar of Fangs': 'Altar de los Colmillos', 'Sporefall': 'Micosis', 'The Voidspire': 'La Aguja del Vacío', 'March on Quel\'Danas': 'Marcha a Quel\'Danas', 'The Dreamrift': 'La Falla Onírica', 'Algeth\'ar Academy': 'Academia Algeth\'ar', 'Pit of Saron': 'Foso de Saron', 'Seat of the Triumvirate': 'Trono del Triunvirato', 'Skyreach': 'Trecho Celestial'
   };
   const trName = n => (S().lang === 'es' && ES_NAMES[n]) || n;
   const bossLabel = enc => trName((state.bosses.names || {})[enc] || '');
@@ -216,7 +218,7 @@
   function srcText(it, bare) {
     const t = T(), s = srcOf(it), enc = s && s.encounter != null ? s.encounter : 0;
     if (!s) return null;
-    if (catOfSrc(s) === 'dungeon') { const name = s.instance > 0 ? instName(s.instance) : instName(enc) || bossLabel(enc); return name ? { name, sub: t.catDungeon } : null; }
+    if (catOfSrc(s) === 'dungeon') { const raw = s.instance > 0 ? instName(s.instance) : instName(enc) || (state.bosses.names || {})[enc] || ''; return raw ? { name: trName(raw), en: raw, sub: t.catDungeon } : null; }
     // Bajadas y presas: el botín sale en cualquiera de ellas, así que se nombra el tipo de contenido
     if (['delve', 'prey', 'bonus'].includes(catOfSrc(s))) return { name: bossLabel(enc) || catName(catOfSrc(s)), sub: t.coinAnyOf(catName(catOfSrc(s))) };
     const boss = bossLabel(enc);
@@ -608,10 +610,10 @@
       return out.concat(bucket.sort((x, y) => chance(y) - chance(x) || byEv(x, y)));
     };
     const cmp = { priority: null, boss: (x, y) => posOf(x) - posOf(y) || byGain(x, y), ev: byEv, best: (x, y) => top(y) - top(x) || byGain(x, y) }[lootSort];
-    const sortBar = `<div class="loot-sortbar"><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
+    const sortBar = `<div class="loot-sortbar" data-no-shot><label class="meta" for="lootSort" title="${esc(t.lootSortHint)}">${esc(t.lootSortLabel)}:</label><select id="lootSort" title="${esc(t.lootSortHint)}">${[['priority', t.lootSortPriority], ['boss', t.lootSortBoss], ['ev', t.lootSortEv], ['best', t.lootSortBest]].map(([k, l]) => `<option value="${k}"${k === lootSort ? ' selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`;
     const groupsHTML = (cmp ? [...groups.values()].sort(cmp) : byPriority([...groups.values()])).map(g => {
       const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
-      const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
+      const ic = cat === 'dungeon' && st ? nameImg(st.en || st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = ordered(g.items).map(it => {
         const info = itemInfo(it);
         return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' && it.under ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
@@ -639,9 +641,9 @@
           + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
           + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
     }
-    html += `<section class="panel card">${multi ? '' : simHeader(p)}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
-      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
-      + `<span class="spacer"></span><div class="card-tools">${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
+    html += `<section class="panel card no-copy">${multi ? '' : simHeader(p)}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
+      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta card-sub">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div></div>`
+      + `<span class="spacer"></span><div class="card-tools" data-no-shot><button class="btn small" data-shot>${ui('export')}${esc(t.shotCopy)}</button>${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
       + (groupsHTML ? `${sortBar}<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
   }
@@ -685,8 +687,8 @@
       if ((used[g] || 0) >= cap(g) || ids.has(r.it.id)) continue;
       used[g] = (used[g] || 0) + 1; ids.add(r.it.id); rows.push(r);
     }
-    const pick = `<label class="coin-count">${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
-    const srcSeg = `<div class="seg">${[['all', t.coinSrcAll], ['raid', t.coinSrcRaid], ['dungeon', t.coinSrcDungeon]].map(([k, l]) => `<button data-coin-src="${k}" class="${src === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
+    const pick = `<label class="coin-count" data-no-shot>${esc(t.coinAsk)} <select id="coinCount">${Array.from({ length: 20 }, (_, i) => i + 1).map(n => `<option value="${n}"${n === coins ? ' selected' : ''}>${n}</option>`).join('')}</select></label>`;
+    const srcSeg = `<div class="seg" data-no-shot>${[['all', t.coinSrcAll], ['raid', t.coinSrcRaid], ['dungeon', t.coinSrcDungeon]].map(([k, l]) => `<button data-coin-src="${k}" class="${src === k ? 'on' : ''}">${esc(l)}</button>`).join('')}</div>`;
     let body = rows.length ? '' : `<div class="hint">${esc(t.coinNone)}</div>`;
     const pct = S().unit === 'pct';
     const gainTxt = it => (pct ? `+${it.pct.toFixed(2)}%` : `+${nf().format(it.gain)}`);
@@ -701,7 +703,7 @@
     if (rows.length) {
       body += [...byBoss.values()].map(g => {
         const c = catOfSrc(g.src), st = g.st, total = g.list.reduce((x, r) => x + r.it.gain, 0), totalPct = g.list.reduce((x, r) => x + r.it.pct, 0);
-        const ic = c === 'dungeon' ? nameImg(st.name, 44) : c === 'raid' ? bossImg(g.src.encounter, 44) : '';
+        const ic = c === 'dungeon' ? nameImg(st.en || st.name, 44) : c === 'raid' ? bossImg(g.src.encounter, 44) : '';
         const sub = st.sub && st.sub !== catName(c) ? `<span class="meta">${esc(st.sub)}</span>` : '';
         const rowsHTML = g.list.map(({ it, n }) => {
           const info = itemInfo(it); state.shown.add(it.id);
@@ -709,10 +711,10 @@
             + `<div class="cg-nm"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}<small>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
             + `<div class="cg-g"><b>${gainTxt(it)}</b>${pctTxt(it)}</div></div>`;
         }).join('');
-        return `<section class="cg-grp"><header class="cg-h">${ic}<div class="cg-t"><b>${esc(st.name)}</b>${sub}</div><div class="cg-tot"><b>${pct ? `+${totalPct.toFixed(2)}%` : `+${nf().format(total)}`}</b><span class="meta">${g.list.length} ${esc(g.list.length === 1 ? t.coinUnit1 : t.coinUnitN)}</span></div></header>${rowsHTML}</section>`;
+        return `<section class="cg-grp"><header class="cg-h">${ic}<div class="cg-t"><b>${esc(st.name)}</b>${sub}</div><div class="cg-tot"><b>${pct ? `+${totalPct.toFixed(2)}%` : `+${nf().format(total)} <span class="cg-pc">(${totalPct.toFixed(2)}%)</span>`}</b><span class="meta">${g.list.length} ${esc(g.list.length === 1 ? t.coinUnit1 : t.coinUnitN)}</span></div></header>${rowsHTML}</section>`;
       }).join('');
     }
-    return `<section class="panel card"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
+    return `<section class="panel card no-copy"><div class="card-head"><h2>${esc(t.coinTitle)}</h2><span class="spacer"></span><button class="btn small" data-shot data-no-shot>${ui('export')}${esc(t.shotCopy)}</button>${srcSeg}${pick}</div><div class="hint">${esc(t.coinHint(coins))}</div>${body}</section>`;
   }
 
   // Combina las simulaciones de una misma persona en una sola lista de objetos, de más a menos DPS (cada uno recuerda de qué sim viene)
@@ -1302,6 +1304,60 @@
     } catch (e) { console.error(e); return null; }
   }
 
+  // ---------- Copiar una sección como imagen (para pegarla en Discord sin recortes) ----------
+  // Se hace una copia de la sección con todos sus estilos puestos en línea, los iconos y la fuente incrustados, y se dibuja en un lienzo
+  const SHOT_FONTS = [400, 500, 600, 700];
+  async function shotData(url) {
+    const rel = String(url || '').replace(/^.*?((?:assets|fonts)\/[\w.\-\/]+)$/, '$1');
+    return (await window.api.iconData(/^(?:assets|fonts)\//.test(rel) ? rel : url)) || null;
+  }
+  function shotCanvasData(img) {
+    try {
+      if (!img.complete || !img.naturalWidth) return null;
+      const c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight;
+      c.getContext('2d').drawImage(img, 0, 0); return c.toDataURL('image/png');
+    } catch { return null; }
+  }
+  async function shotClone(src) {
+    const clone = src.cloneNode(true), a = [src, ...src.querySelectorAll('*')], b = [clone, ...clone.querySelectorAll('*')], jobs = [];
+    a.forEach((el, i) => {
+      const c = b[i]; if (!c || !c.style) return;
+      const cs = getComputedStyle(el); let css = '';
+      for (let k = 0; k < cs.length; k++) css += `${cs[k]}:${cs.getPropertyValue(cs[k])};`;
+      // un texto que cabía en una línea se queda en una línea (la fuente incrustada puede medir unas décimas más)
+      if ([...el.childNodes].some(n => n.nodeType === 3 && n.nodeValue.trim())) {
+        const lh = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.35;
+        if (el.getBoundingClientRect().height <= lh * 1.5 + parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)) css += 'white-space:nowrap;';
+      }
+      c.setAttribute('style', css);
+      if (c.tagName === 'IMG') jobs.push((async () => { const d = (await shotData(el.getAttribute('src'))) || shotCanvasData(el); if (d) c.setAttribute('src', d); else c.remove(); })());
+    });
+    clone.querySelectorAll('[data-no-shot],script,style').forEach(n => n.remove());
+    await Promise.all(jobs);
+    return clone;
+  }
+  async function shotRender(el) {
+    const w = Math.ceil(el.getBoundingClientRect().width), h = Math.ceil(el.scrollHeight), pad = 16;
+    const clone = await shotClone(el);
+    const bg = getComputedStyle(document.body).backgroundColor;
+    clone.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+    clone.style.cssText += `;width:${w}px;margin:0;box-sizing:border-box;`;
+    const fonts = (await Promise.all(SHOT_FONTS.map(async wt => { const d = await shotData(`fonts/noto-sans-latin-${wt}-normal.woff2`); return d ? `@font-face{font-family:'Noto Sans';font-weight:${wt};font-style:normal;src:url(${d}) format('woff2')}` : ''; }))).join('');
+    const W = w + pad * 2, H = h + pad * 2;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><style>${fonts}</style><foreignObject x="${pad}" y="${pad}" width="${w}" height="${h}">${new XMLSerializer().serializeToString(clone)}</foreignObject></svg>`;
+    const img = new Image(); img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg); await img.decode();
+    const scale = Math.min(2, 8000 / Math.max(W, H));
+    const cv = document.createElement('canvas'); cv.width = Math.round(W * scale); cv.height = Math.round(H * scale);
+    const g = cv.getContext('2d'); g.fillStyle = bg; g.fillRect(0, 0, cv.width, cv.height); g.scale(scale, scale); g.drawImage(img, 0, 0, W, H);
+    return new Promise(res => cv.toBlob(res, 'image/png'));
+  }
+  async function shotExport(el) {
+    if (!el) return;
+    let blob = null;
+    try { blob = await shotRender(el); } catch (e) { console.warn('shot', e); }
+    if (!blob) return showCopiedPop(T().shotFail, false);
+    try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]); showCopiedPop(T().captureCopied); } catch { showCopiedPop(T().shotFail, false); }
+  }
   // ---------- Exportar a PNG ----------
   // Exportar todas las mejoras de todas las sims a CSV (Excel / Google Sheets) o JSON
   function exportRows() {
@@ -1991,6 +2047,7 @@
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { if (!plainClick(e)) return; e.preventDefault(); state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }
+    else if (q('data-shot')) shotExport(e.target.closest('section.panel'));
     else if (q('data-capture')) captureModal();
     else if ((el = q('data-role'))) { S().roleFilter = el.dataset.role; persistSettings(); state.animateNext = true; render(); }
     else if ((el = q('data-clsf'))) { S().classFilter = el.dataset.clsf; persistSettings(); state.animateNext = true; render(); }

@@ -60,7 +60,7 @@
   // --- Iconos como data URL (para exportar gráficas a PNG) ---
   async function iconData(href) {
     try {
-      if (!/^(?:\.\/)?assets\/(items|classes)\/[\w.\-]+\.png$/.test(href) && !/^https:\/\/wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg$/.test(href)) return null;
+      if (!/^(?:\.\/)?(?:assets\/(?:items|classes)\/[\w.\-]+\.png|assets\/bosses\/[\w.\-]+\.(?:jpg|png)|assets\/ui\/[\w.\-]+\.(?:jpg|png)|fonts\/[\w.\-]+\.woff2)$/.test(href) && !/^https:\/\/wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg$/.test(href)) return null;
       const r = await fetch(href);
       if (!r.ok) return null;
       const blob = await r.blob();

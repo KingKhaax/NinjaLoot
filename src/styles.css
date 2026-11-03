@@ -537,7 +537,7 @@ body.no-anim .made-by .heart, body.no-anim .made-with .heart { animation: none; 
 .gbar, .gbar span, .rtable-wrap, .xs-crow, .skel-bars i { border-radius: 0; }
 
 /* Icono del jefe junto al título */
-.boss-ic { flex: none; border-radius: var(--r-icon); box-shadow: 0 0 0 1px var(--border); }
+.boss-ic { flex: none; border-radius: var(--r-icon); box-shadow: 0 0 0 1px var(--border); object-fit: cover; object-position: center; }
 .card-head .boss-ic { width: 40px; height: 40px; }
 .rtable .bcol .boss-ic { width: 30px; height: 30px; }
 
@@ -996,7 +996,8 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .cl-card.open .cl-body { display: block; }
 .cl-sec + .cl-sec { margin-top: 14px; }
 /* Tooltip de piezas de tier: las que llevas puestas y las bonificaciones que ya tienes se iluminan */
-#tip .set-on, #tip .set-on a { color: #ffd100; font-weight: 600; }
+/* Como el tooltip de Raidbots: piezas que llevas en amarillo claro y en negrita, las que no, en gris; bonificaciones activas en verde */
+#tip .set-on, #tip .set-on a { color: #ffff98; font-weight: 700; }
 #tip .set-act, #tip .set-act a { color: #1eff00; }
 /* Pieza catalizada: justo debajo de la pieza de origen, con sangría y marca */
 .lg-row.lg-cat { margin-left: 34px; position: relative; }
@@ -1021,3 +1022,14 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .cg-g b { color: #3fcf6a; }
 :root[data-theme="light"] .cg-tot b, :root[data-theme="light"] .cg-g b { color: #1a8f43; }
 @media (max-width: 700px) { .cg-row { grid-template-columns: 26px 34px minmax(0, 1fr); } .cg-g { grid-column: 2 / -1; text-align: left; } }
+/* Todas las piezas y Dónde tirar moneda: el texto no se puede seleccionar ni copiar (para eso está «Copiar imagen») */
+.no-copy, .no-copy * { -webkit-user-select: none; user-select: none; }
+.no-copy select, .no-copy input { -webkit-user-select: auto; user-select: auto; }
+.cg-pc { color: var(--muted); font-size: 12.5px; font-weight: 600; }
+/* Subtítulos de la sim y del personaje: en blanco y más marcados */
+.sh-sub { color: var(--text); font-weight: 600; font-size: 15px; letter-spacing: .02em; line-height: 1.3; padding-left: 10px; border-left: 3px solid var(--accent); }
+.card-sub { color: var(--text); font-weight: 600; font-size: 14px; letter-spacing: .01em; }
+:root:not([data-theme="light"]) .sh-sub, :root:not([data-theme="light"]) .card-sub { color: #fff; }
+/* Ranura donde se equipa la pieza (Cuello, Anillo…): en blanco, no en gris */
+.lg-row .lg-n small, .cg-nm small { color: var(--text); font-weight: 500; }
+:root:not([data-theme="light"]) .lg-row .lg-n small, :root:not([data-theme="light"]) .cg-nm small { color: #fff; }
