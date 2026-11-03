@@ -21,7 +21,7 @@
   const state = {
     settings: (() => { const st = { ...DEFAULTS, ...load('ninjaloot.settings', {}) }; if (!['es', 'en'].includes(st.lang)) st.lang = 'es'; return st; })(),
     sims: [], loading: new Set(), names: { es: {}, en: {} }, expanded: new Set(), animateNext: true, info: { version: '' },
-    view: 'home', page: {}, personal: null, personalList: [], gear: load('ninjaloot.gear', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
+    view: 'home', page: {}, personal: null, personalList: [], gear: load('ninjaloot.gear', {}), qual: load('ninjaloot.qual', {}), personalUrl: load('ninjaloot.personalUrl', ''), shown: new Set(), bossSel: null, bosses: BOSSES_SNAPSHOT, rot: load('ninjaloot.rotations', {}),
   };
   if (state.settings.persist) state.sims = load('ninjaloot.sims', []).filter(s => s && s.id && Array.isArray(s.items));
   // Simulación personal: una o varias simulaciones de la misma persona (raid, míticas...) y su versión combinada para compararlas
@@ -94,10 +94,34 @@
     const loc = ITEMS[it.id], lang = S().lang, cached = state.names[lang][it.id] || state.names.en[it.id];
     const name = (lang !== 'en' && state.names[lang][it.id]?.[0]) || loc?.[0] || cached?.[0] || it.name || `#${it.id}`;
     const icon = loc?.[1] || cached?.[1] || 'inv_misc_questionmark';
-    const quality = loc?.[2] ?? cached?.[2] ?? 4;
+    const quality = (it.ilvl && state.qual[`${it.id}:${it.ilvl}`]) ?? loc?.[2] ?? cached?.[2] ?? 4;
     const tag = { t: '(tank)', h: '(healer)', th: '(tank/healer)' }[loc?.[5]] || '';
     const src = loc ? `assets/items/${loc[1]}.png` : icon === 'inv_misc_questionmark' ? 'assets/ui/questionmark.jpg' : WEB_ICON(icon);
     return { name, icon: src, quality, tag };
+  }
+  // Calidad real de cada pieza: la del tooltip a su nivel de objeto (una pieza de mazmorra a nivel Mito es épica aunque su base sea rara)
+  const qualPending = new Set(), qualFail = new Set();
+  async function fillQualities() {
+    if (!window.api || !window.api.itemTooltip) return;
+    const lang = S().lang, todo = new Map();
+    document.querySelectorAll('[data-item][data-ilvl]').forEach(el => {
+      const id = Number(el.dataset.item), il = Number(el.dataset.ilvl) || 0, k = `${id}:${il}`;
+      if (id && il && state.qual[k] == null && !qualPending.has(k) && !qualFail.has(k)) todo.set(k, [id, il]);
+    });
+    if (!todo.size) return;
+    const list = [...todo.entries()];
+    let changed = false;
+    for (let i = 0; i < list.length; i += 6) {
+      await Promise.all(list.slice(i, i + 6).map(async ([k, [id, il]]) => {
+        qualPending.add(k);
+        try {
+          const r = await window.api.itemTooltip(id, il, lang), m = r && r.ok && String(r.html).match(/<b class="q(\d)">/);
+          if (m) { state.qual[k] = Math.min(7, Number(m[1])); changed = true; } else qualFail.add(k);
+        } catch { qualFail.add(k); }
+        qualPending.delete(k);
+      }));
+    }
+    if (changed) { save('ninjaloot.qual', state.qual); state.animateNext = false; render(); }
   }
   const pending = new Set();
   async function ensureNames() {
@@ -818,7 +842,7 @@
     if (state.view === 'roster') { content.innerHTML = rosterView(); return; }
     if (state.view === 'personal') {
       content.innerHTML = personalView();
-      ensureNames();
+      ensureNames(); fillQualities();
       return;
     }
     if (!state.sims.length && state.loading.size) { content.innerHTML = skeletonHtml(Math.max(2, state.loading.size)); return; }
@@ -841,7 +865,7 @@
     content.innerHTML = html + (state.loading.size ? skeletonHtml(state.loading.size) : '');
     document.scrollingElement.scrollTop = scroll;
     if (animate) enterAnim(content);
-    ensureNames();
+    ensureNames(); fillQualities();
   }
 
   // ---------- Quick Sim y Top Gear ----------
