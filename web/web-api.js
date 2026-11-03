@@ -43,13 +43,13 @@
     return out;
   }
   const tipCache = new Map();
-  async function itemTooltip(id, ilvl, lang) {
-    id = Number(id); ilvl = Number(ilvl) || 0;
+  async function itemTooltip(id, ilvl, lang, gem) {
+    id = Number(id); ilvl = Number(ilvl) || 0; gem = Number(gem) || 0;
     if (!Number.isInteger(id) || id <= 0) return { ok: false };
-    const key = `${lang}:${id}:${ilvl}`;
+    const key = `${lang}:${id}:${ilvl}:${gem}`;
     if (tipCache.has(key)) return tipCache.get(key);
     try {
-      const j = await getJSON(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}`);
+      const j = await getJSON(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}${Number.isInteger(gem) && gem > 0 ? `&gems=${gem}` : ''}`);
       if (!j.tooltip) return { ok: false };
       const r = { ok: true, html: j.tooltip };
       tipCache.set(key, r);

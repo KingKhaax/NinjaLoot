@@ -72,13 +72,13 @@ ipcMain.handle('items:lookup', async (_e, ids, lang) => {
 
 // --- Tooltip de objeto (Wowhead) con el nivel de objeto simulado ---
 const tipCache = new Map();
-ipcMain.handle('items:tooltip', async (_e, id, ilvl, lang) => {
-  id = Number(id); ilvl = Number(ilvl) || 0;
+ipcMain.handle('items:tooltip', async (_e, id, ilvl, lang, gem) => {
+  id = Number(id); ilvl = Number(ilvl) || 0; gem = Number(gem) || 0;
   if (!Number.isInteger(id) || id <= 0) return { ok: false };
-  const key = `${lang}:${id}:${ilvl}`;
+  const key = `${lang}:${id}:${ilvl}:${gem}`;
   if (tipCache.has(key)) return tipCache.get(key);
   try {
-    const res = await net.fetch(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}`, { headers: UA });
+    const res = await net.fetch(`https://nether.wowhead.com/tooltip/item/${id}?dataEnv=1&locale=${WH_LOCALE[lang] ?? 0}${ilvl ? `&ilvl=${ilvl}` : ''}${Number.isInteger(gem) && gem > 0 ? `&gems=${gem}` : ''}`, { headers: UA });
     if (!res.ok) return { ok: false };
     const j = await res.json();
     if (!j.tooltip) return { ok: false };

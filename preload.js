@@ -5,7 +5,7 @@ contextBridge.exposeInMainWorld('api', {
   parseLoot: text => ipcRenderer.invoke('loot:parse', text),
   lookupItems: (ids, lang) => ipcRenderer.invoke('items:lookup', ids, lang),
   iconData: href => ipcRenderer.invoke('icon:data', href),
-  itemTooltip: (id, ilvl, lang) => ipcRenderer.invoke('items:tooltip', id, ilvl, lang),
+  itemTooltip: (id, ilvl, lang, gem) => ipcRenderer.invoke('items:tooltip', id, ilvl, lang, gem),
   getBosses: () => ipcRenderer.invoke('bosses:get'),
   fetchGear: (region, realm, name) => ipcRenderer.invoke('gear:fetch', region, realm, name),
   fetchPortrait: (region, realm, name) => ipcRenderer.invoke('portrait:fetch', region, realm, name),

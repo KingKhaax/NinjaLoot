@@ -201,6 +201,14 @@ function parseReport(json, id) {
   // Datos de las piezas de origen de los catalizadores (nombre, estadísticas secundarias y dónde caen)
   const infoById = new Map();
   for (const e of [...(Array.isArray(lib) ? lib : []), ...(Array.isArray(meta.encounterItems) ? meta.encounterItems : [])]) if (e && e.id && !infoById.has(e.id)) infoById.set(e.id, e);
+  // Gema que Raidbots engasta en los anillos y collares (la que más le simula): id, icono, nombre y estadísticas
+  const gemOf = (id) => {
+    const e = infoById.get(id), si = e && e.socketInfo;
+    const g = si && Object.values(si).map(s => s && s.gems && s.gems[0]).find(x => x && x.itemId);
+    if (!g) return null;
+    const n = g.itemNames || {};
+    return { id: g.itemId, icon: g.itemIcon || '', label: g.displayName || '', en: n.en_US || g.itemName || '', es: n.es_ES || '' };
+  };
   const SEC = new Set([32, 36, 40, 49]);
   const catInfo = (fromId, encounter) => {
     const e = infoById.get(fromId);
@@ -225,7 +233,7 @@ function parseReport(json, id) {
     const key = `${p.id}:${p.ilvl}`;
     const prev = best.get(key);
     const tier = (p.catalystFrom && 'catalyst') || (p.source && tierOf.get(`${p.id}:${p.source.encounter}`)) || null;
-    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier, armor: armor.get(p.id) || null, catFrom: p.catalystFrom ? catInfo(p.catalystFrom, p.source && p.source.encounter) : null });
+    if (!prev || gain > prev.gain) best.set(key, { id: p.id, ilvl: p.ilvl, slot: normSlot(p.slot) || p.slot, name: p.name, gain: Math.round(gain), pct: gain / base * 100, source: p.source, tier, armor: armor.get(p.id) || null, gem: gemOf(p.id), catFrom: p.catalystFrom ? catInfo(p.catalystFrom, p.source && p.source.encounter) : null });
   }
   if (!best.size) {
     const any = results.some(r => parseProfilesetName(r.name));

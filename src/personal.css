@@ -294,3 +294,7 @@ body:not(:has(.home-hero)) .bg-art, body:not(:has(.home-hero)) .bg-dim { opacity
 .pc-card.on::after { content: "✓"; position: absolute; right: 12px; top: 10px; z-index: 2; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--accent); animation: pc-pop .4s cubic-bezier(.2, 1.6, .4, 1); }
 @keyframes pc-pop { from { transform: scale(0); } }
 body.no-anim .pc-card, body.no-anim .pc-card::after { transition: none; animation: none; }
+/* Gema que más le simula a un anillo o collar: icono y nombre al lado de la pieza (con su tooltip) */
+.gem-ref { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 1px 7px 1px 3px; border-radius: 999px; font-size: 11.5px; font-weight: 600; vertical-align: 1px; color: var(--text); background: color-mix(in srgb, var(--accent) 12%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); cursor: help; }
+.gem-ref img { width: 16px; height: 16px; border-radius: 50%; }
+:root:not([data-theme="light"]) .gem-ref { color: #fff; }
