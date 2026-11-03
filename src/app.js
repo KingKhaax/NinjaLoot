@@ -471,7 +471,7 @@
       html += `<section class="panel card" id="sim-${esc(sim.id)}"><div class="card-head">`
         + (specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : '')
         + `<div><h2 style="color:${readable(col)}">${esc(sim.character.name)} ${diffBadge(sim.difficulty)}</h2>`
-        + `<div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
+        + `<div class="meta">${esc([specName(sim), clsName(sim), realmLabel(sim.character.realm)].filter(Boolean).join(' · '))} — ${esc(t.baseDps)}: ${nf().format(sim.baseDps)} — ${total} ${esc(t.items)}</div></div>`
         + (best => { const bi = itemInfo(best); state.shown.add(best.id); return `<div class="star-item" style="--q:${QUALITY_COLORS[bi.quality]}" data-item="${best.id}" data-ilvl="${best.ilvl || 0}" data-tip-always title="${esc(t.starItem)}"><img src="${bi.icon}" alt=""><span><small>★ ${esc(t.starItem)}</small><b>${esc(bi.name)}</b><em>${esc(valueText(best, sim))}</em></span></div>`; })(bestOf(sim))
         + `<span class="spacer"></span><div class="card-tools">`
         + (paged ? `<span class="pg-info">${pg * per + 1}–${Math.min(total, pg * per + per)} ${esc(t.pageOf)} ${total}</span>` : '')
@@ -578,7 +578,7 @@
     const best = items.reduce((a, i) => (!a || i.gain > a.gain ? i : a), null), srcs = new Set(items.map(i => catOfSrc(srcOf(i)))), spec = specIcon(p);
     const stat = (k, v) => `<div class="pc-stat"><small>${esc(k)}</small><b>${v}</b></div>`;
     return `<section class="panel pers-char" style="--cc:${col}">${spec ? `<img class="pch-ic" src="${spec}" alt="">` : ''}`
-      + `<div class="pch-id"><h2 style="color:${readable(col)}">${esc(p.character.name)}</h2><div class="meta">${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}</div></div>`
+      + `<div class="pch-id"><h2 style="color:${readable(col)}">${esc(p.character.name)}</h2><div class="meta">${esc([specName(p), clsName(p), realmLabel(p.character.realm)].filter(Boolean).join(' · '))}</div></div>`
       + `<div class="pch-stats">${p.head && p.head.avgIlvl ? stat(t.shAvgIlvl, p.head.avgIlvl) : ''}${stat(t.baseDps, nf().format(p.baseDps))}${stat(t.persSumItems, items.length)}${stat(t.persSumSources, srcs.size)}${best ? stat(t.persSumTop, `<span class="pc-g">+${nf().format(best.gain)}</span>`) : ''}</div></section>`;
   }
   function personalView() {
@@ -663,10 +663,10 @@
         return `<button class="pc-card${pcat === k ? ' on' : ''}${it.gain === topGain ? ' top' : ''}" data-pcat="${k}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}">`
           + `<span class="pc-cat">${it.gain === topGain ? '★ ' : ''}${esc(catName(k))} <span class="meta">${cats[k]} ${esc(t.items)}</span></span>`
           + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
-          + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
+          + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="pc-src">${k === 'dungeon' ? nameImg(st.en || st.name, 24) : k === 'raid' && srcOf(it) ? bossImg(srcOf(it).encounter, 24) : ''}${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
     }
     html += `<section class="panel card no-copy">${multi ? '' : simHeader(p).replace('<div class="sim-hdr"', '<div class="sim-hdr" data-no-shot')}<div class="card-head">${multi && specIcon(p) ? `<img class="cls-icon" src="${specIcon(p)}" alt="" style="border-color:${col}">` : ''}`
-      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta card-sub" data-no-shot>${esc([specName(p), clsName(p), p.character.realm].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div><div class="card-sub shot-only" data-shot-only>${esc(`${p.character.name}${(p.head && p.head.realmName) || p.character.realm ? '-' + ((p.head && p.head.realmName) || p.character.realm) : ''} ${[clsName(p), specName(p)].filter(Boolean).join(' ')} - ${S().lang === 'es' ? 'DPS Base' : 'Base DPS'}: ${nf().format(p.baseDps)}`)}</div></div>`
+      + `<div>${multi ? `<h2 style="color:${readable(col)}">${esc(p.character.name)}</h2>` : `<h2>${diffBadge(p.difficulty)}</h2>`}<div class="meta card-sub" data-no-shot>${esc([specName(p), clsName(p), realmLabel(p.character.realm)].filter(Boolean).join(' · '))}${multi ? ` — ${esc(t.persSimsCount(list.length))}` : ` — ${esc(t.baseDps)}: ${nf().format(p.baseDps)}`}</div><div class="card-sub shot-only" data-shot-only>${esc(`${p.character.name}${(p.head && p.head.realmName) || p.character.realm ? '-' + realmLabel((p.head && p.head.realmName) || p.character.realm) : ''} ${[clsName(p), specName(p)].filter(Boolean).join(' ')} - ${S().lang === 'es' ? 'DPS Base' : 'Base DPS'}: ${nf().format(p.baseDps)}`)}</div></div>`
       + `<span class="spacer"></span><div class="card-tools" data-no-shot><button class="btn small" data-shot>${ui('export')}${esc(t.shotCopy)}</button>${list.map(r => `<button class="btn small" data-open="${esc(r.url)}">${ui('open')}${esc(t.openRaidbots)}${multi ? ' · ' + esc(simLabel(r)) : ''}</button>`).join('')}</div></div>`
       + (groupsHTML ? `${sortBar}<div class="loot-grid">${groupsHTML}</div>` : `<div class="hint">${esc(t.persNoBoss)}</div>`) + `</section>`;
     return html;
@@ -932,6 +932,15 @@
     const n = Math.round(Number(secs) || 0), m = Math.floor(n / 60), r = n % 60, unit = S().lang === 'es' ? 'seg' : 'sec';
     return [m ? `${m} min` : '', r || !m ? `${r} ${unit}` : ''].filter(Boolean).join(' ');
   }
+  // Nombre oficial del reino (Zul'jin, Pozo de la Eternidad…) a partir del identificador que trae Raidbots (zuljin, pozo-de-la-eternidad…)
+  function realmLabel(r) {
+    const v = String(r || '').trim();
+    if (!v) return '';
+    const slug = v.toLowerCase().replace(/['’]/g, '').replace(/\s+/g, '-');
+    if (typeof REALM_NAMES !== 'undefined' && REALM_NAMES[slug]) return REALM_NAMES[slug];
+    if (!/^[a-z0-9\-]+$/.test(v)) return v;
+    return v.split('-').map(w => (w ? w[0].toUpperCase() + w.slice(1) : w)).join(' ');
+  }
   function simHeader(sim, compact = false) {
     const t = T(), h = sim.head || {}, col = clsColor(sim), f = nf();
     const kind = sim.kind;
@@ -940,7 +949,7 @@
     const dpsLbl = kind === 'drop' ? t.shBestItem : kind === 'topgear' ? t.shBestCombo : t.shDps;
     const rk = String(h.race || '').toLowerCase().replace(/[^a-z]/g, '');
     const race = (t.shRaces && t.shRaces[rk]) || (h.race ? capFirst(String(h.race).replace(/_/g, ' ')) : '');
-    const realm = h.realmName || (sim.character && sim.character.realm) || '';
+    const realm = realmLabel(h.realmName || (sim.character && sim.character.realm) || '');
     const realmTxt = realm ? `${realm}${h.region ? ` (${h.region})` : ''}` : '';
     const fight = sim.fight ? [sim.fight.style, sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight.secs ? durTxt(sim.fight.secs) : ''].filter(Boolean).join(' · ') : '';
     const slots = HEAD_ORDER.map(k => {
@@ -974,7 +983,7 @@
         const max = Math.max(1, ...sim.combos.map(c => Math.abs(c.gain)));
         combos = sim.combos.length ? `<div class="xs-combos"><div class="xs-chead"><span>#</span><span>${esc(t.xsCombo)}</span><span>DPS</span><span>${esc(t.xsGain)}</span></div>` + sim.combos.slice(0, 12).map((c, i) => `<div class="xs-crow${i === 0 ? ' best' : ''}"><span class="rk">${i + 1}</span><span class="nm" title="${esc(c.name)}">${esc(c.name)}</span><span>${f.format(c.dps)}</span><span class="gn ${c.gain >= 0 ? 'up' : 'down'}"><i style="width:${Math.abs(c.gain) / max * 100}%"></i><b>${c.gain >= 0 ? '+' : ''}${f.format(c.gain)} (${c.pct.toFixed(2)}%)</b></span></div>`).join('') + '</div>' : `<div class="hint">${esc(t.xsNoCombos)}</div>`;
       }
-      return `<div class="xsim" style="--cc:${col}">${simHeader(sim, true)}<div class="xs-head">${specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<div><h3 style="color:${readable(col)}">${esc(sim.character.name)} <span class="dbadge d-xs">${top ? 'TG' : 'QS'}</span></h3><div class="meta">${esc([specName(sim), clsName(sim), sim.character.realm].filter(Boolean).join(' · '))}${fight ? ` — ${esc(t.xsFight)}: ${esc(fight)}` : ''}</div></div><span class="spacer"></span>`
+      return `<div class="xsim" style="--cc:${col}">${simHeader(sim, true)}<div class="xs-head">${specIcon(sim) ? `<img class="cls-icon" src="${specIcon(sim)}" alt="" style="border-color:${col}">` : ''}<div><h3 style="color:${readable(col)}">${esc(sim.character.name)} <span class="dbadge d-xs">${top ? 'TG' : 'QS'}</span></h3><div class="meta">${esc([specName(sim), clsName(sim), realmLabel(sim.character.realm)].filter(Boolean).join(' · '))}${fight ? ` — ${esc(t.xsFight)}: ${esc(fight)}` : ''}</div></div><span class="spacer"></span>`
         + `<div class="card-tools"><button class="btn small" data-open="${esc(sim.url)}">${ui('open')}${esc(t.openRaidbots)}</button><button class="btn small" data-refresh="${esc(sim.id)}" title="${esc(t.refresh)}">${ui('refresh')}</button><button class="btn small danger" data-remove="${esc(sim.id)}" title="${esc(t.remove)}">${xmark}</button></div></div>`
         + `<div class="xs-dps"><div><small>${esc(t.xsDps)}</small><b>${f.format(sim.baseDps)}</b>${sim.dpsStd ? `<em>± ${f.format(sim.dpsStd)} ${esc(t.xsStd)}</em>` : ''}</div>${sim.hps ? `<div><small>${esc(t.xsHps)}</small><b>${f.format(sim.hps)}</b></div>` : ''}${sim.dtps ? `<div><small>${esc(t.xsDtps)}</small><b>${f.format(sim.dtps)}</b></div>` : ''}</div>`
         + (stats.trim() ? `<div class="xs-stats">${stats}</div>` : '') + combos + '</div>';
@@ -1230,6 +1239,20 @@
   });
   // clic normal = se navega aquí; Mayús / Ctrl / Cmd / Alt / botón central = se deja al navegador abrir el enlace aparte
   // Aviso en medio de la pantalla: confirma que el texto se ha copiado (desaparece solo)
+  // Onda al pulsar una tarjeta de fuente
+  function pcRipple(card, pt) {
+    const r = card.getBoundingClientRect(), d = Math.max(r.width, r.height) * 2.2, sp = document.createElement('span');
+    sp.className = 'pc-rip'; sp.style.width = sp.style.height = d + 'px'; sp.style.left = pt.x - r.left - d / 2 + 'px'; sp.style.top = pt.y - r.top - d / 2 + 'px';
+    card.appendChild(sp); setTimeout(() => sp.remove(), 800);
+  }
+  // Imán: la tarjeta se acerca un poco al cursor
+  document.addEventListener('mousemove', e => {
+    const c = e.target.closest && e.target.closest('.pc-card');
+    if (!c || !S().animations || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const r = c.getBoundingClientRect();
+    c.style.transform = `translate(${(e.clientX - r.left - r.width / 2) * .04}px, ${(e.clientY - r.top - r.height / 2) * .06}px)`;
+  });
+  document.addEventListener('mouseout', e => { const c = e.target.closest && e.target.closest('.pc-card'); if (c && !c.contains(e.relatedTarget)) c.style.transform = ''; });
   function showCopiedPop(text, ok = true) {
     document.getElementById('copyPop')?.remove();
     const el = document.createElement('div');
@@ -1412,7 +1435,7 @@
     for (const sim of state.sims) for (const it of sim.items) {
       const info = itemInfo(it), src = srcText(it), s = srcOf(it);
       rows.push({
-        player: sim.character.name, realm: sim.character.realm || '', class: clsName(sim), spec: specName(sim),
+        player: sim.character.name, realm: realmLabel(sim.character.realm), class: clsName(sim), spec: specName(sim),
         difficulty: sim.difficulty ? DIFF_TAG[sim.difficulty] : '', baseDps: Math.round(sim.baseDps || 0),
         itemId: it.id, item: info.name, slot: T().slots[it.slot] || it.slot || '', ilvl: it.ilvl || '',
         source: s ? catName(catOfSrc(s)) : '', boss: src ? src.name : '', instance: src ? src.sub : '',
@@ -1616,7 +1639,7 @@
         const via = sim && state.dcSims[sim.id], src = sim ? (via ? `<span class="ro-src bot" title="${esc(via.by ? t.roViaBotBy(via.by) : t.roViaBot)}">${esc(t.roViaBot)}${via.by ? ` · ${esc(via.by)}` : ''}</span>` : `<span class="ro-src hand">${esc(t.roViaHand)}</span>`) : '';
         const note = manual ? `<span class="ro-man" title="${esc(t.roManualTip)}">${esc(t.roManual)}</span>` : ok ? (src + (when ? ` <span class="meta">${esc(new Date(when).toLocaleDateString(S().lang))}</span>` : '')) : (sim ? `<span class="meta">${esc(t.roOld(new Date(when).toLocaleDateString(S().lang)))}</span>` : '');
         const ck = m.cls || (sim && sim.character.cls) || '', av = CLASS_COLORS[ck] ? `<img class="ro-av" src="assets/classes/${ck}.png" alt="" style="--cc:${CLASS_COLORS[ck]}">` : '<span class="ro-av ph"></span>';
-        return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><span class="ro-who">${av}<span><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(m.realm || '')}</span></span></span></td>`
+        return `<tr class="${ok ? 'ro-ok' : 'ro-miss'}"><td><span class="ro-who">${av}<span><b style="${col ? `color:${readable(col)}` : ''}">${esc(m.name)}</b> <span class="meta">${esc(realmLabel(m.realm))}</span></span></span></td>`
           + `<td><button type="button" class="ro-pill ${ok ? 'ok' : 'bad'}" data-ro="toggle" data-k="${esc(k)}" title="${esc(t.roToggleTip)}"><i>${ok ? '✓' : '✗'}</i><span>${esc(ok ? t.roHasSim : t.roMissing)}</span></button> ${note}</td>`
           + `<td class="ro-act"><button class="btn small danger" data-ro="del" data-k="${esc(k)}" title="${esc(t.roRemove)}">${xmark}</button></td></tr>`;
       }).join('') + `</tbody></table></div></section>`;
@@ -2090,7 +2113,7 @@
     else if ((el = q('data-pick'))) { const s = state.sims.find(x => x.id === el.dataset.pick); if (s) { setPersonalList([s]); state.personalUrl = s.url; save('ninjaloot.personalUrl', s.url); state.animateNext = true; render(); } }
     else if (q('data-vault-refresh')) { const c = state.personalList[0]?.character; if (c) { refreshVault(c, true); render(); } }
     else if ((el = q('data-pers-remove'))) { setPersonalList(state.personalList.filter(r => r.id !== el.dataset.persRemove)); state.animateNext = false; render(); }
-    else if ((el = q('data-pcat'))) { S().persCat = el.dataset.pcat; persistSettings(); render(); }
+    else if ((el = q('data-pcat'))) { const key = el.dataset.pcat, pt = { x: e.clientX, y: e.clientY }; S().persCat = key; persistSettings(); render(); const nc = document.querySelector(`.pc-card[data-pcat="${key}"]`); if (nc && S().animations) pcRipple(nc, pt); }
     else if ((el = q('data-lang'))) { S().lang = el.dataset.lang; persistSettings(); langMenu().hidden = true; state.animateNext = false; render(); }
     else if ((el = q('data-view'))) { if (!plainClick(e)) return; e.preventDefault(); state.view = el.dataset.view; state.animateNext = true; render(); window.scrollTo(0, 0); }
     else if ((el = q('data-mode'))) { S().chartMode = el.dataset.mode; if (el.dataset.mode === 'boss') S().srcCat = 'all'; persistSettings(); state.animateNext = true; render(); }

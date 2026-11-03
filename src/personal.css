@@ -277,3 +277,15 @@ body:not(.mobile-anim) .home-actions .btn:not(.primary) { animation: none !impor
 /* El fondo ilustrado solo se ve en Inicio */
 .bg-art, .bg-dim { transition: opacity .3s ease; }
 body:not(:has(.home-hero)) .bg-art, body:not(:has(.home-hero)) .bg-dim { opacity: 0; }
+/* Fuente de la mejor pieza (jefe o mazmorra): en blanco y con su icono */
+.pc-card .pc-src { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--text); }
+:root:not([data-theme="light"]) .pc-card .pc-src { color: #fff; }
+.pc-card .pc-src .boss-ic { width: 24px; height: 24px; border-radius: 5px; }
+/* Ondas e imán: onda al pulsar, marca en la elegida y movimiento suave hacia el cursor */
+.pc-card { position: relative; overflow: hidden; transition: transform .2s ease-out, border-color .2s, background .2s; }
+.pc-card > * { position: relative; z-index: 2; }
+.pc-card .pc-rip { position: absolute; z-index: 1; border-radius: 50%; background: color-mix(in srgb, var(--accent) 45%, transparent); transform: scale(0); animation: pc-rip .7s ease-out forwards; pointer-events: none; }
+@keyframes pc-rip { to { transform: scale(1); opacity: 0; } }
+.pc-card.on::after { content: "✓"; position: absolute; right: 12px; top: 10px; z-index: 2; width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: var(--accent); animation: pc-pop .4s cubic-bezier(.2, 1.6, .4, 1); }
+@keyframes pc-pop { from { transform: scale(0); } }
+body.no-anim .pc-card, body.no-anim .pc-card::after { transition: none; animation: none; }
