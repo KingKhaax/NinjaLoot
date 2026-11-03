@@ -337,6 +337,8 @@ body.compact .cell { min-height: 30px; }
 .verbadge:hover { transform: translateY(-2px); box-shadow: 0 8px 22px -8px var(--vc); }
 .verbadge:active { transform: translateY(0) scale(.97); }
 .top-actions { align-items: center; }
+.top-actions .btn.ghost { border-color: transparent; background: transparent; }
+.top-actions .btn.ghost:hover { border-color: transparent; background: transparent; color: var(--accent); }
 
 /* ---------- Tiers ---------- */
 .tier-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
