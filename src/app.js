@@ -1238,14 +1238,20 @@
     routed = true;
   }
   // Pone la pantalla que indica la URL. Devuelve true si ha cambiado algo.
-  function applyRoute() {
+  // full = true (Atrás/Adelante): lo que la dirección no dice vuelve a su valor por defecto; false (al abrir): solo se aplica lo que la dirección trae
+  function applyRoute(full = true) {
     const r = parseRoute(location.hash);
     if (!r) return false;
     const before = routeHash();
     state.view = r.view;
     if (r.boss != null) state.bossSel = r.boss;
-    for (const k of VIEW_KEYS[r.view] || []) SUBS[k].set(r.sub[k] != null ? (r.sub[k] === 'none' ? '' : r.sub[k]) : subDef(k));
-    persistSettings();
+    let dirty = false;
+    for (const k of VIEW_KEYS[r.view] || []) {
+      if (r.sub[k] == null && !full) continue;
+      const want = r.sub[k] != null ? (r.sub[k] === 'none' ? '' : r.sub[k]) : subDef(k);
+      if (String(SUBS[k].get() ?? subDef(k)) !== String(want)) { SUBS[k].set(want); dirty = true; }
+    }
+    if (dirty) persistSettings();
     return routeHash() !== before;
   }
   window.addEventListener('popstate', () => { if (applyRoute()) { state.animateNext = true; render(); window.scrollTo(0, 0); } });
@@ -1306,7 +1312,7 @@
     showCopiedPop(name, copied);
   });
   const plainClick = e => !/^https?:$/.test(location.protocol) || (e.button === 0 && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey); // en la app de escritorio no hay ventanas aparte: siempre se navega dentro
-  applyRoute();
+  applyRoute(false);
 
   // Mayús + clic (otra ventana), Ctrl/Cmd + clic o botón central (otra pestaña) en las opciones que cambian lo que se ve, como en un enlace
   const NAVS = { 'data-pmode': 'pm', 'data-pcat': 'pc', 'data-coin-src': 'cs', 'data-mode': 'cm', 'data-cat': 'sc', 'data-role': 'rf', 'data-clsf': 'cf', 'data-diff': 'df', 'data-raid': 'rp', 'data-tier-cls': 'tc' };
