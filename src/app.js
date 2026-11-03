@@ -927,6 +927,11 @@
     return '';
   }
   const HEAD_ORDER = ['head', 'neck', 'shoulder', 'back', 'chest', 'wrist', 'hands', 'waist', 'legs', 'feet', '|', 'finger1', 'finger2', '|', 'trinket1', 'trinket2', '|', 'mainHand', 'offHand'];
+  // Duración del combate siempre en minutos: «5 min» o «5 min 30 seg»
+  function durTxt(secs) {
+    const n = Math.round(Number(secs) || 0), m = Math.floor(n / 60), r = n % 60, unit = S().lang === 'es' ? 'seg' : 'sec';
+    return [m ? `${m} min` : '', r || !m ? `${r} ${unit}` : ''].filter(Boolean).join(' ');
+  }
   function simHeader(sim, compact = false) {
     const t = T(), h = sim.head || {}, col = clsColor(sim), f = nf();
     const kind = sim.kind;
@@ -937,7 +942,7 @@
     const race = (t.shRaces && t.shRaces[rk]) || (h.race ? capFirst(String(h.race).replace(/_/g, ' ')) : '');
     const realm = h.realmName || (sim.character && sim.character.realm) || '';
     const realmTxt = realm ? `${realm}${h.region ? ` (${h.region})` : ''}` : '';
-    const fight = sim.fight ? [sim.fight.style, sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight.secs ? `${sim.fight.secs} s` : ''].filter(Boolean).join(' · ') : '';
+    const fight = sim.fight ? [sim.fight.style, sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight.secs ? durTxt(sim.fight.secs) : ''].filter(Boolean).join(' · ') : '';
     const slots = HEAD_ORDER.map(k => {
       if (k === '|') return '<i class="sh-gap"></i>';
       const it = h.equipped && h.equipped[k];
@@ -963,7 +968,7 @@
       const col = clsColor(sim), st = sim.stats || {}, top = sim.kind === 'topgear';
       const prim = [['stStr', st.strength], ['stAgi', st.agility], ['stInt', st.intellect]].sort((a, b) => (b[1] || 0) - (a[1] || 0))[0];
       const stats = [prim && prim[1] != null ? stat(t[prim[0]], prim[1], null, col) : '', stat(t.stSta, st.stamina, null, '#9aa3b2'), stat(t.stCrit, st.crit, st.critPct, '#e0554f'), stat(t.stHaste, st.haste, st.hastePct, '#f0c24f'), stat(t.stMast, st.mastery, st.masteryPct, '#5fa8ff'), stat(t.stVers, st.versatility, null, '#5fe08a'), stat(t.stArmor, st.armor, null, '#9aa3b2')].join('');
-      const fight = [sim.fight && sim.fight.style, sim.fight && sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight && sim.fight.secs ? `${sim.fight.secs} s` : ''].filter(Boolean).join(' · ');
+      const fight = [sim.fight && sim.fight.style, sim.fight && sim.fight.targets ? `${sim.fight.targets}T` : '', sim.fight && sim.fight.secs ? durTxt(sim.fight.secs) : ''].filter(Boolean).join(' · ');
       let combos = '';
       if (top) {
         const max = Math.max(1, ...sim.combos.map(c => Math.abs(c.gain)));
