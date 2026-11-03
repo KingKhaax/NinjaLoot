@@ -339,6 +339,9 @@ body.compact .cell { min-height: 30px; }
 .top-actions { align-items: center; }
 .top-actions .btn.ghost { border-color: transparent; background: transparent; }
 .top-actions .btn.ghost:hover { border-color: transparent; background: transparent; color: var(--accent); }
+#btnSettings svg { transition: transform .5s cubic-bezier(.3, 1.4, .4, 1), filter .25s; }
+#btnSettings:hover svg { transform: rotate(90deg); filter: drop-shadow(0 0 7px color-mix(in srgb, var(--accent) 75%, transparent)); }
+@media (prefers-reduced-motion: reduce) { #btnSettings svg { transition: none; } #btnSettings:hover svg { transform: none; } }
 
 /* ---------- Tiers ---------- */
 .tier-classes { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 12px; }
