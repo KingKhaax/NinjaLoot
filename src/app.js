@@ -640,8 +640,8 @@
       const ic = cat === 'dungeon' && st ? nameImg(st.en || st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = ordered(g.items).map(it => {
         const info = itemInfo(it);
-        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' && it.under ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)}${gemAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
-          + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}${gemRef(it)}`
+        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' && it.under ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)}${gemAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><span class="ic-wrap"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">${gemRef(it)}</span>`
+          + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}`
           + `<small>${multi ? `<span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>` : ''}${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
           + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
       }).join('');
@@ -731,8 +731,8 @@
         const sub = st.sub && st.sub !== catName(c) ? `<span class="meta">${esc(st.sub)}</span>` : '';
         const rowsHTML = g.list.map(({ it, n }) => {
           const info = itemInfo(it); state.shown.add(it.id);
-          return `<div class="cg-row" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)}${gemAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><span class="cg-n">${n}</span><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
-            + `<div class="cg-nm"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}${gemRef(it)}<small>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
+          return `<div class="cg-row" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)}${gemAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><span class="cg-n">${n}</span><span class="ic-wrap"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">${gemRef(it)}</span>`
+            + `<div class="cg-nm"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}<small>${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
             + `<div class="cg-g"><b>${gainTxt(it)}</b>${pctTxt(it)}</div></div>`;
         }).join('');
         return `<section class="cg-grp"><header class="cg-h">${ic}<div class="cg-t"><b>${esc(st.name)}</b>${sub}</div><div class="cg-tot"><b>${pct ? `+${totalPct.toFixed(2)}%` : `+${nf().format(total)} <span class="cg-pc">(${totalPct.toFixed(2)}%)</span>`}</b><span class="meta">${g.list.length} ${esc(g.list.length === 1 ? t.coinUnit1 : t.coinUnitN)}</span></div></header>${rowsHTML}</section>`;
@@ -893,10 +893,8 @@
   // Gema que más le simula a un anillo o collar (como en Raidbots): su icono con tooltip y su nombre justo al lado de la pieza
   function gemRef(it) {
     const g = it.gem;
-    if (!g || !g.id || !/^(finger|neck)/.test(String(it.slot || ''))) return '';
-    const nm = (S().lang === 'es' ? g.es : g.en) || g.en || g.label || '';
-    const ic = g.icon ? `<img src="${WEB_ICON(g.icon)}" alt="" width="16" height="16">` : '';
-    return ` <span class="gem-ref" data-item="${g.id}" data-ilvl="0" title="">${ic}<span>${esc(nm)}</span></span>`;
+    if (!g || !g.id || !g.icon || !/^(finger|neck)/.test(String(it.slot || ''))) return '';
+    return `<span class="gem-ref" data-item="${g.id}" data-ilvl="0"><img src="${WEB_ICON(g.icon)}" alt="" width="18" height="18"></span>`;
   }
   function gemAttr(it) { return it.gem && it.gem.id && /^(finger|neck)/.test(String(it.slot || '')) ? ` data-gem="${it.gem.id}"` : ''; }
   function catNote(it) {
