@@ -213,7 +213,7 @@
   const armorLabel = it => T().armorNames[it.armor || ARMOR[it.id] || 'any'];
   const instName = id =>((state.bosses.inst || {})[id] || {}).n || '';
   // Fuente de un objeto: en mazmorras el nombre de la mítica; en raid el jefe, con (Tier) si sale de su ficha o (Catalizador) si se convierte
-  function srcText(it) {
+  function srcText(it, bare) {
     const t = T(), s = srcOf(it), enc = s && s.encounter != null ? s.encounter : 0;
     if (!s) return null;
     if (catOfSrc(s) === 'dungeon') { const name = s.instance > 0 ? instName(s.instance) : instName(enc) || bossLabel(enc); return name ? { name, sub: t.catDungeon } : null; }
@@ -221,7 +221,7 @@
     if (['delve', 'prey', 'bonus'].includes(catOfSrc(s))) return { name: bossLabel(enc) || catName(catOfSrc(s)), sub: t.coinAnyOf(catName(catOfSrc(s))) };
     const boss = bossLabel(enc);
     if (!boss) return null;
-    const tag = it.tier === 'token' ? ' (Tier)' : it.tier === 'catalyst' ? ` (${t.catCatalyst})` : '';
+    const tag = bare ? '' : it.tier === 'token' ? ' (Tier)' : it.tier === 'catalyst' ? ` (${t.catCatalyst})` : '';
     return { name: boss + tag, sub: (allBosses().find(b => b.id === enc) || {}).group || '' };
   }
 
@@ -581,7 +581,7 @@
     const groups = new Map();
     shownItems.filter(i => i.gain >= min).forEach(it => {
       state.shown.add(it.id);
-      const st = srcText(it), key = (st && st.name) || '';
+      const st = srcText(it, true), key = (st && st.name) || '';
       if (!groups.has(key)) groups.set(key, { st, src: srcOf(it), items: [], total: 0 });
       const g = groups.get(key);
       g.items.push(it); g.total += it.gain;
@@ -593,7 +593,7 @@
     // Como Raidbots: Expected Value = DPS medio de TODAS las piezas de la tabla del jefe (las que no mejoran cuentan 0);
     // Best = la mejor pieza; Priority = jefes con valor esperado parecido (a menos de 0,2 %) agrupados y, dentro, primero el que más probabilidad tiene de dar una mejora
     const counts = (p.lootCounts) || ((list[0] && list[0].lootCounts) || {});
-    const sizeOf = g => Math.max(g.items.length, (g.src && counts[g.src.encounter + (g.items[0] && g.items[0].tier === 'catalyst' ? ':c' : '')]) || 0, 1);
+    const sizeOf = g => Math.max(g.items.length, g.src ? (counts[g.src.encounter] || 0) + (g.items.some(i => i.tier === 'catalyst') ? (counts[g.src.encounter + ':c'] || 0) : 0) : 0, 1);
     const avg = g => g.total / sizeOf(g), top = g => Math.max(...g.items.map(i => i.gain));
     const chance = g => g.items.length / sizeOf(g);
     const byGain = (x, y) => y.total - x.total;
@@ -612,10 +612,10 @@
     const groupsHTML = (cmp ? [...groups.values()].sort(cmp) : byPriority([...groups.values()])).map(g => {
       const cat = g.src ? catOfSrc(g.src) : '', st = g.st;
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
-      const rowsHTML = g.items.map(it => {
+      const rowsHTML = ordered(g.items).map(it => {
         const info = itemInfo(it);
-        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
-          + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}`
+        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
+          + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}`
           + `<small>${multi ? `<span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>` : ''}${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
           + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
       }).join('');
@@ -634,7 +634,7 @@
       const bestOf = k => p.items.find(it => catOfSrc(srcOf(it)) === k && !owned(p, it)) || p.items.find(it => catOfSrc(srcOf(it)) === k);
       const bests = catKeys.map(k => [k, bestOf(k)]), topGain = Math.max(...bests.map(([, it]) => it.gain));
       html += `<div class="pers-compare">${bests.map(([k, it]) => { const info = itemInfo(it), st = srcText(it); state.shown.add(it.id);
-        return `<button class="pc-card${pcat === k ? ' on' : ''}${it.gain === topGain ? ' top' : ''}" data-pcat="${k}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}">`
+        return `<button class="pc-card${pcat === k ? ' on' : ''}${it.gain === topGain ? ' top' : ''}" data-pcat="${k}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}">`
           + `<span class="pc-cat">${it.gain === topGain ? '★ ' : ''}${esc(catName(k))} <span class="meta">${cats[k]} ${esc(t.items)}</span></span>`
           + `<span class="pc-item"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span></span>`
           + `<span class="pc-gain"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></span>${st ? `<span class="meta pc-src">${esc(st.name)}</span>` : ''}</button>`; }).join('')}</div>`;
@@ -696,7 +696,7 @@
     const pctTxt = it => (pct ? '' : ` <span class="meta">(${it.pct.toFixed(2)}%)</span>`);
     const itemChip = (it, cls = '') => {
       const info = itemInfo(it); state.shown.add(it.id);
-      return `<div class="coin-item cp-item ${cls}" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}" data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><small class="cp-sl">${esc(capFirst(T().slots[it.slot] || it.slot || ''))}</small></div></div>`;
+      return `<div class="coin-item cp-item ${cls}" style="--ic:${QUALITY_COLORS[info.quality]}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}"><div><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span> <span class="meta">${esc(info.tag)}</span><small class="cp-sl">${esc(capFirst(T().slots[it.slot] || it.slot || ''))}</small></div></div>`;
     };
     const bossBlock = it => {
       const st = srcText(it), c = catOfSrc(srcOf(it));
@@ -846,20 +846,26 @@
   // Piezas de Ula'tek pasadas a catalizador: si la pieza de origen tiene una sola estadística y una pasiva, la de tier conserva las dos cosas
   const BIBELOT = { id: 270909, icon: 'rogue_paralytic_poison' };
   const ULATEK_ENC = 2895, KITHIX_ENC = 2896;
+  // Pieza de origen cuya pasiva y estadísticas conserva el objeto catalizado (se enseñan en su tooltip, como en Raidbots)
+  function catKept(it) {
+    const cf = it.catFrom, enc = it.source && it.source.encounter;
+    if (!it.tier || !cf || !cf.same || !cf.stats || !cf.stats.length) return 0;
+    return enc === KITHIX_ENC || (enc === ULATEK_ENC && cf.stats.length === 1) ? cf.from : 0;
+  }
+  function catAttr(it) { const f = catKept(it); if (f) state.shown.add(f); return f ? ` data-cat-from="${f}"` : ''; }
+  function tierTag(it) { return it.tier === 'catalyst' ? ` <span class="lg-cat-tag">${esc(T().catCatalyst)}</span>` : it.tier === 'token' ? ' <span class="lg-cat-tag">Tier</span>' : ''; }
+  // Cada pieza catalizada justo debajo de su pieza de origen; las que no tienen origen en la lista van al final
+  function ordered(list) {
+    const cats = list.filter(i => i.tier === 'catalyst'), used = new Set(), out = [];
+    for (const it of list.filter(i => i.tier !== 'catalyst')) {
+      out.push(it);
+      for (const c of cats) if (!used.has(c) && c.catFrom && c.catFrom.from === it.id) { used.add(c); out.push(c); }
+    }
+    return out.concat(cats.filter(c => !used.has(c)));
+  }
   function catNote(it) {
-    const t = T(), cf = it.catFrom, enc = it.source && it.source.encounter;
-    if (!it.tier || (enc !== ULATEK_ENC && enc !== KITHIX_ENC)) return '';
-    if (enc === KITHIX_ENC) {
-      if (!(cf && cf.stats && cf.stats.length && cf.same)) return '';
-      state.shown.add(cf.from);
-      const nm = itemInfo({ id: cf.from, name: cf.name }).name;
-      return `<div class="cat-note">${esc(t.catKeepAll(cf.stats.map(x => t.statNames[x] || x).join(' + '), nm))}</div>`;
-    }
-    if (cf && cf.stats && cf.stats.length === 1 && cf.same) {
-      state.shown.add(cf.from);
-      const nm = itemInfo({ id: cf.from, name: cf.name }).name;
-      return `<div class="cat-note">${esc(t.catKeep(t.statNames[cf.stats[0]] || cf.stats[0], nm))}</div>`;
-    }
+    const t = T(), enc = it.source && it.source.encounter;
+    if (!it.tier || (enc !== ULATEK_ENC && enc !== KITHIX_ENC) || catKept(it) || enc === KITHIX_ENC) return '';
     state.shown.add(BIBELOT.id);
     const bn = t.bibelotName;
     return `<div class="cat-note bib"><img src="${WEB_ICON(BIBELOT.icon)}" alt="" data-item="${BIBELOT.id}"> <b>${esc(bn)}</b> <span>${esc(t.bibelotNote)}</span></div>`;
@@ -1693,14 +1699,46 @@
     if (top + h > innerHeight - 8) top = Math.max(8, innerHeight - h - 8);
     tipEl.style.left = left + 'px'; tipEl.style.top = top + 'px';
   }
+  // Pieza catalizada: sus estadísticas secundarias y su pasiva son las de la pieza de origen (Wowhead da la de tier sin catalizar)
+  function mergeCat(html, orig) {
+    const stats = s => { const m = s.match(/<!--ebstats-->([\s\S]*?)<!--egstats-->/); return m ? m[1] : null; };
+    const a = stats(html), b = stats(orig);
+    if (a != null && b != null) html = html.replace(a, () => b);
+    const eff = orig.match(/<!--useText:0:\d+-->[\s\S]*?<!--useText:\d+-->/);
+    // Wowhead escribe el daño como «(1 * 5163)»: se deja solo la cifra, como en el juego
+    if (eff) html = html.replace('<!--itemEffects:0-->', () => `<!--itemEffects:0-->${eff[0].replace(/\((?:<!--[^>]*-->)*1(?:<!--[^>]*-->)* \* (?:<!--[^>]*-->)*(\d[\d.,]*)(?:<!--[^>]*-->)*\)/g, '$1')}<br>`);
+    return html;
+  }
+  // Piezas de tier que ya lleva el personaje (Raider.IO y, si no hay, lo que llevaba al simular)
+  function tipEquipped() {
+    if (state.view !== 'personal') return null;
+    const s0 = (state.personalList && state.personalList[0]) || state.personal;
+    if (!s0) return null;
+    const ids = new Set(Object.values(gearOf(s0) || s0.equippedAtSim || {}).filter(x => x && x.id).map(x => x.id));
+    return ids.size ? ids : null;
+  }
+  // Como en Raidbots: las piezas del conjunto que llevas puestas se iluminan, el contador sube y se encienden las bonificaciones que ya tienes
+  function markSet(html, eq) {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const head = doc.querySelector('a[href*="item-set="]'), box = head && head.closest('span.q'), list = box && box.nextElementSibling;
+    if (!list) return html;
+    let n = 0;
+    for (const sp of [...list.children].filter(c => c.tagName === 'SPAN')) {
+      const c = [...sp.childNodes].find(x => x.nodeType === 8 && /^si\d+$/.test(x.nodeValue));
+      if (c && eq.has(Number(c.nodeValue.slice(2)))) { sp.classList.add('set-on'); n++; }
+    }
+    for (const node of [...box.childNodes]) if (node.nodeType === 3) node.nodeValue = node.nodeValue.replace(/\(\d+\//, `(${n}/`);
+    doc.querySelectorAll('span.q0 > span').forEach(s => { const m = s.textContent.match(/^\((\d+)\)/); if (m && n >= Number(m[1])) s.classList.add('set-act'); });
+    return doc.body.innerHTML;
+  }
   async function showTip(g, x, y) {
-    const id = Number(g.dataset.item), ilvl = Number(g.dataset.ilvl) || 0, lang = S().lang, trim = g.dataset.tipTrim === 'set', key = `${lang}:${id}:${ilvl}${trim ? ':t' : ''}`;
+    const id = Number(g.dataset.item), ilvl = Number(g.dataset.ilvl) || 0, lang = S().lang, trim = g.dataset.tipTrim === 'set', from = Number(g.dataset.catFrom) || 0, eq = trim ? null : tipEquipped(), key = `${lang}:${id}:${ilvl}${trim ? ':t' : ''}${from ? ':c' + from : ''}${eq ? ':e' + [...eq].sort().join('.') : ''}`;
     tipKey = key;
     const foot = g.dataset.gain ? `<div class="tip-gain">${esc(g.dataset.gain)}</div>` : '';
     const fallback = () => { const info = itemInfo({ id }); return `<div class="tip-fallback"><b style="color:${QUALITY_COLORS[info.quality]}">${esc(info.name)}</b><br>${esc(T().ilvl)} ${ilvl}</div>`; };
     if (!tipCache.has(key)) {
       tipEl.innerHTML = `<div class="tip-load">${esc(T().loading)}</div>`; tipEl.hidden = false; placeTip(x, y);
-      window.api.itemTooltip(id, ilvl, lang).then(r => { tipCache.set(key, r && r.ok ? cleanTip(r.html, trim) : fallback()); if (tipKey === key) { tipEl.innerHTML = tipCache.get(key) + foot; placeTip(x, y); } });
+      window.api.itemTooltip(id, ilvl, lang).then(async r => { let html = r && r.ok ? r.html : null; if (html && from) { try { const o = await window.api.itemTooltip(from, ilvl, lang); if (o && o.ok) html = mergeCat(html, o.html); } catch { /* sin la pieza de origen: tooltip normal */ } } if (html && eq) html = markSet(html, eq); tipCache.set(key, html ? cleanTip(html, trim) : fallback()); if (tipKey === key) { tipEl.innerHTML = tipCache.get(key) + foot; placeTip(x, y); } });
       return;
     }
     tipEl.innerHTML = tipCache.get(key) + foot; tipEl.hidden = false; placeTip(x, y);

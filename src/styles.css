@@ -995,3 +995,10 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .cl-body { display: none; }
 .cl-card.open .cl-body { display: block; }
 .cl-sec + .cl-sec { margin-top: 14px; }
+/* Tooltip de piezas de tier: las que llevas puestas y las bonificaciones que ya tienes se iluminan */
+#tip .set-on, #tip .set-on a { color: #ffd100; font-weight: 600; }
+#tip .set-act, #tip .set-act a { color: #1eff00; }
+/* Pieza catalizada: justo debajo de la pieza de origen, con sangría y marca */
+.lg-row.lg-cat { margin-left: 34px; position: relative; }
+.lg-row.lg-cat::before { content: "↳"; position: absolute; left: -22px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 17px; }
+.lg-cat-tag { display: inline-block; margin-left: 4px; padding: 0 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; letter-spacing: .3px; text-transform: uppercase; color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); vertical-align: 1px; }
