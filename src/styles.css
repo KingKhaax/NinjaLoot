@@ -1044,3 +1044,4 @@ a:focus-visible, button:focus-visible, select:focus-visible, summary:focus-visib
 .lg-row .lg-n small, .cg-nm small { color: var(--text); font-weight: 500; }
 :root:not([data-theme="light"]) .lg-row .lg-n small, :root:not([data-theme="light"]) .cg-nm small { color: #fff; }
 .shot-only { display: none; }
+#langLabel { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
