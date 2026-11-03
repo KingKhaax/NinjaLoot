@@ -614,7 +614,7 @@
       const ic = cat === 'dungeon' && st ? nameImg(st.name, 36) : cat === 'raid' && g.src ? bossImg(g.src.encounter, 36) : '';
       const rowsHTML = ordered(g.items).map(it => {
         const info = itemInfo(it);
-        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
+        return `<div class="lg-row${owned(p, it) ? ' owned-row' : ''}${it.tier === 'catalyst' && it.under ? ' lg-cat' : ''}" style="--qc:${readable(QUALITY_COLORS[info.quality])}" data-item="${it.id}"${catAttr(it)} data-ilvl="${it.ilvl}" data-gain="${esc(gainLine(it))}"><img src="${info.icon}" alt="" style="border-color:${QUALITY_COLORS[info.quality]}">`
           + `<div class="lg-n"><span style="color:${readable(QUALITY_COLORS[info.quality])}">${esc(info.name)}</span>${info.tag ? ` <span class="meta">${esc(info.tag)}</span>` : ''}${tierTag(it)}`
           + `<small>${multi ? `<span class="sim-dot" style="background:${SIM_COLORS[(it.sim || 0) % SIM_COLORS.length]}"></span>` : ''}${esc(capFirst(t.slots[it.slot] || it.slot || ''))}</small>${catNote(it)}</div>`
           + `<div class="lg-g"><b>+${nf().format(it.gain)}</b> <span class="meta">(${it.pct.toFixed(2)}%)</span></div></div>`;
@@ -860,9 +860,9 @@
     const cats = list.filter(i => i.tier === 'catalyst'), used = new Set(), out = [];
     for (const it of list.filter(i => i.tier !== 'catalyst')) {
       out.push(it);
-      for (const c of cats) if (!used.has(c) && c.catFrom && c.catFrom.from === it.id) { used.add(c); out.push(c); }
+      for (const c of cats) if (!used.has(c) && c.catFrom && c.catFrom.from === it.id) { used.add(c); c.under = true; out.push(c); }
     }
-    return out.concat(cats.filter(c => !used.has(c)));
+    return out.concat(cats.filter(c => { if (used.has(c)) return false; c.under = false; return true; }));
   }
   function catNote(it) {
     const t = T(), enc = it.source && it.source.encounter;
