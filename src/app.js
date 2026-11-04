@@ -875,9 +875,8 @@
   const ULATEK_ENC = 2895, KITHIX_ENC = 2896;
   // Pieza de origen cuya pasiva y estadísticas conserva el objeto catalizado (se enseñan en su tooltip, como en Raidbots)
   function catKept(it) {
-    const cf = it.catFrom, enc = it.source && it.source.encounter;
-    if (!it.tier || !cf || !cf.same || !cf.stats || !cf.stats.length) return 0;
-    return enc === KITHIX_ENC || (enc === ULATEK_ENC && cf.stats.length === 1) ? cf.from : 0;
+    const cf = it.catFrom;
+    return it.tier === 'catalyst' && cf && cf.from ? cf.from : 0;
   }
   function catAttr(it) { const f = catKept(it); if (f) state.shown.add(f); return f ? ` data-cat-from="${f}"` : ''; }
   function tierTag(it) { return it.tier === 'catalyst' ? ` <span class="lg-cat-tag">${esc(T().catCatalyst)}</span>` : it.tier === 'token' ? ' <span class="lg-cat-tag">Tier</span>' : ''; }
