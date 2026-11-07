@@ -91,8 +91,8 @@ ipcMain.handle('items:tooltip', async (_e, id, ilvl, lang, gem) => {
 // --- Iconos como data URL (para exportar el gráfico a PNG sin "tainted canvas") ---
 ipcMain.handle('icon:data', async (_e, href) => {
   try {
-    const m = String(href).match(/^(?:\.\/)?((?:assets\/(?:items|classes)\/[\w.\-]+\.png)|(?:assets\/bosses\/[\w.\-]+\.(?:jpg|png))|(?:assets\/ui\/[\w.\-]+\.(?:jpg|png))|(?:fonts\/[\w.\-]+\.woff2))$/);
-    if (m) { const mime = { png: 'image/png', jpg: 'image/jpeg', woff2: 'font/woff2' }[m[1].split('.').pop()]; return `data:${mime};base64,${fs.readFileSync(path.join(__dirname, 'src', m[1])).toString('base64')}`; }
+    const m = String(href).match(/^(?:\.\/)?((?:assets\/(?:items\/[\w.\-]+\.webp|classes\/[\w.\-]+\.png))|(?:assets\/bosses\/[\w.\-]+\.(?:jpg|png))|(?:assets\/ui\/[\w.\-]+\.(?:jpg|png))|(?:fonts\/[\w.\-]+\.woff2))$/);
+    if (m) { const mime = { png: 'image/png', webp: 'image/webp', jpg: 'image/jpeg', woff2: 'font/woff2' }[m[1].split('.').pop()]; return `data:${mime};base64,${fs.readFileSync(path.join(__dirname, 'src', m[1])).toString('base64')}`; }
     const r = String(href).match(/^https:\/\/(?:wow\.zamimg\.com\/images\/wow\/icons\/\w+\/[\w.\-]+\.jpg|render\.worldofwarcraft\.com\/[\w\/.\-]+\.(?:png|jpg))$/);
     if (!r) return null;
     const res = await net.fetch(href, { headers: UA });

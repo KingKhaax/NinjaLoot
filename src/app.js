@@ -96,7 +96,7 @@
     const icon = loc?.[1] || cached?.[1] || 'inv_misc_questionmark';
     const quality = (it.ilvl && state.qual[`${it.id}:${it.ilvl}`]) ?? loc?.[2] ?? cached?.[2] ?? 4;
     const tag = { t: '(tank)', h: '(healer)', th: '(tank/healer)' }[loc?.[5]] || '';
-    const src = loc ? `assets/items/${loc[1]}.png` : icon === 'inv_misc_questionmark' ? 'assets/ui/questionmark.jpg' : WEB_ICON(icon);
+    const src = loc ? `assets/items/${loc[1]}.webp` : icon === 'inv_misc_questionmark' ? 'assets/ui/questionmark.jpg' : WEB_ICON(icon);
     return { name, icon: src, quality, tag };
   }
   // Calidad real de cada pieza: la del tooltip a su nivel de objeto (una pieza de mazmorra a nivel Mito es épica aunque su base sea rara)
